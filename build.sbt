@@ -4,6 +4,23 @@ version := "1.0"
 
 scalaVersion := "2.11.6"
 
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-unchecked",
+  "-feature",
+  "-Yinline-warnings",
+  "-Ywarn-adapted-args",
+  "-Ywarn-dead-code",
+  "-Ywarn-inaccessible",
+  "-Ywarn-infer-any",
+  "-Ywarn-nullary-override",
+  "-Ywarn-nullary-unit",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-unused",
+  "-Ywarn-unused-import",
+  "-Ywarn-value-discard"
+)
+
 libraryDependencies += "org.bouncycastle" % "bcprov-jdk16" % "1.46"
 
 libraryDependencies += "com.google.guava" % "guava" % "18.0"
