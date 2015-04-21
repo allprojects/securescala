@@ -1,1 +1,15 @@
-/thesis/auto/bibliography.el
+/thesis/auto/
+/thesis/tex/auto/
+
+/thesis/**/*.aux
+/thesis/**/*.bbl
+/thesis/**/*.blg
+/thesis/**/*.fls
+/thesis/**/*.lof
+/thesis/**/*.log
+/thesis/**/*.lol
+/thesis/**/*.out
+/thesis/**/*.pyg
+/thesis/**/*.synctex.gz
+/thesis/**/*.toc
+/thesis/thesis.pdf
