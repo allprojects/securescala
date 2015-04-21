@@ -3,55 +3,121 @@
 
 \section{Homomorphic encryption}
 \label{sec:homom-encrypt}
+\begin{itemize}
+\item Fully Homomorphic Encryption
+  \begin{itemize}
+  \item theoretically possible
+  \item practically not usable
+  \end{itemize}
+\item Partial Homomorphic Encryption
+  \begin{itemize}
+  \item partial means with respect to a certain operation
+  \item available for multiplication, addition, comparison, ordering, \dots
+  \end{itemize}
+\end{itemize}
 
 \subsection{CryptDB}
 \label{sec:cryptdb}
 
 \cite{CryptDB}
+\begin{itemize}
+\item use PHE to perform operations on encrypted columns
+\item SQL proxy
+\item does not support for example average because no operator for division
+\end{itemize}
 
 \subsection{MrCrypt}
 \label{sec:mrcrypt}
 
 \cite{MrCrypt}
+\begin{itemize}
+\item written in Scala
+\item encryption scheme inference, fails if FHE required due to
+  different operators on same value
+\end{itemize}
 
 \subsection{Program Analysis for Secure Big Data Processing}
 \label{sec:progr-analys-secure}
 
 \cite{ProgramAnalysisBigData}
 
+\begin{itemize}
+\item transform pig latin scripts
+\item communicate with trusted party to perform re-encryption
+\end{itemize}
+
 \subsection{Information-flow control for programming on encrypted data}
 \label{sec:inform-flow-contr}
 
 \cite{InfFlowEnc}
+\begin{itemize}
+\item protect against control flow leaks
+\item problem: mix encrypted/plain data, assign to plain data after
+  branching with if on encrypted leads to leaks
+\end{itemize}
 
 \section{Garbled Circuits}
 \label{sec:garbled-circuits}
+
+\begin{itemize}
+\item Secure function evaluation
+\item generating party vs evaluating party
+\end{itemize}
 
 \subsection{Secure Two-Party Computations in ANSI C}
 \label{sec:secure-two-party}
 
 \cite{Secure2PartyC}
+\begin{itemize}
+\item compiler for C
+\item use modified CBMC model checker
+\end{itemize}
 
 \subsection{VMCrypt}
 \label{sec:vmcrypt}
 
 \cite{VMCrypt}
+\begin{itemize}
+\item library for secure computation using garbled circuits
+\item API for integration with external code
+\end{itemize}
 
 \subsection{Faster Secure Two-Party Computation Using Garbled Circuits}
 \label{sec:faster-secure-two}
 
 \cite{FasterCircuits}
+\begin{itemize}
+\item instead of sending whole circuit, pipelined approach
+\item does not allow global optimizations on circuit
+\end{itemize}
 
 \subsection{Reusable Garbled Circuits and Succing Functional Encryption}
 \label{sec:reus-garbl-circ}
 
 \cite{ReusableGC}
+\begin{itemize}
+\item leveled FHE + attribute based encryption + garbled circuits
+\item for functions with 1-bit output, larger output by repeating
+  scheme (performance? Nothing said\dots)
+\end{itemize}
 
 \subsection{Yao's Garbled Circuits: Recent Directions and
   Implementations}
 \label{sec:yaos-garbl-circ}
 
 \cite{GCRecent}
+
+\subsubsection{Fairplay-Secure Two-Party Computation System}
+\label{sec:fairplay-secure-two}
+
+\cite{Fairplay}
+
+\begin{itemize}
+\item loads complete circuit into memory which becomes a problem
+\item Requires several hours and 40GB RAM to compile AES
+\item Function description language SFDL and compiler
+\item high-level programming abstractions inhibit optimizations
+\end{itemize}
 
 %%% Local Variables:
 %%% mode: latex
