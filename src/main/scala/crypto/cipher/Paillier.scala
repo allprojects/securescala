@@ -39,7 +39,7 @@ object Paillier {
     }.toOption
   }
 
-  private def encrypt(pub: PubKey)(input: BigInt): BigInt = {
+  def encrypt(pub: PubKey)(input: BigInt): BigInt = {
     val r = BigInt(pub.bits, new Random)
     pub.g.modPow(input, pub.nSquare) * r.modPow(pub.n,pub.nSquare) mod pub.nSquare
   }
