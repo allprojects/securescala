@@ -2,15 +2,16 @@ package crypto.cipher
 
 import scala.util._
 
-case class Encryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
-  def apply(x: BigInt) = f(x)
-}
-
-case class Decryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
-  def apply(x: BigInt) = f(x)
-}
-
 object Paillier {
+  case class Encryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
+    def apply(x: BigInt) = f(x)
+  }
+
+  case class Decryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
+    def apply(x: BigInt) = f(x)
+  }
+
+
   case class PubKey(bits: Int, n: BigInt, g: BigInt, nSquare: BigInt)
   case class PrivKey(lambda: BigInt, mu: BigInt)
 
