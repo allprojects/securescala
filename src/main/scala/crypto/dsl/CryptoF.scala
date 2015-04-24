@@ -13,13 +13,13 @@ case class Compare[K](lhs: Enc, rhs: Enc, k: Ordering => K) extends CryptoF[K]
 
 object CryptoF {
   object DSL {
-    type Crypto[A] = Free[CryptoF, A]
+    type CryptoM[A] = Free[CryptoF, A]
 
-    def multiply(lhs: Enc, rhs: Enc): Crypto[Enc] = liftF(Mult(lhs,rhs,identity))
-    def add(lhs: Enc, rhs: Enc): Crypto[Enc] = liftF(Plus(lhs,rhs,identity))
-    def encrypt(v: Int): Crypto[Enc] = liftF(Encrypt(v,identity))
-    def equals(lhs: Enc, rhs: Enc): Crypto[Boolean] = liftF(Equals(lhs,rhs,identity))
-    def compare(lhs: Enc, rhs: Enc): Crypto[Ordering] = liftF(Compare(lhs,rhs,identity))
+    def multiply(lhs: Enc, rhs: Enc): CryptoM[Enc] = liftF(Mult(lhs,rhs,identity))
+    def add(lhs: Enc, rhs: Enc): CryptoM[Enc] = liftF(Plus(lhs,rhs,identity))
+    def encrypt(v: Int): CryptoM[Enc] = liftF(Encrypt(v,identity))
+    def equals(lhs: Enc, rhs: Enc): CryptoM[Boolean] = liftF(Equals(lhs,rhs,identity))
+    def compare(lhs: Enc, rhs: Enc): CryptoM[Ordering] = liftF(Compare(lhs,rhs,identity))
   }
 
   // deriving Functor

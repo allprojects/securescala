@@ -8,11 +8,11 @@ import crypto.cipher._
 import crypto.cipher.Common._
 
 trait CryptoInterpreter {
-  def interpret[A]: Crypto[A] => A
+  def interpret[A]: CryptoM[A] => A
 }
 
 case class LocalInterpreter(encKeys: EncKeys, decKeys: DecKeys) extends CryptoInterpreter {
-  def interpret[A]: Crypto[A] => A = _.resume match {
+  def interpret[A]: CryptoM[A] => A = _.resume match {
     case -\/(Mult(lhs,rhs,k)) => sys.error("No scheme for multiplication")
     case -\/(Plus(PaillierEnc(lhs),PaillierEnc(rhs),k)) =>
       val r = PaillierEnc((lhs * rhs) mod encKeys.paillier.nSquare)

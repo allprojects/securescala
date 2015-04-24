@@ -22,12 +22,12 @@ object ExamplePrograms {
     }
   } yield result
 
-  def sum[F[_]:Foldable](xs: F[Enc]): Crypto[Enc] = for {
+  def sum[F[_]:Foldable](xs: F[Enc]): CryptoM[Enc] = for {
     init <- encrypt(0)
     r <- xs.foldLeftM(init) { (accum,x) => add(accum,x) }
   } yield r
 
-  def product(xs: List[Enc]): Crypto[Enc] = for {
+  def product(xs: List[Enc]): CryptoM[Enc] = for {
     init <- encrypt(1)
     r <- xs.foldLeftM(init) { (accum,x) => multiply(accum,x) }
   } yield r
