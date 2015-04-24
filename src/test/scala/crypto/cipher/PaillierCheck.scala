@@ -10,12 +10,12 @@ object PaillierCheck extends Properties("Paillier") {
 
   val (encrypt,decrypt,pub) = Paillier.create(1024)
 
-  property("decrypt . encrypt = id for positive ints") =
+  property("decrypt · encrypt = id for positive ints") =
     forAll(positiveInts) { (input: BigInt) =>
       decrypt(encrypt(input)) == input
     }
 
-  property("decrypt . encrypt = id (with modulus)") = forAll { (input: BigInt) =>
+  property("decrypt · encrypt = id (with modulus)") = forAll { (input: BigInt) =>
     decrypt(encrypt(input)) == input.mod(pub.n)
   }
 
