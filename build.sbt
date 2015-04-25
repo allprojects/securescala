@@ -24,3 +24,5 @@ scalacOptions ++= Seq(
 libraryDependencies += "org.scalaz" % "scalaz-core_2.11" % "7.1.1"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
+
+libraryDependencies += "commons-codec" % "commons-codec" % "1.10"
