@@ -2,7 +2,6 @@ package crypto.dsl
 
 import crypto.cipher._
 import scalaz._
-import scalaz.Free.liftF
 
 sealed trait CryptoF[+K]
 case class Mult[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
@@ -14,12 +13,13 @@ case class Compare[K](lhs: Enc, rhs: Enc, k: Ordering => K) extends CryptoF[K]
 object CryptoF {
   object DSL {
     type CryptoM[A] = Free[CryptoF, A]
+    type Crypto[A] = FreeAp[CryptoF, A]
 
-    def multiply(lhs: Enc, rhs: Enc): CryptoM[Enc] = liftF(Mult(lhs,rhs,identity))
-    def add(lhs: Enc, rhs: Enc): CryptoM[Enc] = liftF(Plus(lhs,rhs,identity))
-    def encrypt(v: Int): CryptoM[Enc] = liftF(Encrypt(v,identity))
-    def equals(lhs: Enc, rhs: Enc): CryptoM[Boolean] = liftF(Equals(lhs,rhs,identity))
-    def compare(lhs: Enc, rhs: Enc): CryptoM[Ordering] = liftF(Compare(lhs,rhs,identity))
+    def multiply(lhs: Enc, rhs: Enc): CryptoM[Enc] = Free.liftF(Mult(lhs,rhs,identity))
+    def add(lhs: Enc, rhs: Enc): CryptoM[Enc] = Free.liftF(Plus(lhs,rhs,identity))
+    def encrypt(v: Int): CryptoM[Enc] = Free.liftF(Encrypt(v,identity))
+    def equals(lhs: Enc, rhs: Enc): CryptoM[Boolean] = Free.liftF(Equals(lhs,rhs,identity))
+    def compare(lhs: Enc, rhs: Enc): CryptoM[Ordering] = Free.liftF(Compare(lhs,rhs,identity))
   }
 
   // deriving Functor
