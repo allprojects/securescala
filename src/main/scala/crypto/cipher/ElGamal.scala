@@ -7,8 +7,9 @@ object ElGamal {
     def apply(x: BigInt) = f(x)
   }
 
-  case class Decryptor(f: (BigInt,BigInt) => BigInt) extends Function1[(BigInt,BigInt),BigInt]{
-    def apply(xy: (BigInt,BigInt)) = f(xy._1,xy._2)
+  case class Decryptor(f: (BigInt,BigInt) => BigInt) extends Function2[BigInt,BigInt,BigInt]{
+    def apply(x: BigInt, y: BigInt) = f(x,y)
+    def apply(xy: (BigInt,BigInt)) = f(xy._1, xy._2)
   }
 
   case class PubKey(bits: Int, p: BigInt, g: BigInt, h: BigInt)
@@ -47,12 +48,12 @@ object ElGamal {
     val rand = BigInt(pub.bits, new SecureRandom)
     val c1 = pub.g.modPow(rand, pub.p)
     val s = pub.h.modPow(rand,pub.p)
-    val c2 = input * s mod pub.p
+    val c2 = (input * s).mod(pub.p)
     (c1,c2)
   }
 
   def decrypt(pub: PubKey, priv: PrivKey)(c1: BigInt, c2: BigInt): BigInt = {
     val inverse = c1.modPow(priv.x, pub.p).modInverse(pub.p)
-    c2 * inverse mod pub.p
+    (c2 * inverse).mod(pub.p)
   }
 }
