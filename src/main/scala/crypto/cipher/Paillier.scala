@@ -1,6 +1,7 @@
 package crypto.cipher
 
 import scala.util._
+import java.security.SecureRandom
 
 object Paillier {
   case class Encryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
@@ -16,14 +17,18 @@ object Paillier {
   case class PrivKey(lambda: BigInt, mu: BigInt)
 
   def create(bits: Int): (Encryptor,Decryptor,PubKey) = {
-    val (pub,priv) =
-      Stream.continually(Paillier.generateKeys(bits)).dropWhile(_.isEmpty).head.get
+    val (pub,priv) = Stream.continually(Paillier.generateKeys(bits)).
+      take(100).
+      dropWhile(_.isEmpty).
+      headOption.
+      flatten.
+      getOrElse(sys.error("Failed to generate keys."))
 
-    (Encryptor(Paillier.encrypt(pub)),Decryptor(Paillier.decrypt(pub,priv)), pub)
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)), pub)
   }
 
   private def generateKeys(bits: Int): Option[(PubKey,PrivKey)] = {
-    val rand = new Random
+    val rand = new SecureRandom
     val p = BigInt(bits/2, 64, rand)
     val q = BigInt(bits/2, 64, rand)
 
