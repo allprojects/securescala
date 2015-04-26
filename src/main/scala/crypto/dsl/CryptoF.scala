@@ -12,6 +12,7 @@ case class Compare[K](lhs: Enc, rhs: Enc, k: Ordering => K) extends CryptoF[K]
 case class Encrypt[K](v: Int, k: Enc => K) extends CryptoF[K]
 case class ToPaillier[K](v: Enc, k: PaillierEnc => K) extends CryptoF[K]
 case class ToGamal[K](v: Enc, k: GamalEnc => K) extends CryptoF[K]
+case class ToAes[K](v: Enc, k: AesEnc => K) extends CryptoF[K]
 
 object CryptoF {
   object DSL {
@@ -25,6 +26,7 @@ object CryptoF {
     def encrypt(v: Int): Crypto[Enc] = FreeAp.lift(Encrypt(v,identity))
     def toPaillier(v: Enc): Crypto[PaillierEnc] = FreeAp.lift(ToPaillier(v,identity))
     def toGamal(v: Enc): Crypto[GamalEnc] = FreeAp.lift(ToGamal(v,identity))
+    def toAes(v: Enc): Crypto[AesEnc] = FreeAp.lift(ToAes(v,identity))
   }
 
   // deriving Functor
@@ -37,6 +39,7 @@ object CryptoF {
       case Encrypt(v,k) => Encrypt(v,f compose k)
       case ToPaillier(v,k) => ToPaillier(v,f compose k)
       case ToGamal(v,k) => ToGamal(v,f compose k)
+      case ToAes(v,k) => ToAes(v,f compose k)
     }
   }
 }
