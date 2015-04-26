@@ -18,13 +18,13 @@ object CryptoF {
     type CryptoM[A] = Free[CryptoF, A]
     type Crypto[A] = FreeAp[CryptoF, A]
 
-    def multiply(lhs: Enc, rhs: Enc): CryptoM[Enc] = Free.liftF(Mult(lhs,rhs,identity))
-    def add(lhs: Enc, rhs: Enc): CryptoM[Enc] = Free.liftF(Plus(lhs,rhs,identity))
-    def equals(lhs: Enc, rhs: Enc): CryptoM[Boolean] = Free.liftF(Equals(lhs,rhs,identity))
-    def compare(lhs: Enc, rhs: Enc): CryptoM[Ordering] = Free.liftF(Compare(lhs,rhs,identity))
-    def encrypt(v: Int): CryptoM[Enc] = Free.liftF(Encrypt(v,identity))
-    def toPaillier(v: Enc): CryptoM[PaillierEnc] = Free.liftF(ToPaillier(v,identity))
-    def toGamal(v: Enc): CryptoM[GamalEnc] = Free.liftF(ToGamal(v,identity))
+    def multiply(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Mult(lhs,rhs,identity))
+    def add(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Plus(lhs,rhs,identity))
+    def equals(lhs: Enc, rhs: Enc): Crypto[Boolean] = FreeAp.lift(Equals(lhs,rhs,identity))
+    def compare(lhs: Enc, rhs: Enc): Crypto[Ordering] = FreeAp.lift(Compare(lhs,rhs,identity))
+    def encrypt(v: Int): Crypto[Enc] = FreeAp.lift(Encrypt(v,identity))
+    def toPaillier(v: Enc): Crypto[PaillierEnc] = FreeAp.lift(ToPaillier(v,identity))
+    def toGamal(v: Enc): Crypto[GamalEnc] = FreeAp.lift(ToGamal(v,identity))
   }
 
   // deriving Functor
