@@ -5,14 +5,20 @@ import scalaz.std.list
 
 import CryptoF.DSL._
 import crypto.cipher._
+import crypto.KeyRing
 
 trait CryptoInterpreter {
   def interpret[A]: CryptoM[A] => A
 }
 
-case class LocalInterpreter(encKeys: EncKeys, decKeys: DecKeys) extends CryptoInterpreter {
+case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
+  val KeyRing(encKeys,decKeys) = keyRing
   def interpret[A]: CryptoM[A] => A = _.resume match {
-    case -\/(Mult(lhs,rhs,k)) => sys.error("No scheme for multiplication")
+    case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
+    case -\/(Mult(lhs,rhs,k)) =>
+      val lhs2@GamalEnc(_,_) = Common.convert(encKeys, decKeys)(Multiplicative, lhs)
+      val rhs2@GamalEnc(_,_) = Common.convert(encKeys, decKeys)(Multiplicative, rhs)
+      interpret(k(lhs2*rhs2))
     case -\/(Plus(PaillierEnc(lhs),PaillierEnc(rhs),k)) =>
       val r = PaillierEnc((lhs * rhs) mod encKeys.paillier.nSquare)
       interpret(k(r))
