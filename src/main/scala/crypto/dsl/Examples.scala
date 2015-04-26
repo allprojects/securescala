@@ -16,7 +16,7 @@ object ExamplePrograms {
   import CryptoF.DSL._
 
   def encMax(a: Enc, b: Enc) = for {
-    comparison <- compare(a,b)
+    comparison <- compare(a,b).monadic
     result <- comparison match {
       case LT => Free.point[CryptoF, Enc](b)
       case _ => Free.point[CryptoF, Enc](a)
@@ -24,19 +24,19 @@ object ExamplePrograms {
   } yield result
 
   def sum[F[_]:Foldable](xs: F[Enc]): CryptoM[Enc] = for {
-    init <- encrypt(0)
-    r <- xs.foldLeftM(init) { (accum,x) => add(accum,x) }
+    init <- encrypt(0).monadic
+    r <- xs.foldLeftM[CryptoM,Enc](init) { (accum,x) => add(accum,x).monadic}
   } yield r
 
   def product(xs: List[Enc]): CryptoM[Enc] = for {
-    init <- encrypt(1)
-    r <- xs.foldLeftM(init) { (accum,x) => multiply(accum,x) }
+    init <- encrypt(1).monadic
+    r <- xs.foldLeftM[CryptoM,Enc](init) { (accum,x) => multiply(accum,x).monadic }
   } yield r
 
   def prog1(a: Enc, b: Enc) = for {
-    aTimesB <- multiply(a,b)
-    c <- encrypt(32)
-    r <- add(aTimesB, c)
+    aTimesB <- multiply(a,b).monadic
+    c <- encrypt(32).monadic
+    r <- add(aTimesB, c).monadic
   } yield r
 }
 
