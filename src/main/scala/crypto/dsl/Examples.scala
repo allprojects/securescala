@@ -10,6 +10,7 @@ import scalaz.std.list
 import scala.util.Random
 
 import crypto.cipher._
+import crypto.KeyRing
 
 object ExamplePrograms {
   import CryptoF.DSL._
@@ -39,7 +40,7 @@ object ExamplePrograms {
   } yield r
 }
 
-object Main extends App {
+object SumExample extends App {
   import ExamplePrograms._
 
   val randomNumbers = List.fill(20)(Random.nextInt.abs).map(BigInt(_))
@@ -47,17 +48,36 @@ object Main extends App {
 
   val encryptedList: List[Enc] = randomNumbers.map(NoEnc(_))
 
-  val (paillierEnc, paillierDec, paillierPub) = Paillier.create(1024)
-  val encKeys = EncKeys(paillierPub)
-  val decKeys = DecKeys(paillierDec)
+  val keyRing = KeyRing.create
 
-  val locally = LocalInterpreter(encKeys,decKeys)
-  val decryption = Common.decrypt(decKeys)
+  val locally = LocalInterpreter(keyRing)
+  val decryption = Common.decrypt(keyRing.dec)
 
   val sumResult: Enc = locally.interpret {
     sum(encryptedList)
   }
 
-  println(s"Result of sum without encryption: ${randomNumbers.sum mod paillierPub.n}")
+  println(s"Result of sum without encryption: ${randomNumbers.sum mod keyRing.enc.paillier.n}")
   println(s"Result of sum with    encryption: ${decryption(sumResult)}")
+}
+
+object MultExample extends App {
+  import ExamplePrograms._
+
+  val randomNumbers = List.fill(5)(Random.nextInt.abs).map(BigInt(_))
+  println(s"Sequence of random numbers: ${randomNumbers}")
+
+  val encryptedList: List[Enc] = randomNumbers.map(NoEnc(_))
+
+  val keyRing = KeyRing.create
+
+  val locally = LocalInterpreter(keyRing)
+  val decryption = Common.decrypt(keyRing.dec)
+
+  val productResult: Enc = locally.interpret {
+    product(encryptedList)
+  }
+
+  println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.enc.gamal.p}")
+  println(s"Result of product with    encryption: ${decryption(productResult)}")
 }
