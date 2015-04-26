@@ -40,6 +40,16 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
     case -\/(Encrypt(v,k)) =>
       // TODO be more clever about what scheme to use
       interpret(k(NoEnc(v)))
+
+    case -\/(ToPaillier(v,k)) =>
+      val r@PaillierEnc(_) = Common.convert(encKeys,decKeys)(Additive,v)
+      interpret(k(r))
+
+    case -\/(ToGamal(v,k)) =>
+      val r@GamalEnc(_,_) = Common.convert(encKeys,decKeys)(Multiplicative,v)
+      interpret(k(r))
+
+    // End of the program, return the final value
     case \/-(x) => x
   }
 }
