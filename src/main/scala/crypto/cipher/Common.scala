@@ -1,16 +1,27 @@
 package crypto.cipher
 
+import scalaz.Ordering
 import crypto.{DecKeys,EncKeys}
 
 sealed trait Enc
-case class PaillierEnc(underlying: BigInt) extends Enc
+case class PaillierEnc(underlying: BigInt) extends Enc {
+  // TODO: modulus public key nSquare
+  def +(that: PaillierEnc): PaillierEnc = (this,that) match {
+    case (PaillierEnc(lhs),PaillierEnc(rhs)) => PaillierEnc(lhs * rhs)
+  }
+}
 case class GamalEnc(ca: BigInt, cb: BigInt) extends Enc {
+  // TODO: modulus public key
   def *(that: GamalEnc): GamalEnc = (this,that) match {
     case (GamalEnc(ca1,ca2),GamalEnc(cb1,cb2)) => GamalEnc(ca1 * cb1, ca2 * cb2)
   }
 }
-case class AESEnc(underlying: BigInt) extends Enc
-case class OPEEnc(underlying: BigInt) extends Enc
+case class AESEnc(underlying: BigInt) extends Enc {
+  def =:=(that: AESEnc): Boolean = this.underlying == that.underlying
+}
+case class OPEEnc(underlying: BigInt) extends Enc {
+  def compare(that: OPEEnc): Ordering = ???
+}
 case class NoEnc(underlying: BigInt) extends Enc
 
 sealed trait Scheme

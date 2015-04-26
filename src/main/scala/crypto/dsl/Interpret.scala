@@ -23,9 +23,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
       interpret(k(lhs2*rhs2))
 
     // Addition
-    case -\/(Plus(PaillierEnc(lhs),PaillierEnc(rhs),k)) =>
-      val r = PaillierEnc((lhs * rhs) mod encKeys.paillier.nSquare)
-      interpret(k(r))
+    case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
     case -\/(Plus(lhs,rhs,k)) =>
       val PaillierEnc(lhs_) = Common.convert(encKeys, decKeys)(Additive, lhs)
       val PaillierEnc(rhs_) = Common.convert(encKeys, decKeys)(Additive, rhs)
