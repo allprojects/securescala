@@ -52,7 +52,7 @@ object ElGamal {
     (c1,c2)
   }
 
-  def decrypt(pub: PubKey, priv: PrivKey)(c1: BigInt, c2: BigInt): BigInt = {
+  private def decrypt(pub: PubKey, priv: PrivKey)(c1: BigInt, c2: BigInt): BigInt = {
     val inverse = c1.modPow(priv.x, pub.p).modInverse(pub.p)
     (c2 * inverse).mod(pub.p)
   }
