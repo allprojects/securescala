@@ -5,7 +5,7 @@ import scalaz._
 
 sealed trait CryptoF[+K]
 case class Mult[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
-case class Plus[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
+case class Plus[K](lhs: Enc, rhs: Enc, k: PaillierEnc => K) extends CryptoF[K]
 case class Equals[K](lhs: Enc, rhs: Enc, k: Boolean => K)  extends CryptoF[K]
 case class Compare[K](lhs: Enc, rhs: Enc, k: Ordering => K) extends CryptoF[K]
 

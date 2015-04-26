@@ -23,6 +23,7 @@ object ExamplePrograms {
     }
   } yield result
 
+  // General case for every foldable, but needs monadic interface
   def sum[F[_]:Foldable](xs: F[Enc]): CryptoM[Enc] = for {
     init <- encrypt(0).monadic
     r <- xs.foldLeftM[CryptoM,Enc](init) { (accum,x) => add(accum,x).monadic}
@@ -38,6 +39,10 @@ object ExamplePrograms {
     c <- encrypt(32).monadic
     r <- add(aTimesB, c).monadic
   } yield r
+
+  // Use applicative, allows for batch encrypting/decrypting
+  def sumList(xs: List[Enc]): Crypto[Enc] = xs.traverse(toPaillier).map(_.reduce(_+_))
+  def multiplyList(xs: List[Enc]): Crypto[Enc] = xs.traverse(toGamal).map(_.reduce(_*_))
 }
 
 object SumExample extends App {

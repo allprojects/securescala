@@ -7,7 +7,7 @@ import javax.crypto.SecretKey
 import javax.crypto.KeyGenerator
 import javax.crypto.Cipher;
 
-object AES {
+object Aes {
   sealed trait KeySize { def bits: Int }
   case object B128 extends KeySize { def bits = 128 }
   case object B192 extends KeySize { def bits = 192 }
