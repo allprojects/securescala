@@ -34,7 +34,14 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
     case -\/(Compare(lhs,rhs,k)) => sys.error("No scheme for comparison")
 
     // Equality
-    case -\/(Equals(lhs,rhs,k)) => sys.error("No scheme for equality")
+    case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
+    case -\/(Equals(lhs,rhs,k)) =>
+      val decLhs = Common.decrypt(decKeys)(lhs).toByteArray
+      val decRhs = Common.decrypt(decKeys)(rhs).toByteArray
+
+      val encLhs: AesEnc = AesEnc(BigInt(decKeys.aesEnc(decLhs)))
+      val encRhs: AesEnc = AesEnc(BigInt(decKeys.aesEnc(decRhs)))
+      interpret(k(encLhs =:= encRhs))
 
     // Encryption
     case -\/(Encrypt(v,k)) =>
@@ -47,6 +54,13 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
 
     case -\/(ToGamal(v,k)) =>
       val r@GamalEnc(_,_) = Common.convert(encKeys,decKeys)(Multiplicative,v)
+      interpret(k(r))
+
+      // Offline operations?
+    case -\/(Sub(lhs,rhs,k)) =>
+      val plainLhs = Common.decrypt(decKeys)(lhs)
+      val plainRhs = Common.decrypt(decKeys)(rhs)
+      val r = Common.encrypt(Additive, encKeys)(plainLhs - plainRhs)
       interpret(k(r))
 
     // End of the program, return the final value
