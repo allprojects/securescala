@@ -73,26 +73,44 @@ object REPL {
 
   def runProgram[A](p: CryptoM[A]): A = locally.interpret(p)
   def encrypt(i: Int): Enc = Common.encrypt(Additive, keyRing.enc)(i)
-  def decrypt(i: Enc): BigInt = Common.decrypt(keyRing.dec)(i)
+}
+
+object SumExample extends App {
+  import ExamplePrograms._
+  import REPL._
+
+  val randomNumbers = List.fill(20)(Random.nextInt.abs).map(BigInt(_))
+  println(s"Sequence of random numbers: ${randomNumbers}")
+
+  val encryptedList: List[Enc] = randomNumbers.map(NoEnc(_)) // TODO stub for encryption used
+
+  val sumResult = REPL.runProgram(sum(encryptedList))
+
+  println(s"Result of sum without encryption: ${randomNumbers.sum mod REPL.keyRing.enc.paillier.n}")
+  println(s"Result of sum with    encryption: ${decryption(sumResult)}")
 }
 
 object MultExample extends App {
   import ExamplePrograms._
+  import REPL._
 
   val randomNumbers = List.fill(5)(Random.nextInt.abs).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
   val encryptedList: List[Enc] = randomNumbers.map(NoEnc(_))
 
-  val keyRing = KeyRing.create
-
-  val locally = LocalInterpreter(keyRing)
-  val decryption = Common.decrypt(keyRing.dec)
-
-  val productResult: Enc = locally.interpret {
-    product(encryptedList)
-  }
+  val productResult: Enc = REPL.runProgram(product(encryptedList))
 
   println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.enc.gamal.p}")
   println(s"Result of product with    encryption: ${decryption(productResult)}")
+}
+
+object FactExample extends App {
+  import ExamplePrograms._
+  import REPL._
+
+  val six = REPL.encrypt(6)
+  val result = REPL.runProgram(factorial(six))
+
+  println(s"Result of factorial(6) is ${decryption(result)}")
 }
