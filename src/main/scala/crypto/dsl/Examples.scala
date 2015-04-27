@@ -53,39 +53,14 @@ object ExamplePrograms {
 
   def factorial(n: Enc): CryptoM[Enc] = for {
     zero <- encrypt(0).monadic
-    isZero <- equal(n,zero).monadic   // TODO monadic if can be used
-    r <- if (isZero) {
-      encrypt(1).monadic
-    } else {
+    r <- equal(n,zero).monadic.ifM(encrypt(1).monadic,
       for {
         one <- encrypt(1).monadic
-        newN <- subtract(n,one).monadic // TODO no subtraction (yet?) due to encryption
+        newN <- subtract(n,one).monadic
         intermediateR <- factorial(newN)
         result <- multiply(n,intermediateR).monadic
-      } yield result
-    }
+      } yield result)
   } yield r
-}
-
-object SumExample extends App {
-  import ExamplePrograms._
-
-  val randomNumbers = List.fill(20)(Random.nextInt.abs).map(BigInt(_))
-  println(s"Sequence of random numbers: ${randomNumbers}")
-
-  val encryptedList: List[Enc] = randomNumbers.map(NoEnc(_))
-
-  val keyRing = KeyRing.create
-
-  val locally = LocalInterpreter(keyRing)
-  val decryption = Common.decrypt(keyRing.dec)
-
-  val sumResult: Enc = locally.interpret {
-    sum(encryptedList)
-  }
-
-  println(s"Result of sum without encryption: ${randomNumbers.sum mod keyRing.enc.paillier.n}")
-  println(s"Result of sum with    encryption: ${decryption(sumResult)}")
 }
 
 object REPL {
