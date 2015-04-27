@@ -41,8 +41,30 @@ object ExamplePrograms {
   } yield r
 
   // Use applicative, allows for batch encrypting/decrypting
-  def sumList(xs: List[Enc]): Crypto[Enc] = xs.traverse(toPaillier).map(_.reduce(_+_))
+  def sumList(xs: List[Enc]): Crypto[PaillierEnc] =
+    xs.traverse(toPaillier).map(_.reduce(_+_))
   def multiplyList(xs: List[Enc]): Crypto[Enc] = xs.traverse(toGamal).map(_.reduce(_*_))
+
+  def sumAndProduct(xs: List[Enc]): Crypto[(Enc,Enc)] = {
+    val theSum = sumList(xs)
+    val theProduct = multiplyList(xs)
+    (theSum |@| theProduct) { (x,y) => (x,y) }
+  }
+
+  def factorial(n: Enc): CryptoM[Enc] = for {
+    zero <- encrypt(0).monadic
+    isZero <- equal(n,zero).monadic   // TODO monadic if can be used
+    r <- if (isZero) {
+      encrypt(1).monadic
+    } else {
+      for {
+        one <- encrypt(1).monadic
+        newN <- subtract(n,one).monadic // TODO no subtraction (yet?) due to encryption
+        intermediateR <- factorial(newN)
+        result <- multiply(n,intermediateR).monadic
+      } yield result
+    }
+  } yield r
 }
 
 object SumExample extends App {
@@ -64,6 +86,19 @@ object SumExample extends App {
 
   println(s"Result of sum without encryption: ${randomNumbers.sum mod keyRing.enc.paillier.n}")
   println(s"Result of sum with    encryption: ${decryption(sumResult)}")
+}
+
+object REPL {
+  import crypto.dsl.CryptoF.DSL._
+
+  val keyRing = KeyRing.create
+
+  val locally = LocalInterpreter(keyRing)
+  val decryption = Common.decrypt(keyRing.dec)
+
+  def runProgram[A](p: CryptoM[A]): A = locally.interpret(p)
+  def encrypt(i: Int): Enc = Common.encrypt(Additive, keyRing.enc)(i)
+  def decrypt(i: Enc): BigInt = Common.decrypt(keyRing.dec)(i)
 }
 
 object MultExample extends App {
