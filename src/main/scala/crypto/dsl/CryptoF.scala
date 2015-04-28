@@ -16,6 +16,7 @@ case class ToAes[K](v: Enc, k: AesEnc => K) extends CryptoF[K]
 
 // TODO offline or encode into encryption?
 case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
+case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 
 object CryptoF {
   object DSL {
@@ -32,6 +33,7 @@ object CryptoF {
     def toAes(v: Enc): Crypto[AesEnc] = FreeAp.lift(ToAes(v,identity))
 
     def subtract(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Sub(lhs,rhs,identity))
+    def divide(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Div(lhs,rhs,identity))
   }
 
   // deriving Functor
@@ -46,6 +48,7 @@ object CryptoF {
       case ToGamal(v,k) => ToGamal(v,f compose k)
       case ToAes(v,k) => ToAes(v,f compose k)
       case Sub(lhs,rhs,k) => Sub(lhs,rhs,f compose k)
+      case Div(lhs,rhs,k) => Div(lhs,rhs,f compose k)
     }
   }
 }
