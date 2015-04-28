@@ -3,7 +3,7 @@ package crypto.dsl
 import scalaz._
 import scalaz.std.list
 
-import CryptoF.DSL._
+import CryptoF.Dsl._
 import crypto.cipher._
 import crypto.KeyRing
 

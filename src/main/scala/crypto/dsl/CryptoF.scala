@@ -21,9 +21,9 @@ case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 
 object CryptoF {
-  object DSL {
-    type CryptoM[A] = Free[CryptoF, A]
+  object Dsl {
     type Crypto[A] = FreeAp[CryptoF, A]
+    type CryptoM[A] = Free[CryptoF, A]
 
     def multiply(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Mult(lhs,rhs,identity))
     def add(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Plus(lhs,rhs,identity))
