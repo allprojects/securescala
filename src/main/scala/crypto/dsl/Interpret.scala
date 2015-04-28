@@ -39,8 +39,8 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
       val decLhs = Common.decrypt(decKeys)(lhs).toByteArray
       val decRhs = Common.decrypt(decKeys)(rhs).toByteArray
 
-      val encLhs: AesEnc = AesEnc(BigInt(decKeys.aesEnc(decLhs)))
-      val encRhs: AesEnc = AesEnc(BigInt(decKeys.aesEnc(decRhs)))
+      val encLhs: AesEnc = AesEnc(decKeys.aesEnc(decLhs))
+      val encRhs: AesEnc = AesEnc(decKeys.aesEnc(decRhs))
       interpret(k(encLhs =:= encRhs))
 
     // Encryption

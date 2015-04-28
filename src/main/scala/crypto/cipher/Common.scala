@@ -16,8 +16,10 @@ case class GamalEnc(ca: BigInt, cb: BigInt) extends Enc {
     case (GamalEnc(ca1,ca2),GamalEnc(cb1,cb2)) => GamalEnc(ca1 * cb1, ca2 * cb2)
   }
 }
-case class AesEnc(underlying: BigInt) extends Enc {
-  def =:=(that: AesEnc): Boolean = this.underlying == that.underlying
+case class AesEnc(underlying: Array[Byte]) extends Enc {
+  def =:=(that: AesEnc): Boolean = (this,that) match {
+    case (AesEnc(x),AesEnc(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
+  }
 }
 case class OPEEnc(underlying: BigInt) extends Enc {
   def compare(that: OPEEnc): Ordering = ???
@@ -34,7 +36,7 @@ object Common {
   def decrypt(keys: DecKeys): Enc => BigInt = _ match {
     case PaillierEnc(x) => keys.paillier(x)
     case GamalEnc(x,y) => keys.gamal(x,y)
-    case AesEnc(x) => BigInt(keys.aesDec(x.toByteArray)) // TODO don't use bigints?
+    case AesEnc(x) => BigInt(keys.aesDec(x))
     case OPEEnc(x) => ???
     case NoEnc(x) => x
   }
