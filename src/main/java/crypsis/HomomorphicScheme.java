@@ -500,18 +500,6 @@ public abstract class HomomorphicScheme {
 
 		switch (schemeName) {
 
-		case "AES":
-			homomorphicScheme = new AES(privateKeyPath, sentence);
-			break;
-
-		case "Paillier":
-			homomorphicScheme = new Paillier(publicKeyPath, privateKeyPath);
-			break;
-
-		case "ElGamal":
-			homomorphicScheme = new ElGamal(publicKeyPath, privateKeyPath);
-			break;
-
 		case "OPE":
 			homomorphicScheme = new OPE(privateKeyPath);
 			break;
