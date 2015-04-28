@@ -16,6 +16,8 @@ case class ToAes[K](v: Enc, k: AesEnc => K) extends CryptoF[K]
 
 // TODO offline or encode into encryption?
 case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
+
+// Has to be offline because no phe scheme available
 case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 
 object CryptoF {
