@@ -37,6 +37,7 @@ object Analysis {
           case ToPaillier(p@PaillierEnc(_),k) => FreeAp.point(k(p))
           case ToGamal(g@GamalEnc(_,_),k) => FreeAp.point(k(g))
           case Plus(x@PaillierEnc(_),y@PaillierEnc(_),k) => FreeAp.point(k(x+y))
+          case Mult(x@GamalEnc(_,_),y@GamalEnc(_,_),k) => FreeAp.point(k(x*y))
           case x => FreeAp.lift(x)
         }
       }
