@@ -13,7 +13,6 @@ import crypto.cipher._
 import crypto.KeyRing
 
 object ExamplePrograms {
-  import CryptoF.Dsl._
 
   def encMax(a: Enc, b: Enc) = for {
     comparison <- compare(a,b).monadic
@@ -64,7 +63,6 @@ object ExamplePrograms {
 }
 
 object REPL {
-  import crypto.dsl.CryptoF.Dsl._
 
   val keyRing = KeyRing.create
 

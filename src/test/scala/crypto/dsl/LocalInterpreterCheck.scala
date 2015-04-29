@@ -6,7 +6,6 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.forAll
 
 import crypto._
-import crypto.dsl.CryptoF.Dsl._
 import crypto.cipher._
 import crypto.TestUtils._
 

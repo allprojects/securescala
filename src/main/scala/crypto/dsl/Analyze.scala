@@ -3,12 +3,11 @@ package crypto.dsl
 import scalaz._
 import scalaz.std.anyVal._
 
-import CryptoF.Dsl._
 import crypto.cipher._
 
 object Analysis {
-  def requiredConversions[A](program: Crypto[A]): Int = {
-    program.analyze(new (CryptoF ~> λ[α => Int]) {
+  def requiredConversions[A](p: Crypto[A]): Int = {
+    p.analyze(new (CryptoF ~> λ[α => Int]) {
       def apply[B](fa: CryptoF[B]): Int = fa match {
         case ToPaillier(PaillierEnc(_),_) => 0
         case ToGamal(GamalEnc(_,_),_) => 0

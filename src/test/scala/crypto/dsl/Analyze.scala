@@ -4,7 +4,6 @@ import org.scalatest._
 
 import crypto._
 import crypto.cipher._
-import crypto.dsl.CryptoF.Dsl._
 
 class AnalysisSpec extends WordSpec with Matchers {
   val keys = KeyRing.create
