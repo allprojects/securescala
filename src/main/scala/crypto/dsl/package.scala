@@ -37,4 +37,16 @@ trait DeriveDsl {
 
   def sumA[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): Crypto[PaillierEnc] =
     xs.traverse(toPaillier(_)).map(_.foldLeft(zero)(_+_))
+
+  def productM[F[_]:Foldable](one: GamalEnc)(xs: F[Enc]): CryptoM[Enc] =
+    xs.foldLeftM[CryptoM,Enc](one)(multiply(_,_).monadic)
+
+  def productA[F[_]:Traverse](one: GamalEnc)(xs: F[Enc]): Crypto[GamalEnc] =
+    xs.traverse(toGamal(_)).map(_.foldLeft(one)(_*_))
+
+  def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] = for {
+    sum <- sumA(zero)(xs).monadic
+    n <- encrypt { xs.length }.monadic
+    r <- divide(sum,n).monadic
+  } yield r
 }
