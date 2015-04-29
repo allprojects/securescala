@@ -4,6 +4,8 @@ version := "1.0"
 
 scalaVersion := "2.11.6"
 
+resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
+
 scalacOptions ++= Seq(
   "-deprecation",
   "-unchecked",
@@ -23,6 +25,10 @@ scalacOptions ++= Seq(
 
 libraryDependencies += "org.scalaz" % "scalaz-core_2.11" % "7.1.1"
 
+libraryDependencies += "commons-codec" % "commons-codec" % "1.10"
+
+addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
+
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
 
-libraryDependencies += "commons-codec" % "commons-codec" % "1.10"
+libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
