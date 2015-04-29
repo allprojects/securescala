@@ -42,4 +42,15 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
       decryptThenProd == prodThenDecrypt
     }
 
+  property("monadic sum == applicative sum") =
+    forAll(nonEmptyEncryptedList(5)(keyRing.enc)) { (xs: List[Enc]) =>
+      val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.enc)(0)
+
+      val monadicSum = locally.interpret { sumM(zero)(xs) }
+
+      val applicativeSum = locally.interpret { sumA(zero)(xs).monadic }
+
+      Common.decrypt(keyRing.dec)(monadicSum) == Common.decrypt(keyRing.dec)(applicativeSum)
+    }
+
 }
