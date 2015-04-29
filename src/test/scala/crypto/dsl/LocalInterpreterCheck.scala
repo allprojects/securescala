@@ -18,7 +18,7 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
   val locally = LocalInterpreter(keyRing)
 
   property("sum of a list") =
-    forAll(nonEmptyEncryptedList(keyRing.enc)) { (xs: List[Enc]) =>
+    forAll(nonEmptyEncryptedList(5)(keyRing.enc)) { (xs: List[Enc]) =>
       val decryptThenSum = xs.map(Common.decrypt(keyRing.dec)).sum
 
       val sumThenDecrypt = Common.decrypt(keyRing.dec) {
@@ -31,7 +31,7 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
     }
 
   property("product of a list") =
-    forAll(nonEmptyEncryptedList(keyRing.enc)) { (xs: List[Enc]) =>
+    forAll(nonEmptyEncryptedList(5)(keyRing.enc)) { (xs: List[Enc]) =>
       val decryptThenProd = xs.map(Common.decrypt(keyRing.dec)).product
 
       val prodThenDecrypt = Common.decrypt(keyRing.dec) {

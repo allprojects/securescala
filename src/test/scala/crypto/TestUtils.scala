@@ -13,13 +13,14 @@ object TestUtils {
     i <- positiveInt
   } yield Common.encrypt(scheme, keys)(i)
 
-  def encryptedList(keys: EncKeys): Gen[List[Enc]] = for {
-    n <- Gen.choose(0,10)
+  def encryptedList(maxSize: Int)(keys: EncKeys): Gen[List[Enc]] = for {
+    n <- Gen.choose(0,maxSize)
     xs <- Gen.listOfN(n, encryptedNumber(keys))
   } yield xs
 
-  def nonEmptyEncryptedList(keys: EncKeys): Gen[List[Enc]] = for {
+  def nonEmptyEncryptedList(maxSize: Int)(keys: EncKeys): Gen[List[Enc]] = for {
     n <- encryptedNumber(keys)
-    ns <- encryptedList(keys)
+    ns <- encryptedList(maxSize-1)(keys)
   } yield n :: ns
 }
+
