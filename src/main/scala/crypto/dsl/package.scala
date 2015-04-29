@@ -7,7 +7,12 @@ import Scalaz._
 
 import crypto.cipher._
 
-package object dsl {
+package object dsl extends BaseDsl with DeriveDsl {
+  object base extends BaseDsl
+}
+
+trait BaseDsl {
+  import crypto.dsl._
   type Crypto[A] = FreeAp[CryptoF, A]
   type CryptoM[A] = Free[CryptoF, A]
 
@@ -22,12 +27,14 @@ package object dsl {
 
   def subtract(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Sub(lhs,rhs,identity))
   def divide(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Div(lhs,rhs,identity))
+}
 
-  // Convenience
+trait DeriveDsl {
+  self: BaseDsl =>
 
-  def sumM[F[_]:Foldable](zero: PaillierEnc)(xs: List[Enc]): CryptoM[Enc] =
+  def sumM[F[_]:Foldable](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] =
     xs.foldLeftM[CryptoM,Enc](zero)(add(_,_).monadic)
 
-  def sumA[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): Crypto[Enc] =
+  def sumA[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): Crypto[PaillierEnc] =
     xs.traverse(toPaillier(_)).map(_.foldLeft(zero)(_+_))
 }
