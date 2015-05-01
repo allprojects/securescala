@@ -1,6 +1,6 @@
 package crypto.cipher
 
-import scalaz.Ordering
+import scalaz._
 import crypto.{DecKeys,EncKeys}
 
 sealed trait Enc
@@ -26,6 +26,18 @@ case class OPEEnc(underlying: BigInt) extends Enc {
 }
 case class NoEnc(underlying: BigInt) extends Enc
 
+object PaillierEnc {
+  implicit val paillierSemigroup = new Semigroup[PaillierEnc] {
+    def append(f1: PaillierEnc, f2: => PaillierEnc): PaillierEnc = f1+f2
+  }
+}
+
+object GamalEnc {
+  implicit val gamalSemigroup = new Semigroup[GamalEnc] {
+    def append(f1: GamalEnc, f2: => GamalEnc): GamalEnc = f1*f2
+  }
+}
+
 sealed trait Scheme
 case object Additive extends Scheme
 case object Multiplicative extends Scheme
@@ -43,7 +55,7 @@ object Common {
 
   def encrypt(s: Scheme, keys: EncKeys): BigInt => Enc = input => s match {
     case Additive => PaillierEnc(Paillier.encrypt(keys.paillier)(input))
-    case Multiplicative => GamalEnc.tupled(ElGamal.encrypt(keys.gamal)(input))
+    case Multiplicative => (GamalEnc.apply _).tupled(ElGamal.encrypt(keys.gamal)(input))
     case OrderPreserving => ???
     case NoEncScheme => NoEnc(input)
   }
