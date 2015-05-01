@@ -20,6 +20,8 @@ case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 // Has to be offline because no phe scheme available
 case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 
+case class Embed[A,K](v: Crypto[A], k: CryptoM[A] => CryptoM[K]) extends CryptoF[K]
+
 object CryptoF {
   // deriving Functor
   implicit val functor: Functor[CryptoF] = new Functor[CryptoF] {
@@ -34,6 +36,7 @@ object CryptoF {
       case ToAes(v,k) => ToAes(v,f compose k)
       case Sub(lhs,rhs,k) => Sub(lhs,rhs,f compose k)
       case Div(lhs,rhs,k) => Div(lhs,rhs,f compose k)
+      case Embed(v,k) => Embed(v,(x: CryptoM[Any]) => k(x).map(f))
     }
   }
 }

@@ -27,6 +27,8 @@ trait BaseDsl {
 
   def subtract(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Sub(lhs,rhs,identity))
   def divide(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Div(lhs,rhs,identity))
+
+  def embed[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
 }
 
 trait DeriveDsl {

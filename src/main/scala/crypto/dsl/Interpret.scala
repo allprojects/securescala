@@ -2,6 +2,7 @@ package crypto.dsl
 
 import scalaz._
 import scalaz.std.list
+import scalaz.syntax.bind._
 
 import crypto.cipher._
 import crypto.KeyRing
@@ -71,6 +72,9 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
       val plainRhs = Common.decrypt(decKeys)(rhs)
       val r = Common.encrypt(Additive, encKeys)(plainLhs / plainRhs)
       interpret(k(r))
+
+    // TODO: instead of monadic, optimizations on p
+    case -\/(Embed(p,k)) => interpret(k(p.monadic).join)
 
     // End of the program, return the final value
     case \/-(x) => x
