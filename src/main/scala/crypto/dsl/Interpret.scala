@@ -9,10 +9,17 @@ import crypto.KeyRing
 
 trait CryptoInterpreter {
   def interpret[A]: CryptoM[A] => A
+  def interpretA[A]: Crypto[A] => A
 }
 
 case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
   val KeyRing(encKeys,decKeys) = keyRing
+
+  // TODO take advantage of applicative structure to do optimizations
+  def interpretA[A]: Crypto[A] => A = x => {
+    println("Game changing optimization taking place...")
+    interpret(x.monadic)
+  }
 
   def interpret[A]: CryptoM[A] => A = _.resume match {
     // Multiplication
@@ -73,8 +80,9 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
       val r = Common.encrypt(Additive, encKeys)(plainLhs / plainRhs)
       interpret(k(r))
 
-    // TODO: instead of monadic, optimizations on p
-    case -\/(Embed(p,k)) => interpret(k(p.monadic).join)
+    case -\/(Embed(p,k)) =>
+      val r: CryptoM[A] = k(Free.point(interpretA(p))).join
+      interpret(r)
 
     // End of the program, return the final value
     case \/-(x) => x
