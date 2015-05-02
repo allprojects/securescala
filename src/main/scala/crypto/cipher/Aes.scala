@@ -29,14 +29,14 @@ object Aes {
     def apply(x: Array[Byte]) = f(x)
   }
 
-  type PrivKey = SecretKey
+  type PrivKey = SecretKey // alias for java's type
 
   def create(keySize: KeySize): (Encryptor,Decryptor) = {
     val key = generateKey(keySize)
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
   }
 
-  def generateKey(keySize: KeySize): SecretKey =
+  private def generateKey(keySize: KeySize): PrivKey =
     (KeyGenerator.getInstance("AES") <| (_.init(keySize.bits))).generateKey
 
   private def encrypt(priv: PrivKey)(input: Array[Byte]): Array[Byte] =
