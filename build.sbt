@@ -32,3 +32,6 @@ addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
 
 libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
+
+// To avoid classloader problems with sbt console and native ope library
+fork := true

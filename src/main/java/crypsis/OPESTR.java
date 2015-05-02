@@ -20,8 +20,7 @@ import crypsis.CrypsisException;
  * @date 09 Mar 2015
  */
 public class OPESTR extends HomomorphicScheme {
-
-	// the length of the key in bits
+        // the length of the key in bits
 	private static final int KEY_BITLENGTH = Constants.KEY_BITLENGTH
 			.get("OPESTR");
 

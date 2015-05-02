@@ -22,12 +22,8 @@ public class OPE extends HomomorphicScheme {
 
 	// load the native library. Do it statically so is only loaded once.
 	static {
-
-		File f = new File("/usr/lib/libope.so");
-		if (f.exists() && !f.isDirectory())
-			System.load("/usr/lib/libope.so");
-		else
-			System.load("/homes/ssavvide/libope.so");
+            String home = System.getProperty("user.home");
+            System.load(home + "/libope.so");
 	}
 
 	// Size of plaintext and ciphertext: (a) ciphertext_bits cannot be less than
