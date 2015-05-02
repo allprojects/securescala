@@ -5,7 +5,7 @@ import scalaz.std.list
 import scalaz.syntax.bind._
 
 import crypto.cipher._
-import crypto.KeyRing
+import crypto._
 
 trait CryptoInterpreter {
   def interpret[A]: CryptoM[A] => A

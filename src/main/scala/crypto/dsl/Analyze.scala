@@ -3,7 +3,7 @@ package crypto.dsl
 import scalaz._
 import scalaz.std.anyVal._
 
-import crypto.cipher._
+import crypto._
 
 object Analysis {
   def requiredConversions[A](p: Crypto[A]): Int = {

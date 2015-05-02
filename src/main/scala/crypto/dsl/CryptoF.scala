@@ -1,7 +1,8 @@
 package crypto.dsl
 
-import crypto.cipher._
 import scalaz._
+
+import crypto._
 
 sealed trait CryptoF[+K]
 case class Mult[K](lhs: Enc, rhs: Enc, k: GamalEnc => K) extends CryptoF[K]

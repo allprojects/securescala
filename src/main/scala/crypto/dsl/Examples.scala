@@ -8,8 +8,8 @@ import scalaz.std.list
 
 import scala.util.Random
 
+import crypto._
 import crypto.cipher._
-import crypto.KeyRing
 
 object ExamplePrograms {
   def factorial(n: Enc): CryptoM[Enc] = for {
