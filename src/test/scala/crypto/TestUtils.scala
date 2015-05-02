@@ -8,17 +8,17 @@ import crypto.cipher._
 object TestUtils {
   val positiveInt = arbitrary[BigInt] retryUntil (_.signum == 1)
 
-  def encryptedNumber(keys: EncKeys): Gen[Enc] = for {
+  def encryptedNumber(keys: PubKeys): Gen[Enc] = for {
     scheme <- Gen.oneOf(Additive, Multiplicative) // TODO add other schemes
     i <- positiveInt
   } yield Common.encrypt(scheme, keys)(i)
 
-  def encryptedList(maxSize: Int)(keys: EncKeys): Gen[List[Enc]] = for {
+  def encryptedList(maxSize: Int)(keys: PubKeys): Gen[List[Enc]] = for {
     n <- Gen.choose(0,maxSize)
     xs <- Gen.listOfN(n, encryptedNumber(keys))
   } yield xs
 
-  def nonEmptyEncryptedList(maxSize: Int)(keys: EncKeys): Gen[List[Enc]] = for {
+  def nonEmptyEncryptedList(maxSize: Int)(keys: PubKeys): Gen[List[Enc]] = for {
     n <- encryptedNumber(keys)
     ns <- encryptedList(maxSize-1)(keys)
   } yield n :: ns

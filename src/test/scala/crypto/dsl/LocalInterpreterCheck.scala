@@ -17,10 +17,10 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
   val locally = LocalInterpreter(keyRing)
 
   property("sum of a list") =
-    forAll(nonEmptyEncryptedList(5)(keyRing.enc)) { (xs: List[Enc]) =>
-      val decryptThenSum = xs.map(Common.decrypt(keyRing.dec)).sum
+    forAll(nonEmptyEncryptedList(5)(keyRing.pub)) { (xs: List[Enc]) =>
+      val decryptThenSum = xs.map(Common.decrypt(keyRing.priv)).sum
 
-      val sumThenDecrypt = Common.decrypt(keyRing.dec) {
+      val sumThenDecrypt = Common.decrypt(keyRing.priv) {
         locally.interpret {
           xs.traverse(toPaillier).map(_.reduce(_+_)).monadic
         }
@@ -30,10 +30,10 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
     }
 
   property("product of a list") =
-    forAll(nonEmptyEncryptedList(5)(keyRing.enc)) { (xs: List[Enc]) =>
-      val decryptThenProd = xs.map(Common.decrypt(keyRing.dec)).product
+    forAll(nonEmptyEncryptedList(5)(keyRing.pub)) { (xs: List[Enc]) =>
+      val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
 
-      val prodThenDecrypt = Common.decrypt(keyRing.dec) {
+      val prodThenDecrypt = Common.decrypt(keyRing.priv) {
         locally.interpret {
           xs.traverse(toGamal).map(_.reduce(_*_)).monadic
         }
@@ -43,14 +43,14 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
     }
 
   property("monadic sum == applicative sum") =
-    forAll(nonEmptyEncryptedList(5)(keyRing.enc)) { (xs: List[Enc]) =>
-      val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.enc)(0)
+    forAll(nonEmptyEncryptedList(5)(keyRing.pub)) { (xs: List[Enc]) =>
+      val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.pub)(0)
 
       val monadicSum = locally.interpret { sumM(zero)(xs) }
 
       val applicativeSum = locally.interpret { sumA(zero)(xs).monadic }
 
-      Common.decrypt(keyRing.dec)(monadicSum) == Common.decrypt(keyRing.dec)(applicativeSum)
+      Common.decrypt(keyRing.priv)(monadicSum) == Common.decrypt(keyRing.priv)(applicativeSum)
     }
 
 }
