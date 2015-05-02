@@ -1,0 +1,28 @@
+# Define a variable for classpath
+SO_NAME = libOPE.so
+JVM_JNI_PATH=/Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/include
+
+# Define a virtual path for .class in the bin directory
+vpath %.class $(CLASS_PATH)
+
+all : $(SO_NAME)
+
+# $@ matches the target, $< matches the first dependancy
+$(SO_NAME) : ope.o hgd.o prng.o
+	g++ -Wl -fPIC -shared -o $@ -I$(JVM_JNI_PATH) $^ -L/usr/lib/ -lntl -lssl -lcrypto
+
+ope.o : ope.cc OPE.hh
+	g++ -std=c++0x -I$(JVM_JNI_PATH) $< -L/usr/lib/ -lntl -lssl -lcrypto -c
+
+hgd.o : hgd.cc
+	g++ -std=c++0x -I$(JVM_JNI_PATH) $^ -L/usr/lib/ -lntl -lssl -lcrypto -c
+
+prng.o : prng.cc
+	g++ -std=c++0x -I$(JVM_JNI_PATH) $^ -L/usr/lib/ -lntl -lssl -lcrypto -c
+
+# $* matches the target filename without the extension
+OPE.hh :
+	javah -classpath bin edu.purdue.cs.enc.OPE
+	
+clean :
+	rm -f *.o $(SO_NAME)
