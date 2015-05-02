@@ -31,12 +31,12 @@ object Repl {
   val keyRing = KeyRing.create
 
   val locally = LocalInterpreter(keyRing)
-  val decryption = Common.decrypt(keyRing.dec)
+  val decryption = Common.decrypt(keyRing.priv)
 
   def runProgram[A](p: CryptoM[A]): A = locally.interpret(p)
 
-  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.enc)(0)
-  val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing.enc)(0)
+  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.pub)(0)
+  val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing.pub)(0)
 }
 
 object SumExample extends App {
@@ -49,7 +49,7 @@ object SumExample extends App {
 
   val sumResult = Repl.runProgram(sumA(zero)(encryptedList).monadic)
 
-  println(s"Result of sum without encryption: ${randomNumbers.sum mod Repl.keyRing.enc.paillier.n}")
+  println(s"Result of sum without encryption: ${randomNumbers.sum mod Repl.keyRing.pub.paillier.n}")
   println(s"Result of sum with    encryption: ${decryption(sumResult)}")
 }
 
@@ -63,7 +63,7 @@ object MultExample extends App {
 
   val productResult: Enc = Repl.runProgram(productA(one)(encryptedList).monadic)
 
-  println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.enc.gamal.p}")
+  println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.pub.gamal.p}")
   println(s"Result of product with    encryption: ${decryption(productResult)}")
 }
 
@@ -71,7 +71,7 @@ object FactExample extends App {
   import ExamplePrograms._
   import Repl._
 
-  val six = Common.encrypt(Multiplicative, keyRing.enc)(6)
+  val six = Common.encrypt(Multiplicative, keyRing.pub)(6)
   val result = Repl.runProgram(factorial(six))
 
   println(s"Result of factorial(6) is ${decryption(result)}")
@@ -84,11 +84,11 @@ object AverageExample extends App {
   val randomNumbers = List.fill(5)(Random.nextInt.abs)
   println(randomNumbers)
 
-  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.enc)(0)
-  val encNums = randomNumbers.map(Common.encrypt(Additive, keyRing.enc) compose BigInt.apply)
+  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.pub)(0)
+  val encNums = randomNumbers.map(Common.encrypt(Additive, keyRing.pub) compose BigInt.apply)
 
   val (sum,len) = Repl.runProgram(sumAndLength(zero)(encNums))
-  val resultEnc = Common.decrypt(keyRing.dec)(sum) / Common.decrypt(keyRing.dec)(len)
+  val resultEnc = Common.decrypt(keyRing.priv)(sum) / Common.decrypt(keyRing.priv)(len)
 
   val normalAverage = randomNumbers.map(BigInt(_)).reduce(_+_) / randomNumbers.length
   println(s"Result for normal    program: ${normalAverage}")

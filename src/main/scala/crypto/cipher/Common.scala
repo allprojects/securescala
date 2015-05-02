@@ -9,7 +9,7 @@ case object OrderPreserving extends Scheme
 case object NoEncScheme extends Scheme
 
 object Common {
-  def decrypt(keys: DecKeys): Enc => BigInt = _ match {
+  def decrypt(keys: PrivKeys): Enc => BigInt = _ match {
     case PaillierEnc(x) => keys.paillier(x)
     case GamalEnc(x,y) => keys.gamal(x,y)
     case AesEnc(x) => BigInt(keys.aesDec(x))
@@ -17,7 +17,7 @@ object Common {
     case NoEnc(x) => x
   }
 
-  def encrypt(s: Scheme, keys: EncKeys): BigInt => Enc = input => s match {
+  def encrypt(s: Scheme, keys: PubKeys): BigInt => Enc = input => s match {
     case Additive => PaillierEnc(Paillier.encrypt(keys.paillier)(input))
     case Multiplicative => (GamalEnc.apply _).tupled(ElGamal.encrypt(keys.gamal)(input))
     case OrderPreserving => ???
@@ -25,7 +25,7 @@ object Common {
   }
 
   // local version
-  def convert(encKeys: EncKeys, decKeys: DecKeys): (Scheme, Enc) => Enc = {
+  def convert(encKeys: PubKeys, decKeys: PrivKeys): (Scheme, Enc) => Enc = {
     case (Additive,in@PaillierEnc(_)) => in
     case (Multiplicative,in@GamalEnc(_,_)) => in
     case (OrderPreserving,in@OPEEnc(_)) => in
