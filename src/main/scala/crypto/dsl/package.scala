@@ -3,9 +3,7 @@ package crypto
 import scala.language.higherKinds
 
 import scalaz._
-import Scalaz._
-
-import crypto.cipher._
+import scalaz.syntax.traverse._
 
 package object dsl extends BaseDsl with DeriveDsl {
   object base extends BaseDsl
