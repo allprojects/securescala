@@ -3,14 +3,12 @@ package crypto.cipher
 import java.security.SecureRandom
 
 class OpeNative { // trait required for javah/native interface
-  @native
-  def nativeEncrypt(password: String, plaintext: String,
-    plainTextBits: Int, cipherTextBits: Int): String
+  @native def nativeEncrypt(
+    password: String, plaintext: String, plainTextBits: Int, cipherTextBits: Int): String
 
-  @native
-  def nativeDecrypt(password: String, ciphertext: String, plainTextBits: Int, cipherTextBits: Int): String
-
-  }
+  @native def nativeDecrypt(
+    password: String, ciphertext: String, plainTextBits: Int, cipherTextBits: Int): String
+}
 
 object Ope {
   val home = System.getProperty("user.home");
