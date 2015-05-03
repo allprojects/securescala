@@ -21,29 +21,29 @@ object Ope {
 
   private val instance = new OpeNative
 
-  case class Encryptor(f: BigInt => String) extends Function1[BigInt,String]{
+  case class Encryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
     def apply(x: BigInt) = f(x)
   }
 
-  case class Decryptor(f: String => BigInt) extends Function1[String,BigInt]{
-    def apply(x: String) = f(x)
+  case class Decryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
+    def apply(x: BigInt) = f(x)
   }
 
   case class PrivKey(key: String, bits: Int, plainBits: Int, cipherBits: Int)
 
-  def createNum(bits: Int): (Encryptor, Decryptor) = {
+  def createNum(bits: Int): (Encryptor, Decryptor, PrivKey) = {
     val key = generateKey(bits, numPlainTextBits, numCipherTextBits)
-    (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
+    (Encryptor(encrypt(key)), Decryptor(decrypt(key)), key)
   }
 
   private def generateKey(bits: Int, plainBits: Int, cipherBits: Int): PrivKey =
     PrivKey(BigInt(bits, new SecureRandom).toString(32), bits, plainBits, cipherBits)
 
-  def encrypt(priv: PrivKey)(input: BigInt): String =
-    instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
+  def encrypt(priv: PrivKey)(input: BigInt): BigInt =
+    BigInt(instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
 
-  def decrypt(priv: PrivKey)(input: String): BigInt =
-    BigInt(instance.nativeDecrypt(priv.key, input, priv.plainBits, priv.cipherBits))
+  def decrypt(priv: PrivKey)(input: BigInt): BigInt =
+    BigInt(instance.nativeDecrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
 
 
 }
