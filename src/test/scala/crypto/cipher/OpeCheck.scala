@@ -14,6 +14,11 @@ object OpeCheck extends Properties("OPE") {
 
   val allowedBigInts = arbitrary[BigInt] retryUntil (x => x >=0 && x.bitLength <= key.plainBits)
 
+  property("decrypt · encrypt = id (Int)") =
+    forAll(arbitrary[Int].retryUntil(_ >= 0) ){ (input: Int) =>
+      decrypt(encrypt(input)) == input
+    }
+
   property("decrypt · encrypt = id (limited BigInt)") =
     forAll(allowedBigInts) { (input: BigInt) =>
       decrypt(encrypt(input)) == input
