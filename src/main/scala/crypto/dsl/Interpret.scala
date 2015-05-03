@@ -53,7 +53,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
     // Encryption
     case -\/(Encrypt(v,k)) =>
       // TODO be more clever about what scheme to use
-      interpret(k(NoEnc(v)))
+      interpret(k(Common.encrypt(Additive, encKeys)(v)))
 
     case -\/(ToPaillier(v,k)) =>
       val r@PaillierEnc(_) = Common.convert(encKeys,decKeys)(Additive,v)

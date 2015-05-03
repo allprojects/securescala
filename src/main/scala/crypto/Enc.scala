@@ -23,7 +23,6 @@ case class AesEnc(underlying: Array[Byte]) extends Enc {
   }
 }
 case class OpeEnc(underlying: BigInt) extends Enc
-case class NoEnc(underlying: BigInt) extends Enc
 
 object PaillierEnc {
   implicit val paillierSemigroup = new Semigroup[PaillierEnc] {

@@ -45,7 +45,7 @@ object SumExample extends App {
   val randomNumbers = List.fill(20)(Random.nextInt.abs).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
-  val encryptedList: List[Enc] = randomNumbers.map(NoEnc(_)) // TODO stub for encryption used
+  val encryptedList: List[Enc] = randomNumbers.map(Common.encrypt(Additive, keyRing.pub))
 
   val sumResult = Repl.runProgram(sumA(zero)(encryptedList).monadic)
 
@@ -59,7 +59,7 @@ object MultExample extends App {
   val randomNumbers = List.fill(5)(Random.nextInt.abs).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
-  val encryptedList: List[Enc] = randomNumbers.map(NoEnc(_))
+  val encryptedList: List[Enc] = randomNumbers.map(Common.encrypt(Multiplicative, keyRing.pub))
 
   val productResult: Enc = Repl.runProgram(productA(one)(encryptedList).monadic)
 
