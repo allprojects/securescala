@@ -9,18 +9,18 @@ extern "C" {
 #endif
 /*
  * Class:     crypto_cipher_Ope
- * Method:    native_encrypt
+ * Method:    nativeEncrypt
  * Signature: (Ljava/lang/String;Ljava/lang/String;II)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_crypto_cipher_Ope_native_1encrypt
+JNIEXPORT jstring JNICALL Java_crypto_cipher_Ope_nativeEncrypt
   (JNIEnv *, jobject, jstring, jstring, jint, jint);
 
 /*
  * Class:     crypto_cipher_Ope
- * Method:    native_decrypt
+ * Method:    nativeDecrypt
  * Signature: (Ljava/lang/String;Ljava/lang/String;II)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_crypto_cipher_Ope_native_1decrypt
+JNIEXPORT jstring JNICALL Java_crypto_cipher_Ope_nativeDecrypt
   (JNIEnv *, jobject, jstring, jstring, jint, jint);
 
 #ifdef __cplusplus
