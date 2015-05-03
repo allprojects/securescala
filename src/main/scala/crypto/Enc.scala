@@ -1,6 +1,8 @@
 package crypto
 
 import scalaz._
+import scalaz.std.math.bigInt._
+import scalaz.syntax.order._
 
 sealed trait Enc
 case class PaillierEnc(underlying: BigInt) extends Enc {
@@ -20,9 +22,7 @@ case class AesEnc(underlying: Array[Byte]) extends Enc {
     case (AesEnc(x),AesEnc(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
   }
 }
-case class OPEEnc(underlying: BigInt) extends Enc {
-  def compare(that: OPEEnc): Ordering = ???
-}
+case class OpeEnc(underlying: BigInt) extends Enc
 case class NoEnc(underlying: BigInt) extends Enc
 
 object PaillierEnc {
@@ -34,5 +34,13 @@ object PaillierEnc {
 object GamalEnc {
   implicit val gamalSemigroup = new Semigroup[GamalEnc] {
     def append(f1: GamalEnc, f2: => GamalEnc): GamalEnc = f1*f2
+  }
+}
+
+object OpeEnc {
+  implicit val opeOrder = new Order[OpeEnc] {
+    override def order(a: OpeEnc, b: OpeEnc): Ordering = (a,b) match {
+      case (OpeEnc(x),OpeEnc(y)) => x ?|? y
+    }
   }
 }

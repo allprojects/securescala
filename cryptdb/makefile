@@ -1,11 +1,9 @@
 # makefile for libOPE.so
 #
 # requires header for jni interface:
-# javah -classpath Crypsis.jar main.edu.purdue.cs.enc.OPE
+# javah -classpath ".:$SCALA_HOME/lib/*:../target/scala-2.11/classes" crypto.cipher.Ope
 #
-# Also:
-# sudo apt-get install libntl-dev
-# sudo apt-get install libssl-dev
+# sudo apt-get install libntl-dev libssl-dev
 
 SO_NAME = libope.so
 JVM_JNI_PATH=/usr/lib/jvm/java-7-openjdk-amd64/include

@@ -91,7 +91,7 @@ public class OPE extends HomomorphicScheme {
 	 *            the plaintext to be encrypted
 	 * @return the resulting ciphertext
 	 */
-	public native String encrypt(String password, String plaintext,
+	public static native String encrypt(String password, String plaintext,
 			int ptxtBits, int ctxtBits);
 
 	/**
@@ -103,7 +103,7 @@ public class OPE extends HomomorphicScheme {
 	 *            the ciphertext to be decrypted
 	 * @return the resulting plaintext
 	 */
-	public native String decrypt(String password, String ciphertext,
+	public static native String decrypt(String password, String ciphertext,
 			int ptxtBits, int ctxtBits);
 
 	@Override

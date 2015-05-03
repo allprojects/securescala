@@ -13,3 +13,4 @@
 /thesis/**/*.synctex.gz
 /thesis/**/*.toc
 /thesis/thesis.pdf
+/cryptdb/libope.so

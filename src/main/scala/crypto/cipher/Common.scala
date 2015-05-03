@@ -5,7 +5,6 @@ import crypto._
 sealed trait Scheme
 case object Additive extends Scheme
 case object Multiplicative extends Scheme
-case object OrderPreserving extends Scheme
 case object NoEncScheme extends Scheme
 
 object Common {
@@ -13,14 +12,13 @@ object Common {
     case PaillierEnc(x) => keys.paillier(x)
     case GamalEnc(x,y) => keys.gamal(x,y)
     case AesEnc(x) => BigInt(keys.aesDec(x))
-    case OPEEnc(x) => ???
+    case OpeEnc(x) => keys.opeIntDec(x)
     case NoEnc(x) => x
   }
 
   def encrypt(s: Scheme, keys: PubKeys): BigInt => Enc = input => s match {
     case Additive => PaillierEnc(Paillier.encrypt(keys.paillier)(input))
     case Multiplicative => (GamalEnc.apply _).tupled(ElGamal.encrypt(keys.gamal)(input))
-    case OrderPreserving => ???
     case NoEncScheme => NoEnc(input)
   }
 
@@ -28,7 +26,6 @@ object Common {
   def convert(encKeys: PubKeys, decKeys: PrivKeys): (Scheme, Enc) => Enc = {
     case (Additive,in@PaillierEnc(_)) => in
     case (Multiplicative,in@GamalEnc(_,_)) => in
-    case (OrderPreserving,in@OPEEnc(_)) => in
     case (NoEncScheme,in@NoEnc(_)) => in
     case (s,input) => (encrypt(s, encKeys) compose decrypt(decKeys))(input)
   }
