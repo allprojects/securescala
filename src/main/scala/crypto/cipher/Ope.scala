@@ -13,13 +13,11 @@ trait Ope {
   }
 
   @native
-  def encrypt(password: String, plaintext: String,
-    plainTextBits: Int, cipherTextBits: Int): String = {
-    "foo"
-  }
+  def native_encrypt(password: String, plaintext: String,
+    plainTextBits: Int, cipherTextBits: Int): String
 
   @native
-  def decrypt(password: String, ciphertext: String, plainTextBits: Int, cipherTextBits: Int): String = {
-    "foo"
-  }
+  def native_decrypt(password: String, ciphertext: String, plainTextBits: Int, cipherTextBits: Int): String
 }
+
+object Ope extends Ope
