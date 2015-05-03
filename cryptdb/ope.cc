@@ -1,7 +1,7 @@
 #include <jni.h>
 #include <stdio.h>
 
-#include "crypsis_OPE.h"
+#include "crypto_cipher_Ope.h"
 
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
@@ -19,7 +19,7 @@
 using namespace std;
 using namespace NTL;
 
-JNIEXPORT jstring JNICALL Java_crypsis_OPE_encrypt(JNIEnv *env,
+JNIEXPORT jstring JNICALL Java_crypto_cipher_Ope_encrypt(JNIEnv *env,
 		jobject jobj, jstring passwordJStr, jstring plaintextJStr,
 		jint ptxtBits, jint ctxtBits) {
 
@@ -48,7 +48,7 @@ JNIEXPORT jstring JNICALL Java_crypsis_OPE_encrypt(JNIEnv *env,
 	return (*env).NewStringUTF(ciphertextStr);
 }
 
-JNIEXPORT jstring JNICALL Java_crypsis_OPE_decrypt(JNIEnv *env,
+JNIEXPORT jstring JNICALL Java_crypto_cipher_Ope_decrypt(JNIEnv *env,
 		jobject jobj, jstring passwordJStr, jstring ciphertextJStr,
 		jint ptxtBits, jint ctxtBits) {
 
