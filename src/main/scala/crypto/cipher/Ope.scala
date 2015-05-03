@@ -47,12 +47,3 @@ object Ope {
 
 
 }
-
-object OpeTest extends App {
-  // val (enc,dec) = Ope.createNum(128)
-
-  // val plain = BigInt("19980902")
-  // println(plain)
-  // println(enc(plain))
-  // println(dec(enc(plain)))
-}
