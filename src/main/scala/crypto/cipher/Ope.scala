@@ -13,6 +13,9 @@ class OpeNative { // trait required for javah/native interface
   }
 
 object Ope {
+  val home = System.getProperty("user.home");
+  System.load(home + "/libope.so");
+
   private val numPlainTextBits = 64
   private val numCipherTextBits = 96
 
