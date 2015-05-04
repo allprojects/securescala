@@ -1,8 +1,10 @@
 package crypto.dsl
 
 import scalaz._
-import scalaz.std.list
+import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
+
+import scala.concurrent._
 
 import crypto.cipher._
 import crypto._
@@ -15,9 +17,18 @@ trait CryptoInterpreter {
 case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
   val KeyRing(encKeys,decKeys) = keyRing
 
+  def interpPar[A](p: Crypto[A])(
+    implicit executionContext: ExecutionContext): Future[A] = {
+
+    p.foldMap(new (CryptoF ~> Future) {
+      def apply[A](fa: CryptoF[A]): Future[A] = Future {
+        interpret(Free.liftF(fa))
+      }
+    })
+  }
+
   // TODO take advantage of applicative structure to do optimizations
   def interpretA[A]: Crypto[A] => A = x => {
-    println("Game changing optimization taking place...")
     interpret(x.monadic)
   }
 
