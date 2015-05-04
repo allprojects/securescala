@@ -84,7 +84,6 @@ object AverageExample extends App {
   val randomNumbers = List.fill(5)(Random.nextInt.abs)
   println(randomNumbers)
 
-  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.pub)(0)
   val encNums = randomNumbers.map(Common.encrypt(Additive, keyRing.pub) compose BigInt.apply)
 
   val (sum,len) = Repl.runProgram(sumAndLength(zero)(encNums))
