@@ -13,13 +13,13 @@ import crypto.cipher._
 
 object ExamplePrograms {
   def factorial(n: Enc): CryptoM[Enc] = for {
-    zero <- encrypt(0).monadic
-    r <- equal(n,zero).monadic.ifM(encrypt(1).monadic,
+    zero <- encrypt(0)
+    r <- embed(equal(n,zero)).ifM(encrypt(1),
       for {
-        one <- encrypt(1).monadic
-        newN <- subtract(n,one).monadic
+        one <- encrypt(1)
+        newN <- subtract(n,one)
         intermediateR <- factorial(newN)
-        result <- multiply(n,intermediateR).monadic
+        result <- multiply(n,intermediateR)
       } yield result)
   } yield r
 
@@ -47,7 +47,7 @@ object SumExample extends App {
 
   val encryptedList: List[Enc] = randomNumbers.map(Common.encrypt(Additive, keyRing.pub))
 
-  val sumResult = Repl.runProgram(sumA(zero)(encryptedList).monadic)
+  val sumResult = Repl.runProgram(sumA(zero)(encryptedList))
 
   println(s"Result of sum without encryption: ${randomNumbers.sum mod Repl.keyRing.pub.paillier.n}")
   println(s"Result of sum with    encryption: ${decryption(sumResult)}")
@@ -61,7 +61,7 @@ object MultExample extends App {
 
   val encryptedList: List[Enc] = randomNumbers.map(Common.encrypt(Multiplicative, keyRing.pub))
 
-  val productResult: Enc = Repl.runProgram(productA(one)(encryptedList).monadic)
+  val productResult: Enc = Repl.runProgram(productA(one)(encryptedList))
 
   println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.pub.gamal.p}")
   println(s"Result of product with    encryption: ${decryption(productResult)}")

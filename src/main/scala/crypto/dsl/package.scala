@@ -1,6 +1,7 @@
 package crypto
 
 import scala.language.higherKinds
+import scala.language.implicitConversions
 
 import scalaz._
 import scalaz.syntax.traverse._
@@ -27,26 +28,28 @@ trait BaseDsl {
   def divide(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Div(lhs,rhs,identity))
 
   def embed[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
+
+  implicit def liftCryptoToMonadic[A](p: Crypto[A]): CryptoM[A] = embed(p)
 }
 
 trait DeriveDsl {
   self: BaseDsl =>
 
   def sumM[F[_]:Foldable](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] =
-    xs.foldLeftM[CryptoM,Enc](zero)(add(_,_).monadic)
+    xs.foldLeftM[CryptoM,Enc](zero)(add(_,_))
 
   def sumA[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): Crypto[PaillierEnc] =
     xs.traverse(toPaillier(_)).map(_.foldLeft(zero)(_+_))
 
   def productM[F[_]:Foldable](one: GamalEnc)(xs: F[Enc]): CryptoM[Enc] =
-    xs.foldLeftM[CryptoM,Enc](one)(multiply(_,_).monadic)
+    xs.foldLeftM[CryptoM,Enc](one)(multiply(_,_))
 
   def productA[F[_]:Traverse](one: GamalEnc)(xs: F[Enc]): Crypto[GamalEnc] =
     xs.traverse(toGamal(_)).map(_.foldLeft(one)(_*_))
 
   def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] = for {
-    sum <- sumA(zero)(xs).monadic
-    n <- encrypt { xs.length }.monadic
-    r <- divide(sum,n).monadic
+    sum <- sumA(zero)(xs)
+    n <- encrypt { xs.length }
+    r <- divide(sum,n)
   } yield r
 }
