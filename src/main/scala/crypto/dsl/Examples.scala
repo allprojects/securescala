@@ -56,7 +56,7 @@ object SumExample extends App {
 object MultExample extends App {
   import Repl._
 
-  val randomNumbers = List.fill(5)(Random.nextInt.abs).map(BigInt(_))
+  val randomNumbers = List.fill(5)(Random.nextInt.abs+1).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
   val encryptedList: List[Enc] = randomNumbers.map(Common.encrypt(Multiplicative, keyRing.pub))
