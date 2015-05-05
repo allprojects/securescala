@@ -4,6 +4,7 @@ import scala.language.higherKinds
 import scala.language.implicitConversions
 
 import scalaz._
+import scalaz.std.list._
 import scalaz.syntax.traverse._
 
 package object dsl extends BaseDsl with DeriveDsl {
@@ -54,4 +55,7 @@ trait DeriveDsl {
     n <- encrypt { xs.length }
     r <- divide(sum,n)
   } yield r
+
+  def sorted(xs: List[Enc]): Crypto[List[OpeEnc]] =
+    xs.traverse(toOpe).map(_.sorted)
 }

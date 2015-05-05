@@ -53,4 +53,19 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
       Common.decrypt(keyRing.priv)(monadicSum) == Common.decrypt(keyRing.priv)(applicativeSum)
     }
 
+  property("encrypted sorting") = {
+    // Integers can not be larger than bit size of ope key
+    val list = for {
+      n <- Gen.choose(1,6)
+      xs <- Gen.listOfN(n, encryptedNumber(keyRing)(opeAllowedInts(keyRing.priv.opePriv)))
+    } yield xs
+
+    forAll(list) { (xs: List[Enc]) =>
+      val decrypt = Common.decrypt(keyRing.priv)
+      val encSort = locally.interpret { sorted(xs) }.map(decrypt)
+      val decSort = xs.map(decrypt).sorted
+      encSort == decSort
+  }
+  }
+
 }
