@@ -78,6 +78,10 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
       val r = Common.decrypt(priv)(v)
       interpret(k(AesEnc(priv.aesEnc(r.toByteArray))))
 
+    case -\/(ToOpe(v,k)) =>
+      val r = Common.decrypt(priv)(v)
+      interpret(k(OpeEnc(priv.opeIntEnc(r))))
+
       // Offline operations?
     case -\/(Sub(lhs,rhs,k)) =>
       val plainLhs = Common.decrypt(priv)(lhs)
