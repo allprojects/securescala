@@ -17,7 +17,7 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
   val locally = LocalInterpreter(keyRing)
 
   property("sum of a list") =
-    forAll(nonEmptyEncryptedList(5)(keyRing.pub)) { (xs: List[Enc]) =>
+    forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
       val decryptThenSum = xs.map(Common.decrypt(keyRing.priv)).sum
 
       val sumThenDecrypt = Common.decrypt(keyRing.priv) {
@@ -30,7 +30,7 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
     }
 
   property("product of a list") =
-    forAll(nonEmptyEncryptedList(5)(keyRing.pub)) { (xs: List[Enc]) =>
+    forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
       val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {
@@ -43,7 +43,7 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
     }
 
   property("monadic sum == applicative sum") =
-    forAll(nonEmptyEncryptedList(5)(keyRing.pub)) { (xs: List[Enc]) =>
+    forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
       val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing.pub)(0)
 
       val monadicSum = locally.interpret { sumM(zero)(xs) }
