@@ -42,4 +42,5 @@ object OpeEnc {
       case (OpeEnc(x),OpeEnc(y)) => x ?|? y
     }
   }
+  implicit val opeOrderScala = opeOrder.toScalaOrdering
 }
