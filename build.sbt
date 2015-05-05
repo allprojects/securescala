@@ -35,3 +35,5 @@ libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
 
 // To avoid classloader problems with sbt console and native ope library
 fork := true
+
+parallelExecution in Test := false
