@@ -25,6 +25,13 @@ object Common {
     case Multiplicative => (GamalEnc.apply _).tupled(ElGamal.encrypt(keys.gamal)(input))
   }
 
+  def encrypt(s: Scheme, keys: KeyRing): BigInt => Enc = input => s match {
+    case Additive => encryptPub(Additive, keys.pub)(input)
+    case Multiplicative => encryptPub(Multiplicative, keys.pub)(input)
+    case Equality => AesEnc(keys.priv.aesEnc(input))
+    case Comparable => OpeEnc(keys.priv.opeIntEnc(input))
+  }
+
   def convert(keys: KeyRing): (Scheme, Enc) => Enc = {
     case (Additive,in@PaillierEnc(_)) => in
     case (Multiplicative,in@GamalEnc(_,_)) => in
