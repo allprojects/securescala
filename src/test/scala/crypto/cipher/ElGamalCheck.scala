@@ -11,7 +11,7 @@ object ElGamalCheck extends Properties("ElGamal") {
   val (encrypt,decrypt,pub) = ElGamal.create(1024)
 
   property("decrypt · encrypt = id for positive ints") =
-    forAll(positiveInt) { (input: BigInt) =>
+    forAll(posInt) { (input: BigInt) =>
       decrypt(encrypt(input)) == input
     }
 
