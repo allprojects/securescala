@@ -14,6 +14,7 @@ case class Encrypt[K](v: Int, k: Enc => K) extends CryptoF[K]
 case class ToPaillier[K](v: Enc, k: PaillierEnc => K) extends CryptoF[K]
 case class ToGamal[K](v: Enc, k: GamalEnc => K) extends CryptoF[K]
 case class ToAes[K](v: Enc, k: AesEnc => K) extends CryptoF[K]
+case class ToOpe[K](v: Enc, k: OpeEnc => K) extends CryptoF[K]
 
 // TODO offline or encode into encryption?
 case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
@@ -35,6 +36,7 @@ object CryptoF {
       case ToPaillier(v,k) => ToPaillier(v,f compose k)
       case ToGamal(v,k) => ToGamal(v,f compose k)
       case ToAes(v,k) => ToAes(v,f compose k)
+      case ToOpe(v,k) => ToOpe(v,f compose k)
       case Sub(lhs,rhs,k) => Sub(lhs,rhs,f compose k)
       case Div(lhs,rhs,k) => Div(lhs,rhs,f compose k)
       case Embed(v,k) => Embed(v,(x: CryptoM[Any]) => k(x).map(f))
