@@ -71,12 +71,9 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
     // Equality
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
     case -\/(Equals(lhs,rhs,k)) =>
-      val decLhs = Common.decrypt(priv)(lhs).toByteArray
-      val decRhs = Common.decrypt(priv)(rhs).toByteArray
-
-      val encLhs: AesEnc = AesEnc(priv.aesEnc(decLhs))
-      val encRhs: AesEnc = AesEnc(priv.aesEnc(decRhs))
-      interpret(k(encLhs =:= encRhs))
+      val lhs2@AesEnc(_) = Common.convert(keyRing)(Equality,lhs)
+      val rhs2@AesEnc(_) = Common.convert(keyRing)(Equality,rhs)
+      interpret(k(lhs2 =:= rhs2))
 
     // Encryption
     case -\/(Encrypt(v,k)) =>
@@ -92,12 +89,12 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       interpret(k(r))
 
     case -\/(ToAes(v,k)) =>
-      val r = Common.decrypt(priv)(v)
-      interpret(k(AesEnc(priv.aesEnc(r.toByteArray))))
+      val r@AesEnc(_) = Common.convert(keyRing)(Equality,v)
+      interpret(k(r))
 
     case -\/(ToOpe(v,k)) =>
-      val r = Common.decrypt(priv)(v)
-      interpret(k(OpeEnc(priv.opeIntEnc(r))))
+      val r@OpeEnc(_) = Common.convert(keyRing)(Comparable,v)
+      interpret(k(r))
 
       // Offline operations?
     case -\/(Sub(lhs,rhs,k)) =>

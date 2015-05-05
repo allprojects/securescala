@@ -14,13 +14,7 @@ object TestUtils {
   def encryptedNumber(keyRing: KeyRing)(g: Gen[BigInt]): Gen[Enc] = for {
     scheme <- Gen.oneOf(Additive, Multiplicative, Equality, Comparable)
     i <- g
-  } yield 
-    scheme match {
-      case Additive => Common.encryptPub(Additive, keyRing.pub)(i)
-      case Multiplicative => Common.encryptPub(Multiplicative, keyRing.pub)(i)
-      case Equality => AesEnc(keyRing.priv.aesEnc(i.toByteArray))
-      case Comparable => OpeEnc(keyRing.priv.opeIntEnc(i))
-    }
+  } yield Common.encrypt(scheme, keyRing)(i)
 
   def encryptedList(maxSize: Int)(keys: KeyRing): Gen[List[Enc]] = for {
     n <- Gen.choose(0,maxSize)
