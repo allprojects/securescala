@@ -10,17 +10,18 @@ case class PrivKeys(
   aesEnc: Aes.Encryptor,
   aesDec: Aes.Decryptor,
   opeIntEnc: Ope.Encryptor,
-  opeIntDec: Ope.Decryptor)
+  opeIntDec: Ope.Decryptor,
+  opePriv: Ope.PrivKey)
 
 object KeyRing {
   def create: KeyRing = {
     val (_, paillierDec, paillierPub) = Paillier.create(1024)
     val (_, gamalDec, gamalPub) = ElGamal.create(1024)
     val (aesEnc, aesDec) = Aes.create(Aes.B256)
-    val (opeIntEnc, opeIntDec,_) = Ope.createNum(128)
+    val (opeIntEnc, opeIntDec,opePriv) = Ope.createNum(128)
 
     val encKeys = PubKeys(paillierPub, gamalPub)
-    val decKeys = PrivKeys(paillierDec, gamalDec, aesEnc, aesDec, opeIntEnc, opeIntDec)
+    val decKeys = PrivKeys(paillierDec, gamalDec, aesEnc, aesDec, opeIntEnc, opeIntDec, opePriv)
     KeyRing(encKeys,decKeys)
   }
 }
