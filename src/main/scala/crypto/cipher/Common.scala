@@ -33,14 +33,17 @@ object Common {
   }
 
   def convert(keys: KeyRing): (Scheme, Enc) => Enc = {
+    // Nothing to do
     case (Additive,in@PaillierEnc(_)) => in
     case (Multiplicative,in@GamalEnc(_,_)) => in
     case (Equality,in@AesEnc(_)) => in
     case (Comparable,in@OpeEnc(_)) => in
+
+    // Conversion required
     case (Additive,in) => (encryptPub(Additive, keys.pub) compose decrypt(keys.priv))(in)
     case (Multiplicative,in) => (encryptPub(Multiplicative, keys.pub) compose decrypt(keys.priv))(in)
-    case (Equality,in) => AesEnc.apply(keys.priv.aesEnc(decrypt(keys.priv)(in)))
-    case (s,input) => ???
+    case (Equality,in) => AesEnc(keys.priv.aesEnc(decrypt(keys.priv)(in)))
+    case (Comparable,in) => OpeEnc(keys.priv.opeIntEnc(decrypt(keys.priv)(in)))
   }
 
 }
