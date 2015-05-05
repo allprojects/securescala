@@ -1,5 +1,7 @@
 package crypto.dsl
 
+import scala.language.higherKinds
+
 import scalaz._
 import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
@@ -14,11 +16,12 @@ import crypto._
   * offers different implementations of programs depending on the
   * style it is written in (applicative vs monadic)
   */
-trait CryptoInterpreter {
+
+trait CryptoInterpreter[F[_]] {
   /**
     * Interpret a program written in the monadic DSL and return the result
     */
-  def interpret[A]: CryptoM[A] => A
+  def interpret[A]: CryptoM[A] => F[A]
 
   /**
     * Interpret a program written in the applicative DSL and therefore
@@ -27,10 +30,13 @@ trait CryptoInterpreter {
     * By default this performs no optimizations, you need to override
     * it and take advantage of the applicative structure
     */
-  def interpretA[A]: Crypto[A] => A = x => interpret(x.monadic)
+  def interpretA[A]: Crypto[A] => F[A] = x => interpret(x.monadic)
 }
 
-case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
+// Why λ[α=>α]?
+// - This is equivalent to `type Identity[A] = A` enabling the
+//   interpreter to return a type that is not higher kinded
+case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>α]] {
   val KeyRing(pub,priv) = keyRing
 
   // One possible optimization is to use futures
