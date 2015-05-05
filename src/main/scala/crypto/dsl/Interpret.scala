@@ -53,15 +53,15 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
     // Multiplication
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
     case -\/(Mult(lhs,rhs,k)) =>
-      val lhs2@GamalEnc(_,_) = Common.convert(pub, priv)(Multiplicative, lhs)
-      val rhs2@GamalEnc(_,_) = Common.convert(pub, priv)(Multiplicative, rhs)
+      val lhs2@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, lhs)
+      val rhs2@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, rhs)
       interpret(k(lhs2*rhs2))
 
     // Addition
     case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
     case -\/(Plus(lhs,rhs,k)) =>
-      val PaillierEnc(lhs_) = Common.convert(pub, priv)(Additive, lhs)
-      val PaillierEnc(rhs_) = Common.convert(pub, priv)(Additive, rhs)
+      val PaillierEnc(lhs_) = Common.convert(keyRing)(Additive, lhs)
+      val PaillierEnc(rhs_) = Common.convert(keyRing)(Additive, rhs)
       val r = PaillierEnc((lhs_ * rhs_) mod pub.paillier.nSquare)
       interpret(k(r))
 
@@ -84,11 +84,11 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       interpret(k(Common.encrypt(Additive, pub)(v)))
 
     case -\/(ToPaillier(v,k)) =>
-      val r@PaillierEnc(_) = Common.convert(pub,priv)(Additive,v)
+      val r@PaillierEnc(_) = Common.convert(keyRing)(Additive,v)
       interpret(k(r))
 
     case -\/(ToGamal(v,k)) =>
-      val r@GamalEnc(_,_) = Common.convert(pub,priv)(Multiplicative,v)
+      val r@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative,v)
       interpret(k(r))
 
     case -\/(ToAes(v,k)) =>
