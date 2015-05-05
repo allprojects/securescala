@@ -16,8 +16,8 @@ object TestUtils {
     i <- g
   } yield 
     scheme match {
-      case Additive => Common.encrypt(Additive, keyRing.pub)(i)
-      case Multiplicative => Common.encrypt(Multiplicative, keyRing.pub)(i)
+      case Additive => Common.encryptPub(Additive, keyRing.pub)(i)
+      case Multiplicative => Common.encryptPub(Multiplicative, keyRing.pub)(i)
       case Equality => AesEnc(keyRing.priv.aesEnc(i.toByteArray))
       case Comparable => OpeEnc(keyRing.priv.opeIntEnc(i))
     }

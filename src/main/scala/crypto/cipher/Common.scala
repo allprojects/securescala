@@ -20,7 +20,7 @@ object Common {
     case OpeEnc(x) => keys.opeIntDec(x)
   }
 
-  def encrypt(s: AsymmetricScheme, keys: PubKeys): BigInt => Enc = input => s match {
+  def encryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => Enc = input => s match {
     case Additive => PaillierEnc(Paillier.encrypt(keys.paillier)(input))
     case Multiplicative => (GamalEnc.apply _).tupled(ElGamal.encrypt(keys.gamal)(input))
   }
@@ -30,8 +30,8 @@ object Common {
     case (Multiplicative,in@GamalEnc(_,_)) => in
     case (Equality,in@AesEnc(_)) => in
     case (Comparable,in@OpeEnc(_)) => in
-    case (Additive,in) => (encrypt(Additive, keys.pub) compose decrypt(keys.priv))(in)
-    case (Multiplicative,in) => (encrypt(Multiplicative, keys.pub) compose decrypt(keys.priv))(in)
+    case (Additive,in) => (encryptPub(Additive, keys.pub) compose decrypt(keys.priv))(in)
+    case (Multiplicative,in) => (encryptPub(Multiplicative, keys.pub) compose decrypt(keys.priv))(in)
     case (Equality,in) => AesEnc.apply(keys.priv.aesEnc(decrypt(keys.priv)(in)))
     case (s,input) => ???
   }
