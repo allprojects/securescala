@@ -12,15 +12,14 @@ object TestUtils {
     posInt retryUntil (_.bitLength <= key.plainBits)
 
   def encryptedNumber(keyRing: KeyRing)(g: Gen[BigInt]): Gen[Enc] = for {
-    scheme <- Gen.oneOf("Paillier","ElGamal","AES","OPE")
+    scheme <- Gen.oneOf(Additive, Multiplicative, Equality, Comparable)
     i <- g
   } yield 
     scheme match {
-      case "Paillier" => Common.encrypt(Additive, keyRing.pub)(i)
-      case "ElGamal" => Common.encrypt(Multiplicative, keyRing.pub)(i)
-      case "AES" => AesEnc(keyRing.priv.aesEnc(i.toByteArray))
-      case "OPE" => OpeEnc(keyRing.priv.opeIntEnc(i))
-      case x => sys.error(s"Illegal scheme: '$x'")
+      case Additive => Common.encrypt(Additive, keyRing.pub)(i)
+      case Multiplicative => Common.encrypt(Multiplicative, keyRing.pub)(i)
+      case Equality => AesEnc(keyRing.priv.aesEnc(i.toByteArray))
+      case Comparable => OpeEnc(keyRing.priv.opeIntEnc(i))
     }
 
   def encryptedList(maxSize: Int)(keys: KeyRing): Gen[List[Enc]] = for {
