@@ -9,27 +9,38 @@ import scala.concurrent._
 import crypto.cipher._
 import crypto._
 
+/**
+  * An interpreter for a program written using the crypto dsl.  It
+  * offers different implementations of programs depending on the
+  * style it is written in (applicative vs monadic)
+  */
 trait CryptoInterpreter {
+  /**
+    * Interpret a program written in the monadic DSL and return the result
+    */
   def interpret[A]: CryptoM[A] => A
-  def interpretA[A]: Crypto[A] => A
+
+  /**
+    * Interpret a program written in the applicative DSL and therefore
+    * does not depend on the order of the effects.
+    *
+    * By default this performs no optimizations, you need to override
+    * it and take advantage of the applicative structure
+    */
+  def interpretA[A]: Crypto[A] => A = x => interpret(x.monadic)
 }
 
 case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter {
   val KeyRing(pub,priv) = keyRing
 
+  // One possible optimization is to use futures
   def interpPar[A](p: Crypto[A])(
     implicit executionContext: ExecutionContext): Future[A] = {
 
     p.foldMap(new (CryptoF ~> Future) {
-      def apply[A](fa: CryptoF[A]): Future[A] = Future {
-        interpret(Free.liftF(fa))
-      }
+      // Peform regular interpretation inside future
+      def apply[A](fa: CryptoF[A]): Future[A] = Future { interpret(Free.liftF(fa)) }
     })
-  }
-
-  // TODO take advantage of applicative structure to do optimizations
-  def interpretA[A]: Crypto[A] => A = x => {
-    interpret(x.monadic)
   }
 
   def interpret[A]: CryptoM[A] => A = _.resume match {
