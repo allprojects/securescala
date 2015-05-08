@@ -17,7 +17,12 @@ trait CryptoService {
   def convert(s: Scheme, in: Enc): Future[Enc]
 }
 
-class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService {
+trait CryptoServicePlus { this: CryptoService =>
+  def subtract(lhs: Enc, rhs: Enc): Future[Enc]
+  def divide(lhs: Enc, rhs: Enc): Future[Enc]
+}
+
+class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServicePlus {
   private val doConvert = Common.convert(keyRing)
 
   override def toPaillier(in: Enc): Future[PaillierEnc] = Future.successful {
@@ -42,6 +47,20 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService {
 
   override def convert(s: Scheme, in: Enc): Future[Enc] = Future.successful {
     Common.convert(keyRing)(s,in)
+  }
+
+  override def divide(lhs: Enc, rhs: Enc): Future[Enc] = Future.successful {
+    val plainLhs = Common.decrypt(keyRing.priv)(lhs)
+    val plainRhs = Common.decrypt(keyRing.priv)(rhs)
+    val result = plainLhs / plainRhs
+    Common.encryptPub(Additive, keyRing.pub)(result)
+  }
+
+  override def subtract(lhs: Enc, rhs: Enc): Future[Enc] = Future.successful {
+    val plainLhs = Common.decrypt(keyRing.priv)(lhs)
+    val plainRhs = Common.decrypt(keyRing.priv)(rhs)
+    val result = plainLhs - plainRhs
+    Common.encryptPub(Additive, keyRing.pub)(result)
   }
 }
 
