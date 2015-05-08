@@ -48,4 +48,28 @@ object Analysis {
       }
     })
   }
+
+  // perform all explicit conversions
+  def preconvert[A](keyRing: KeyRing)(p: Crypto[A]): Crypto[A] = {
+    p.foldMap(new (CryptoF ~> Crypto) {
+      def apply[A](fa: CryptoF[A]): Crypto[A] = {
+        fa match {
+          case ToPaillier(v,k) =>
+            val r@PaillierEnc(_) = Common.convert(keyRing)(Additive, v)
+            FreeAp.point(k(r))
+          case ToGamal(v,k) =>
+            val r@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, v)
+            FreeAp.point(k(r))
+          case ToAes(v,k) =>
+            val r@AesEnc(_) = Common.convert(keyRing)(Equality, v)
+            FreeAp.point(k(r))
+          case ToOpe(v,k) =>
+            val r@OpeEnc(_) = Common.convert(keyRing)(Comparable, v)
+            FreeAp.point(k(r))
+          case x => FreeAp.lift(x)
+        }
+      }
+    })
+  }
+
 }
