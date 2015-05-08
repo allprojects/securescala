@@ -12,7 +12,7 @@ import crypto.remote._
 case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionContext)
     extends CryptoInterpreter[Future] {
   def interpret[A] = _.resume match {
-    // Multiplication
+
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
     case -\/(Mult(lhs,rhs,k)) => for {
       lhs_ <- service.toElGamal(lhs)
@@ -20,7 +20,6 @@ case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionCon
       r <- interpret(k(lhs_ * rhs_))
     } yield r
 
-    // Addition
     case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
     case -\/(Plus(lhs,rhs,k)) => for {
       lhs_ <- service.toPaillier(lhs)
@@ -28,7 +27,6 @@ case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionCon
       r <- interpret(k(lhs_ + rhs_))
     } yield r
 
-    // Comparisons
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
     case -\/(Compare(lhs,rhs,k)) => for {
       lhs_ <- service.toOpe(lhs)
@@ -36,7 +34,6 @@ case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionCon
       r <- interpret(k(lhs_ ?|? rhs_))
     } yield r
 
-    // Equality
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
     case -\/(Equals(lhs,rhs,k)) => for {
       lhs_ <- service.toAes(lhs)
@@ -64,10 +61,8 @@ case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionCon
       case _ => service.toOpe(v).flatMap(x => interpret(k(x)))
     }
 
-    // Encryption
     case -\/(Encrypt(v,k)) => sys.error("encryption")
 
-      // Offline operations?
     case -\/(Sub(lhs,rhs,k)) => sys.error("subtraction")
 
     case -\/(Div(lhs,rhs,k)) => sys.error("division")
@@ -76,7 +71,6 @@ case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionCon
       val r: CryptoM[A] = k(Free.point(interpretA(p))).join
       interpret(r)
 
-    // End of the program, return the final value
     case \/-(x) => Future.successful(x)
   }
 }

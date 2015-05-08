@@ -27,14 +27,12 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
   }
 
   def interpret[A]: CryptoM[A] => A = _.resume match {
-    // Multiplication
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
     case -\/(Mult(lhs,rhs,k)) =>
       val lhs2@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, lhs)
       val rhs2@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, rhs)
       interpret(k(lhs2*rhs2))
 
-    // Addition
     case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
     case -\/(Plus(lhs,rhs,k)) =>
       val PaillierEnc(lhs_) = Common.convert(keyRing)(Additive, lhs)
@@ -42,21 +40,18 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       val r = PaillierEnc((lhs_ * rhs_) mod pub.paillier.nSquare)
       interpret(k(r))
 
-    // Comparisons
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
     case -\/(Compare(lhs,rhs,k)) =>
       val lhs2@OpeEnc(_) = Common.convert(keyRing)(Comparable, lhs)
       val rhs2@OpeEnc(_) = Common.convert(keyRing)(Comparable, rhs)
       interpret(k(lhs2 ?|? rhs2))
 
-    // Equality
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
     case -\/(Equals(lhs,rhs,k)) =>
       val lhs2@AesEnc(_) = Common.convert(keyRing)(Equality,lhs)
       val rhs2@AesEnc(_) = Common.convert(keyRing)(Equality,rhs)
       interpret(k(lhs2 =:= rhs2))
 
-    // Encryption
     case -\/(Encrypt(v,k)) =>
       // TODO be more clever about what scheme to use
       interpret(k(Common.encryptPub(Additive, pub)(v)))
@@ -77,7 +72,8 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       val r@OpeEnc(_) = Common.convert(keyRing)(Comparable,v)
       interpret(k(r))
 
-      // Offline operations?
+    // Offline operations
+
     case -\/(Sub(lhs,rhs,k)) =>
       val plainLhs = Common.decrypt(priv)(lhs)
       val plainRhs = Common.decrypt(priv)(rhs)
@@ -94,7 +90,6 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       val r: CryptoM[A] = k(Free.point(interpretA(p))).join
       interpret(r)
 
-    // End of the program, return the final value
     case \/-(x) => x
   }
 }
