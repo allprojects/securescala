@@ -14,29 +14,34 @@ trait CryptoService {
   def toElGamal(in: Enc): Future[GamalEnc]
   def toAes(in: Enc): Future[AesEnc]
   def toOpe(in: Enc): Future[OpeEnc]
+  def convert(s: Scheme, in: Enc): Future[Enc]
 }
 
 class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService {
-  val convert: (Scheme, Enc) => Enc = Common.convert(keyRing)
+  private val doConvert = Common.convert(keyRing)
 
   override def toPaillier(in: Enc): Future[PaillierEnc] = Future.successful {
-    val r@PaillierEnc(_) = convert(Additive, in)
+    val r@PaillierEnc(_) = doConvert(Additive, in)
     r
   }
 
   override def toElGamal(in: Enc): Future[GamalEnc] = Future.successful {
-    val r@GamalEnc(_,_) = convert(Multiplicative, in)
+    val r@GamalEnc(_,_) = doConvert(Multiplicative, in)
     r
   }
 
   override def toAes(in: Enc): Future[AesEnc] = Future.successful {
-    val r@AesEnc(_) = convert(Equality, in)
+    val r@AesEnc(_) = doConvert(Equality, in)
     r
   }
 
   override def toOpe(in: Enc): Future[OpeEnc] = Future.successful {
-    val r@OpeEnc(_) = convert(Comparable, in)
+    val r@OpeEnc(_) = doConvert(Comparable, in)
     r
+  }
+
+  override def convert(s: Scheme, in: Enc): Future[Enc] = Future.successful {
+    Common.convert(keyRing)(s,in)
   }
 }
 
