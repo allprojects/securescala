@@ -2,6 +2,7 @@ package crypto.dsl
 
 import scalaz._
 import scalaz.std.anyVal._
+import scalaz.std.list._
 
 import crypto._
 import crypto.cipher._
@@ -72,4 +73,25 @@ object Analysis {
     })
   }
 
+  def extractNumbers[A](p: Crypto[A]): List[Enc] = {
+    p.analyze(new (CryptoF ~> λ[α => List[Enc]]) {
+      def apply[A](a: CryptoF[A]) = a match {
+        case ToPaillier(v,k) => List(v)
+        case ToGamal(v,k) => List(v)
+        case ToAes(v,k) => List(v)
+        case ToOpe(v,k) => List(v)
+
+        case Mult(lhs,rhs,k) => List(lhs,rhs)
+        case Plus(lhs,rhs,k) => List(lhs,rhs)
+        case Equals(lhs,rhs,k) => List(lhs,rhs)
+        case Compare(lhs,rhs,k) => List(lhs,rhs)
+        case Encrypt(s,v,k) => List()
+
+        case Sub(lhs,rhs,k) => List(lhs,rhs)
+        case Div(lhs,rhs,k) => List(lhs,rhs)
+
+        case Embed(v,k) => extractNumbers(v)
+      }
+    })
+  }
 }
