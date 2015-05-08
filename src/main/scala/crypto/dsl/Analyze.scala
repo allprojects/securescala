@@ -35,7 +35,7 @@ object Analysis {
   }
 
   // eliminate all trivial conversions, e.g. toPaillier(PaillierEnc(_))
-  def optimize[A](p: Crypto[A]): Crypto[A] = {
+  def eliminateTrivalConversion[A](p: Crypto[A]): Crypto[A] = {
     p.foldMap(new (CryptoF ~> Crypto) {
       def apply[A](fa: CryptoF[A]): Crypto[A] = {
         fa match {
