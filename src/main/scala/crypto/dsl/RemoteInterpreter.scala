@@ -1,18 +1,16 @@
 package crypto.dsl
 
 import scalaz._
-import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
+import scalaz.syntax.order._
 
 import scala.concurrent._
 
 import crypto._
-import crypto.cipher._
 import crypto.remote._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
-case class RemoteInterpreter(service: CryptoService) extends CryptoInterpreter[Future] {
+case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionContext)
+    extends CryptoInterpreter[Future] {
   def interpret[A] = _.resume match {
     // Multiplication
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
@@ -31,7 +29,12 @@ case class RemoteInterpreter(service: CryptoService) extends CryptoInterpreter[F
     } yield r
 
     // Comparisons
-    case -\/(Compare(lhs,rhs,k)) => sys.error("No scheme for comparison")
+    case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
+    case -\/(Compare(lhs,rhs,k)) => for {
+      lhs_ <- service.toOpe(lhs)
+      rhs_ <- service.toOpe(rhs)
+      r <- interpret(k(lhs_ ?|? rhs_))
+    } yield r
 
     // Equality
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
