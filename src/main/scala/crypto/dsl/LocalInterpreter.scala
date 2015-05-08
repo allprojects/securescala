@@ -3,6 +3,7 @@ package crypto.dsl
 import scalaz._
 import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
+import scalaz.syntax.order._
 
 import scala.concurrent._
 
@@ -42,7 +43,11 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       interpret(k(r))
 
     // Comparisons
-    case -\/(Compare(lhs,rhs,k)) => sys.error("No scheme for comparison")
+    case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
+    case -\/(Compare(lhs,rhs,k)) =>
+      val lhs2@OpeEnc(_) = Common.convert(keyRing)(Comparable, lhs)
+      val rhs2@OpeEnc(_) = Common.convert(keyRing)(Comparable, rhs)
+      interpret(k(lhs2 ?|? rhs2))
 
     // Equality
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
