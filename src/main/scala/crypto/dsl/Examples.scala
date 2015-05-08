@@ -15,10 +15,10 @@ import crypto.cipher._
 
 object ExamplePrograms {
   def factorial(n: Enc): CryptoM[Enc] = for {
-    zero <- encrypt(0)
-    r <- embed(equal(n,zero)).ifM(encrypt(1),
+    zero <- encrypt(Multiplicative)(0)
+    r <- embed(equal(n,zero)).ifM(encrypt(Multiplicative)(1),
       for {
-        one <- encrypt(1)
+        one <- encrypt(Multiplicative)(1)
         newN <- subtract(n,one)
         intermediateR <- factorial(newN)
         result <- multiply(n,intermediateR)
@@ -26,7 +26,7 @@ object ExamplePrograms {
   } yield r
 
   def sumAndLength[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[(Enc,Enc)] =
-    embed { (sumA(zero)(xs) |@| encrypt(xs.length))((x,y) => (x,y))}
+    embed { (sumA(zero)(xs) |@| encrypt(Additive)(xs.length))((x,y) => (x,y))}
 }
 
 object Repl {

@@ -7,12 +7,15 @@ import scalaz._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
 
+import crypto.cipher._
+
 package object dsl extends BaseDsl with DeriveDsl {
   object base extends BaseDsl
 }
 
 trait BaseDsl {
   import crypto.dsl._
+
   type Crypto[A] = FreeAp[CryptoF, A]
   type CryptoM[A] = Free[CryptoF, A]
 
@@ -21,7 +24,7 @@ trait BaseDsl {
   def equal(lhs: Enc, rhs: Enc): Crypto[Boolean] = FreeAp.lift(Equals(lhs,rhs,identity))
   def compare(lhs: Enc, rhs: Enc): Crypto[Ordering] = FreeAp.lift(Compare(lhs,rhs,identity))
 
-  def encrypt(v: Int): Crypto[Enc] = FreeAp.lift(Encrypt(v,identity))
+  def encrypt(s: Scheme)(v: Int): Crypto[Enc] = FreeAp.lift(Encrypt(s,v,identity))
   def toPaillier(v: Enc): Crypto[PaillierEnc] = FreeAp.lift(ToPaillier(v,identity))
   def toGamal(v: Enc): Crypto[GamalEnc] = FreeAp.lift(ToGamal(v,identity))
   def toAes(v: Enc): Crypto[AesEnc] = FreeAp.lift(ToAes(v,identity))
@@ -52,7 +55,7 @@ trait DeriveDsl {
 
   def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] = for {
     sum <- sumA(zero)(xs)
-    n <- encrypt { xs.length }
+    n <- encrypt(Additive) { xs.length }
     r <- divide(sum,n)
   } yield r
 

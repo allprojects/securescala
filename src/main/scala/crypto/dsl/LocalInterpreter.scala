@@ -52,9 +52,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       val rhs2@AesEnc(_) = Common.convert(keyRing)(Equality,rhs)
       interpret(k(lhs2 =:= rhs2))
 
-    case -\/(Encrypt(v,k)) =>
-      // TODO be more clever about what scheme to use
-      interpret(k(Common.encryptPub(Additive, pub)(v)))
+    case -\/(Encrypt(s,v,k)) => interpret(k(Common.encrypt(s, keyRing)(v)))
 
     case -\/(ToPaillier(v,k)) =>
       val r@PaillierEnc(_) = Common.convert(keyRing)(Additive,v)
