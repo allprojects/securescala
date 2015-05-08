@@ -12,8 +12,8 @@ class AnalysisSpec extends WordSpec with Matchers {
     "count the number of required conversions" in {
       import Analysis._
 
-      val additive = Common.encrypt(Additive, keys.pub)(1)
-      val multiplicative = Common.encrypt(Multiplicative, keys.pub)(2)
+      val additive = Common.encryptPub(Additive, keys.pub)(1)
+      val multiplicative = Common.encryptPub(Multiplicative, keys.pub)(2)
 
       requiredConversions{ add(additive,additive)             } should equal(0)
       requiredConversions{ add(additive,multiplicative)       } should equal(1)

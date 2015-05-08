@@ -23,6 +23,7 @@ object Aes {
 
   case class Encryptor(f: Array[Byte] => Array[Byte]) extends Function1[Array[Byte],Array[Byte]]{
     def apply(x: Array[Byte]) = f(x)
+    def apply(x: BigInt) = f(x.toByteArray)
   }
 
   case class Decryptor(f: Array[Byte] => Array[Byte]) extends Function1[Array[Byte],Array[Byte]]{

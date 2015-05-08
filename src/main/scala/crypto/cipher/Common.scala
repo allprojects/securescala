@@ -2,9 +2,15 @@ package crypto.cipher
 
 import crypto._
 
+
 sealed trait Scheme
-case object Additive extends Scheme
-case object Multiplicative extends Scheme
+sealed trait AsymmetricScheme extends Scheme
+
+case object Additive extends AsymmetricScheme
+case object Multiplicative extends AsymmetricScheme
+
+case object Equality extends Scheme
+case object Comparable extends Scheme
 
 object Common {
   def decrypt(keys: PrivKeys): Enc => BigInt = _ match {
@@ -14,16 +20,30 @@ object Common {
     case OpeEnc(x) => keys.opeIntDec(x)
   }
 
-  def encrypt(s: Scheme, keys: PubKeys): BigInt => Enc = input => s match {
+  def encryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => Enc = input => s match {
     case Additive => PaillierEnc(Paillier.encrypt(keys.paillier)(input))
     case Multiplicative => (GamalEnc.apply _).tupled(ElGamal.encrypt(keys.gamal)(input))
   }
 
-  // local version
-  def convert(encKeys: PubKeys, decKeys: PrivKeys): (Scheme, Enc) => Enc = {
+  def encrypt(s: Scheme, keys: KeyRing): BigInt => Enc = input => s match {
+    case Additive => encryptPub(Additive, keys.pub)(input)
+    case Multiplicative => encryptPub(Multiplicative, keys.pub)(input)
+    case Equality => AesEnc(keys.priv.aesEnc(input))
+    case Comparable => OpeEnc(keys.priv.opeIntEnc(input))
+  }
+
+  def convert(keys: KeyRing): (Scheme, Enc) => Enc = {
+    // Nothing to do
     case (Additive,in@PaillierEnc(_)) => in
     case (Multiplicative,in@GamalEnc(_,_)) => in
-    case (s,input) => (encrypt(s, encKeys) compose decrypt(decKeys))(input)
+    case (Equality,in@AesEnc(_)) => in
+    case (Comparable,in@OpeEnc(_)) => in
+
+    // Conversion required
+    case (Additive,in) => (encryptPub(Additive, keys.pub) compose decrypt(keys.priv))(in)
+    case (Multiplicative,in) => (encryptPub(Multiplicative, keys.pub) compose decrypt(keys.priv))(in)
+    case (Equality,in) => AesEnc(keys.priv.aesEnc(decrypt(keys.priv)(in)))
+    case (Comparable,in) => OpeEnc(keys.priv.opeIntEnc(decrypt(keys.priv)(in)))
   }
 
 }

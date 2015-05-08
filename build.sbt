@@ -33,6 +33,10 @@ libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
 
 libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
 
+libraryDependencies += "com.typesafe.akka" % "akka-actor_2.11" % "2.3.10"
+
+libraryDependencies += "com.typesafe.akka" % "akka-remote_2.11" % "2.3.10"
+
 // To avoid classloader problems with sbt console and native ope library
 fork := true
 
