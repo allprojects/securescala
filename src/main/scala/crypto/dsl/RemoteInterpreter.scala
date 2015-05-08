@@ -1,15 +1,19 @@
 package crypto.dsl
 
+import akka.actor._
+import akka.pattern.ask
+
 import scalaz._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
 
 import scala.concurrent._
+import scala.concurrent.duration._
 
 import crypto._
 import crypto.remote._
 
-case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionContext)
+case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: ExecutionContext)
     extends CryptoInterpreter[Future] {
   def interpret[A] = _.resume match {
 
@@ -67,10 +71,47 @@ case class RemoteInterpreter(service: CryptoService)(implicit ctxt: ExecutionCon
 
     case -\/(Div(lhs,rhs,k)) => sys.error("division")
 
-    case -\/(Embed(p,k)) =>
-      val r: CryptoM[A] = k(Free.point(interpretA(p))).join
-      interpret(r)
+    case -\/(Embed(p,k)) => for {
+      v <- interpretA(p)
+      r <- interpret(k(Free.point(v)).join)
+    } yield r
 
-    case \/-(x) => Future.successful(x)
+    case \/-(x) =>
+      Future.successful(x)
   }
+}
+
+object ActorInterpretation extends App {
+  val keyRing = KeyRing.create
+
+  val system = ActorSystem("CryptoService")
+
+  val cryptoService: CryptoServicePlus =
+    TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
+      new CryptoServiceImpl(keyRing)), "cryptoServer")
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val remoteInterpreter = new RemoteInterpreter(cryptoService)
+
+  ///////////////////////////////////////////////////////////////////////
+
+  import crypto.cipher._
+  import scalaz.std.list._
+  val encryptedList: List[Enc] = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keyRing.pub))
+
+  val zero@PaillierEnc(_) = Common.encryptPub(Additive, keyRing.pub)(0)
+
+  val result = remoteInterpreter.interpret {
+    sumA(zero)(encryptedList)
+  }
+
+  val r = Common.decrypt(keyRing.priv)(Await.result(result, Duration.Inf))
+
+  println(r)
+
+  ///////////////////////////////////////////////////////////////////////
+
+  TypedActor(system).poisonPill(cryptoService)
+
+  system.shutdown()
 }
