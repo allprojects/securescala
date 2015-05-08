@@ -17,7 +17,7 @@ trait CryptoService {
   def convert(s: Scheme, in: Enc): Future[Enc]
 }
 
-trait CryptoServicePlus { this: CryptoService =>
+trait CryptoServicePlus extends CryptoService {
   def subtract(lhs: Enc, rhs: Enc): Future[Enc]
   def divide(lhs: Enc, rhs: Enc): Future[Enc]
 }
@@ -70,8 +70,8 @@ object CryptoServiceActor extends App {
 
   val system = ActorSystem("CryptoService")
 
-  val cryptoService: CryptoService =
-    TypedActor(system).typedActorOf(TypedProps(classOf[CryptoService],
+  val cryptoService: CryptoServicePlus =
+    TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
       new CryptoServiceImpl(keyRing)), "cryptoServer")
 
   val response: Future[Enc] = cryptoService.toPaillier(PaillierEnc(1))
