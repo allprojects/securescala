@@ -39,11 +39,10 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   property("product of a list") =
     forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
       val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
+      val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(0)
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {
-        interpret {
-          xs.traverse(toGamal).map(_.reduce(_*_))
-        }
+        interpret { productA(one)(xs) }
       }
 
       decryptThenProd == prodThenDecrypt
