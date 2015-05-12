@@ -7,9 +7,9 @@ import org.scalacheck.Prop.forAll
 
 import scalaz._
 
-import crypto.TestUtils._
+import crypto._
 
-object PaillierCheck extends Properties("Paillier") {
+object PaillierCheck extends Properties("Paillier") with ScalaCheckGen {
   val (encrypt,decrypt,pub) = Paillier.create(1024)
 
   property("decrypt · encrypt = id for positive ints") =

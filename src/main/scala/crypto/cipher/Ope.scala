@@ -41,8 +41,8 @@ object Ope {
     PrivKey(BigInt(bits, new SecureRandom).toString(32), bits, plainBits, cipherBits)
 
   def encrypt(priv: PrivKey)(input: BigInt): String \/ BigInt = input match {
-    case x if x < 0 => -\/("OPE: Input is negative")
-    case x if x > x.pow(priv.plainBits-1) - 1 => -\/("OPE: Number too big")
+    case x if x < -(BigInt(2).pow(priv.plainBits-1)) => -\/("OPE: Input is too small")
+    case x if x > BigInt(2).pow(priv.plainBits-1) - 1 => -\/("OPE: Input is too big")
     case x =>
       val encrypted = Try {
         instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
@@ -50,11 +50,10 @@ object Ope {
         case scala.util.Success(enc) => \/-(enc)
         case scala.util.Failure(e) => -\/(e)
       }
-      encrypted.leftMap(_.getMessage).map(BigInt(_))
+      encrypted.leftMap(e => "OPE: " + e.getMessage).map(BigInt(_))
   }
 
   def decrypt(priv: PrivKey)(input: BigInt): BigInt =
     BigInt(instance.nativeDecrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
-
 
 }

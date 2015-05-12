@@ -7,9 +7,9 @@ import org.scalacheck.Prop.forAll
 
 import scalaz._
 
-import crypto.TestUtils._
+import crypto._
 
-object ElGamalCheck extends Properties("ElGamal") {
+object ElGamalCheck extends Properties("ElGamal") with CryptoCheck {
   val (encrypt,decrypt,pub) = ElGamal.create(1024)
 
   property("decrypt · encrypt = id for positive ints") =

@@ -11,22 +11,20 @@ import org.scalacheck.{Gen => SCGen}
 
 import crypto._
 import crypto.cipher._
-import crypto.TestUtils._
 import crypto.remote._
 
 import org.scalameter.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait InterpreterBench[F[_]] {
+trait InterpreterBench[F[_]] extends CryptoCheck {
   this: PerformanceTest =>
 
-  val keyRing = KeyRing.create
   val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing)(0)
   val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(0)
 
   val sizes = Gen.range("size")(10,50,20)
-  val lists = for (size <- sizes) yield SCGen.listOfN(size, encryptedNumber(keyRing)(TestUtils.posInt)).sample.get
+  val lists = for (size <- sizes) yield SCGen.listOfN(size, generators.encryptedNumber).sample.get
 
   // To be implemented
   def finalize[A]: F[A] => A

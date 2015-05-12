@@ -12,11 +12,9 @@ import scalaz.std.math.bigInt._
 
 import crypto._
 
-import TestUtils._
-
-object OpeCheck extends Properties("OPE") {
-  val (encrypt,decrypt,key) = Ope.createNum(128)
-
+object OpeCheck extends Properties("OPE") with CryptoCheck {
+  val (encrypt,decrypt,key) =
+    (keyRing.priv.opeIntEnc,keyRing.priv.opeIntDec,keyRing.priv.opePriv)
 
   property("decrypt · encrypt = id (Int)") =
     forAll(arbitrary[Int].retryUntil(_ >= 0) ){ (input: Int) =>
@@ -24,12 +22,12 @@ object OpeCheck extends Properties("OPE") {
     }
 
   property("decrypt · encrypt = id (limited BigInt)") =
-    forAll(opeAllowedInts(key)) { (input: BigInt) =>
+    forAll(generators.allowedNumber) { (input: BigInt) =>
       encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
   property("preserves ordering") =
-    forAll(opeAllowedInts(key),opeAllowedInts(key)) { (a: BigInt, b: BigInt) =>
+    forAll(generators.allowedNumber, generators.allowedNumber) { (a: BigInt, b: BigInt) =>
       val \/-(ea) = encrypt(a)
       val \/-(eb) = encrypt(b)
       a ?|? b == ea ?|? eb
