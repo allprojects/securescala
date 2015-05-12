@@ -1,27 +1,36 @@
 package crypto.dsl
 
+import scala.language.higherKinds
+
 import org.scalacheck.Gen
 import org.scalacheck.Properties
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.forAll
 
+import scala.concurrent._
+import scala.concurrent.duration._
+
 import crypto._
+import crypto.remote._
 import crypto.cipher._
 import crypto.TestUtils._
 
 import scalaz.syntax.traverse._
 import scalaz.std.list._
 
-object LocalInterpreterCheck extends Properties("LocalInterpreter") {
+trait InterpreterCheck[F[_]] { this: Properties =>
   val keyRing = KeyRing.create
-  val locally = LocalInterpreter(keyRing)
+  val interpreter: CryptoInterpreter[F]
+  def finalize[A](x: F[A]): A
 
-  property("sum of a list") =
+  def interpret[A](p: CryptoM[A]): A = finalize { interpreter.interpret(p) }
+
+    property("sum of a list") =
     forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
       val decryptThenSum = xs.map(Common.decrypt(keyRing.priv)).sum
 
       val sumThenDecrypt = Common.decrypt(keyRing.priv) {
-        locally.interpret {
+        interpret {
           xs.traverse(toPaillier).map(_.reduce(_+_)).monadic
         }
       }
@@ -34,7 +43,7 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
       val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {
-        locally.interpret {
+        interpret {
           xs.traverse(toGamal).map(_.reduce(_*_)).monadic
         }
       }
@@ -46,9 +55,9 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
     forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
       val zero@PaillierEnc(_) = Common.encryptPub(Additive, keyRing.pub)(0)
 
-      val monadicSum = locally.interpret { sumM(zero)(xs) }
+      val monadicSum = interpret { sumM(zero)(xs) }
 
-      val applicativeSum = locally.interpret { sumA(zero)(xs).monadic }
+      val applicativeSum = interpret { sumA(zero)(xs).monadic }
 
       Common.decrypt(keyRing.priv)(monadicSum) == Common.decrypt(keyRing.priv)(applicativeSum)
     }
@@ -62,10 +71,27 @@ object LocalInterpreterCheck extends Properties("LocalInterpreter") {
 
     forAll(list) { (xs: List[Enc]) =>
       val decrypt = Common.decrypt(keyRing.priv)
-      val encSort = locally.interpret { sorted(xs) }.map(decrypt)
+      val encSort = interpret { sorted(xs) }.map(decrypt)
       val decSort = xs.map(decrypt).sorted
       encSort == decSort
+    }
   }
-  }
+}
 
+object LocalInterpreterCheck
+    extends Properties("LocalInterpreter")
+    with InterpreterCheck[λ[α=>α]] {
+
+  override val interpreter = LocalInterpreter(keyRing)
+  override def finalize[A](x: A) = x
+}
+
+object RemoteInterpreterCheck
+    extends Properties("RemoteInterpreter")
+    with InterpreterCheck[Future] {
+
+  val cryptoService = new CryptoServiceImpl(keyRing)
+  override val interpreter = RemoteInterpreter(cryptoService)(
+    scala.concurrent.ExecutionContext.Implicits.global)
+  override def finalize[A](x: Future[A]) = Await.result(x, Duration.Inf)
 }
