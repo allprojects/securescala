@@ -5,7 +5,7 @@ import org.scalacheck.Gen
 
 import crypto.cipher._
 
-object TestUtils {
+trait ScalaCheckGen {
   val posInt = arbitrary[BigInt] retryUntil (_.signum == 1)
 
   def opeAllowedInts(key: Ope.PrivKey) =
@@ -26,4 +26,6 @@ object TestUtils {
     ns <- encryptedList(maxSize-1)(keys)
   } yield n :: ns
 }
+
+object TestUtils extends ScalaCheckGen
 
