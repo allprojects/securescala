@@ -4,6 +4,7 @@ import scala.language.higherKinds
 
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scalaz.std.list._
 
@@ -14,8 +15,6 @@ import crypto.cipher._
 import crypto.remote._
 
 import org.scalameter.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 trait InterpreterBench[F[_]] extends CryptoCheck {
   this: PerformanceTest =>
