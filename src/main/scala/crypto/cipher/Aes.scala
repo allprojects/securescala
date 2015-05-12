@@ -15,12 +15,6 @@ object Aes {
 
   private val algorithmString = "AES/ECB/PKCS5Padding"
 
-  private lazy val cipherEncrypt: Cipher =
-    Cipher.getInstance(algorithmString, "SunJCE")
-
-  private lazy val cipherDecrypt: Cipher =
-    Cipher.getInstance(algorithmString, "SunJCE")
-
   case class Encryptor(f: Array[Byte] => Array[Byte]) extends Function1[Array[Byte],Array[Byte]]{
     def apply(x: Array[Byte]) = f(x)
     def apply(x: BigInt) = f(x.toByteArray)
@@ -41,8 +35,8 @@ object Aes {
     (KeyGenerator.getInstance("AES") <| (_.init(keySize.bits))).generateKey
 
   private def encrypt(priv: PrivKey)(input: Array[Byte]): Array[Byte] =
-    (cipherEncrypt <| (_.init(Cipher.ENCRYPT_MODE, priv))).doFinal(input)
+    (Cipher.getInstance(algorithmString, "SunJCE") <| (_.init(Cipher.ENCRYPT_MODE, priv))).doFinal(input)
 
   private def decrypt(priv: PrivKey)(input: Array[Byte]): Array[Byte] =
-    (cipherDecrypt <| (_.init(Cipher.DECRYPT_MODE, priv))).doFinal(input)
+    (Cipher.getInstance(algorithmString, "SunJCE") <| (_.init(Cipher.DECRYPT_MODE, priv))).doFinal(input)
 }
