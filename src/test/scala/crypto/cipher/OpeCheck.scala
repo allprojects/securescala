@@ -31,5 +31,11 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
       val \/-(ea) = encrypt(a)
       val \/-(eb) = encrypt(b)
       a ?|? b == ea ?|? eb
-  }
+    }
+
+  property("generator produces valid numbers") =
+    forAll(generators.encryptedNumber) { (x: Enc) =>
+      val decrypted = Common.decrypt(keyRing.priv)(x)
+      encrypt(decrypted).isRight
+    }
 }
