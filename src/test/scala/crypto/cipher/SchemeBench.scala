@@ -25,7 +25,7 @@ trait SchemeBench[A] { this: PerformanceTest =>
   }
 }
 
-object AesBench extends PerformanceTest.Quickbenchmark with SchemeBench[Array[Byte]] {
+object AesBench extends PerformanceTest.OfflineReport with SchemeBench[Array[Byte]] {
   val name = "AES"
   def sizes = Gen.range("sizes")(5000,20000,5000)
 
@@ -35,7 +35,7 @@ object AesBench extends PerformanceTest.Quickbenchmark with SchemeBench[Array[By
   val decrypt = (x: Array[Byte]) => BigInt(aesDecrypt(x))
 }
 
-object OpeBench extends PerformanceTest.Quickbenchmark with SchemeBench[BigInt] {
+object OpeBench extends PerformanceTest.OfflineReport with SchemeBench[BigInt] {
   val name = "OPE"
   def sizes = Gen.enumeration("sizes")(1, 5, 10, 15)
 
@@ -46,7 +46,7 @@ object OpeBench extends PerformanceTest.Quickbenchmark with SchemeBench[BigInt] 
 }
 
 object ElGamalBench
-    extends PerformanceTest.Quickbenchmark
+    extends PerformanceTest.OfflineReport
     with SchemeBench[(BigInt,BigInt)] {
 
   val name = "ElGamal"
@@ -58,7 +58,7 @@ object ElGamalBench
   val decrypt = (x: (BigInt,BigInt)) => elGamalDec(x._1,x._2)
 }
 
-object PaillierBench extends PerformanceTest.Quickbenchmark with SchemeBench[BigInt] {
+object PaillierBench extends PerformanceTest.OfflineReport with SchemeBench[BigInt] {
   val name = "Paillier"
   def sizes = Gen.enumeration("sizes")(1, 5, 10, 15)
 

@@ -58,7 +58,7 @@ trait InterpreterBench[F[_]] extends CryptoCheck {
 }
 
 object RemoteInterpreterBench
-    extends PerformanceTest.Quickbenchmark
+    extends PerformanceTest.OfflineReport
     with InterpreterBench[Future] {
 
   val cryptoService = new CryptoServiceImpl(keyRing)
@@ -69,7 +69,7 @@ object RemoteInterpreterBench
 }
 
 object LocalInterpreterBench
-    extends PerformanceTest.Quickbenchmark
+    extends PerformanceTest.OfflineReport
     with InterpreterBench[λ[α=>α]] {
 
   val interpreter = LocalInterpreter(keyRing)
