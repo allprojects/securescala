@@ -1,6 +1,9 @@
 package crypto.cipher
 
 import java.security.SecureRandom
+import scala.util.Try
+
+import scalaz._
 
 class OpeNative { // `class` required for javah/native interface
   @native def nativeEncrypt(
@@ -19,7 +22,7 @@ object Ope {
 
   private val instance = new OpeNative
 
-  case class Encryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
+  case class Encryptor(f: BigInt => (String \/ BigInt)) extends Function1[BigInt,String \/ BigInt]{
     def apply(x: BigInt) = f(x)
   }
 
@@ -37,8 +40,18 @@ object Ope {
   private def generateKey(bits: Int, plainBits: Int, cipherBits: Int): PrivKey =
     PrivKey(BigInt(bits, new SecureRandom).toString(32), bits, plainBits, cipherBits)
 
-  def encrypt(priv: PrivKey)(input: BigInt): BigInt =
-    BigInt(instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
+  def encrypt(priv: PrivKey)(input: BigInt): String \/ BigInt = input match {
+    case x if x < 0 => -\/("OPE: Input is negative")
+    case x if x > x.pow(priv.plainBits-1) - 1 => -\/("OPE: Number too big")
+    case x =>
+      val encrypted = Try {
+        instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
+      } match {
+        case scala.util.Success(enc) => \/-(enc)
+        case scala.util.Failure(e) => -\/(e)
+      }
+      encrypted.leftMap(_.getMessage).map(BigInt(_))
+  }
 
   def decrypt(priv: PrivKey)(input: BigInt): BigInt =
     BigInt(instance.nativeDecrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
