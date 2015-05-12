@@ -55,7 +55,8 @@ object Ope {
       encrypted.leftMap(e => "OPE: " + e.getMessage).map(BigInt(_))
   }
 
-  def decrypt(priv: PrivKey)(input: BigInt): BigInt =
+  def decrypt(priv: PrivKey)(input: BigInt): BigInt = this.synchronized {
     BigInt(instance.nativeDecrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
+  }
 
 }
