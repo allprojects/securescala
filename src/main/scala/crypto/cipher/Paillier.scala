@@ -3,8 +3,10 @@ package crypto.cipher
 import scala.util._
 import java.security.SecureRandom
 
+import scalaz._
+
 object Paillier {
-  case class Encryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
+  case class Encryptor(f: BigInt => String \/ BigInt) extends Function1[BigInt,String \/ BigInt]{
     def apply(x: BigInt) = f(x)
   }
 
@@ -45,9 +47,13 @@ object Paillier {
     }.toOption
   }
 
-  def encrypt(pub: PubKey)(input: BigInt): BigInt = {
-    val r = BigInt(pub.bits, new Random)
-    pub.g.modPow(input, pub.nSquare) * r.modPow(pub.n,pub.nSquare) mod pub.nSquare
+  def encrypt(pub: PubKey)(input: BigInt): String \/ BigInt = {
+    if (input >= pub.nSquare) {
+      -\/("Paillier: Input too big")
+    } else {
+      val r = BigInt(pub.bits, new Random)
+      \/-(pub.g.modPow(input, pub.nSquare) * r.modPow(pub.n,pub.nSquare) mod pub.nSquare)
+    }
   }
 
   private def decrypt(pub: PubKey, priv: PrivKey)(input: BigInt): BigInt = {
