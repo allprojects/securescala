@@ -20,7 +20,7 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
 
   def interpret[A] = _.resume match {
 
-    case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
+    case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs*rhs))
     case -\/(Mult(lhs,rhs,k)) => for {
       lhs_ <- service.toElGamal(lhs)
       rhs_ <- service.toElGamal(rhs)
