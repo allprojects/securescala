@@ -5,23 +5,25 @@ import org.scalacheck.Properties
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.forAll
 
-import crypto.TestUtils._
+import scalaz._
 
-object ElGamalCheck extends Properties("ElGamal") {
+import crypto._
+
+object ElGamalCheck extends Properties("ElGamal") with CryptoCheck {
   val (encrypt,decrypt,pub) = ElGamal.create(1024)
 
   property("decrypt · encrypt = id for positive ints") =
     forAll(posInt) { (input: BigInt) =>
-      decrypt(encrypt(input)) == input
+      encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
   property("decrypt · encrypt = id (with modulus)") = forAll { (input: BigInt) =>
-    decrypt(encrypt(input)) == input.mod(pub.p)
+    encrypt(input).map(decrypt.apply) == \/-(input.mod(pub.p))
   }
 
   property("multiplicative homomorphic") = forAll { (a: BigInt, b: BigInt) =>
-    val (ca1,ca2) = encrypt(a)
-    val (cb1,cb2) = encrypt(b)
+    val \/-((ca1,ca2)) = encrypt(a)
+    val \/-((cb1,cb2)) = encrypt(b)
 
     decrypt(ca1 * cb1, ca2 * cb2).mod(pub.p) == (a * b).mod(pub.p)
   }

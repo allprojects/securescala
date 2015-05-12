@@ -24,6 +24,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
   }
 
   def interpret[A]: CryptoM[A] => A = _.resume match {
+
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
     case -\/(Mult(lhs,rhs,k)) =>
       val lhs2@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, lhs)
@@ -32,10 +33,9 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
 
     case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
     case -\/(Plus(lhs,rhs,k)) =>
-      val PaillierEnc(lhs_) = Common.convert(keyRing)(Additive, lhs)
-      val PaillierEnc(rhs_) = Common.convert(keyRing)(Additive, rhs)
-      val r = PaillierEnc((lhs_ * rhs_) mod keyRing.pub.paillier.nSquare)
-      interpret(k(r))
+      val lhs2@PaillierEnc(_) = Common.convert(keyRing)(Additive, lhs)
+      val rhs2@PaillierEnc(_) = Common.convert(keyRing)(Additive, rhs)
+      interpret(k(lhs2 + rhs2))
 
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
     case -\/(Compare(lhs,rhs,k)) =>
@@ -72,13 +72,13 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
     case -\/(Sub(lhs,rhs,k)) =>
       val plainLhs = Common.decrypt(keyRing.priv)(lhs)
       val plainRhs = Common.decrypt(keyRing.priv)(rhs)
-      val r = Common.encryptPub(Additive, keyRing.pub)(plainLhs - plainRhs)
+      val r = Common.encrypt(Additive, keyRing)(plainLhs - plainRhs)
       interpret(k(r))
 
     case -\/(Div(lhs,rhs,k)) =>
       val plainLhs = Common.decrypt(keyRing.priv)(lhs)
       val plainRhs = Common.decrypt(keyRing.priv)(rhs)
-      val r = Common.encryptPub(Additive, keyRing.pub)(plainLhs / plainRhs)
+      val r = Common.encrypt(Additive, keyRing)(plainLhs / plainRhs)
       interpret(k(r))
 
     case -\/(Embed(p,k)) =>

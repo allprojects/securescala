@@ -2,8 +2,10 @@ package crypto.cipher
 
 import java.security.SecureRandom
 
+import scalaz._
+
 object ElGamal {
-  case class Encryptor(f: BigInt => (BigInt,BigInt)) extends Function1[BigInt,(BigInt,BigInt)]{
+  case class Encryptor(f: BigInt => String \/ (BigInt,BigInt)) extends Function1[BigInt,String \/ (BigInt,BigInt)]{
     def apply(x: BigInt) = f(x)
   }
 
@@ -43,13 +45,17 @@ object ElGamal {
     }
   }
 
-  def encrypt(pub: PubKey)(input: BigInt): (BigInt,BigInt) = {
-    // TODO check if input size is too big
-    val rand = BigInt(pub.bits, new SecureRandom)
-    val c1 = pub.g.modPow(rand, pub.p)
-    val s = pub.h.modPow(rand,pub.p)
-    val c2 = (input * s).mod(pub.p)
-    (c1,c2)
+  def encrypt(pub: PubKey)(input: BigInt): String \/ (BigInt,BigInt) = {
+    if (input.bitLength >= pub.p.bitLength / 2) {
+      -\/("ElGamal: Input too big")
+    } else {
+      val rand = BigInt(pub.bits, new SecureRandom)
+      val c1 = pub.g.modPow(rand, pub.p)
+      val s = pub.h.modPow(rand,pub.p)
+      val c2 = (input * s).mod(pub.p)
+      \/-((c1,c2))
+    }
+
   }
 
   private def decrypt(pub: PubKey, priv: PrivKey)(c1: BigInt, c2: BigInt): BigInt = {

@@ -13,25 +13,26 @@ import scala.concurrent.duration._
 import crypto._
 import crypto.remote._
 import crypto.cipher._
-import crypto.TestUtils._
 
 import scalaz.syntax.traverse._
 import scalaz.std.list._
 
-trait InterpreterCheck[F[_]] { this: Properties =>
-  val keyRing = KeyRing.create
+trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   val interpreter: CryptoInterpreter[F]
   def finalize[A](x: F[A]): A
 
   def interpret[A](p: CryptoM[A]): A = finalize { interpreter.interpret(p) }
 
-    property("sum of a list") =
-    forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
+  val zero = Common.zero(keyRing)
+  val one = Common.one(keyRing)
+
+  property("sum of a list") =
+    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
       val decryptThenSum = xs.map(Common.decrypt(keyRing.priv)).sum
 
       val sumThenDecrypt = Common.decrypt(keyRing.priv) {
         interpret {
-          xs.traverse(toPaillier).map(_.reduce(_+_)).monadic
+          xs.traverse(toPaillier).map(_.reduce(_+_))
         }
       }
 
@@ -39,34 +40,40 @@ trait InterpreterCheck[F[_]] { this: Properties =>
     }
 
   property("product of a list") =
-    forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
       val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {
-        interpret {
-          xs.traverse(toGamal).map(_.reduce(_*_)).monadic
-        }
+        interpret { productA(one)(xs) }
       }
 
       decryptThenProd == prodThenDecrypt
     }
 
   property("monadic sum == applicative sum") =
-    forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
-      val zero@PaillierEnc(_) = Common.encryptPub(Additive, keyRing.pub)(0)
+    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
 
       val monadicSum = interpret { sumM(zero)(xs) }
 
-      val applicativeSum = interpret { sumA(zero)(xs).monadic }
+      val applicativeSum = interpret { sumA(zero)(xs) }
 
       Common.decrypt(keyRing.priv)(monadicSum) == Common.decrypt(keyRing.priv)(applicativeSum)
+    }
+
+  property("monadic product == applicative product") =
+    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
+      val monadicProduct = interpret {productM(one)(xs) }
+
+      val applicativeProduct = interpret { productA(one)(xs) }
+
+      Common.decrypt(keyRing.priv)(monadicProduct) == Common.decrypt(keyRing.priv)(applicativeProduct)
     }
 
   property("encrypted sorting") = {
     // Integers can not be larger than bit size of ope key
     val list = for {
       n <- Gen.choose(1,6)
-      xs <- Gen.listOfN(n, encryptedNumber(keyRing)(opeAllowedInts(keyRing.priv.opePriv)))
+      xs <- Gen.listOfN(n, generators.encryptedNumber)
     } yield xs
 
     forAll(list) { (xs: List[Enc]) =>

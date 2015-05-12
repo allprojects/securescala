@@ -4,6 +4,7 @@ import scala.language.higherKinds
 
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scalaz.std.list._
 
@@ -11,22 +12,18 @@ import org.scalacheck.{Gen => SCGen}
 
 import crypto._
 import crypto.cipher._
-import crypto.TestUtils._
 import crypto.remote._
 
 import org.scalameter.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
-trait InterpreterBench[F[_]] {
+trait InterpreterBench[F[_]] extends CryptoCheck {
   this: PerformanceTest =>
 
-  val keyRing = KeyRing.create
-  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing)(0)
-  val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(0)
+  val zero = Common.zero(keyRing)
+  val one = Common.one(keyRing)
 
   val sizes = Gen.range("size")(10,50,20)
-  val lists = for (size <- sizes) yield SCGen.listOfN(size, encryptedNumber(keyRing)(TestUtils.posInt)).sample.get
+  val lists = for (size <- sizes) yield SCGen.listOfN(size, generators.encryptedNumber).sample.get
 
   // To be implemented
   def finalize[A]: F[A] => A
@@ -61,7 +58,7 @@ trait InterpreterBench[F[_]] {
 }
 
 object RemoteInterpreterBench
-    extends PerformanceTest.Quickbenchmark
+    extends PerformanceTest.OfflineReport
     with InterpreterBench[Future] {
 
   val cryptoService = new CryptoServiceImpl(keyRing)
@@ -72,7 +69,7 @@ object RemoteInterpreterBench
 }
 
 object LocalInterpreterBench
-    extends PerformanceTest.Quickbenchmark
+    extends PerformanceTest.OfflineReport
     with InterpreterBench[λ[α=>α]] {
 
   val interpreter = LocalInterpreter(keyRing)
