@@ -2,7 +2,7 @@ package crypto.cipher
 
 import java.security.SecureRandom
 
-class OpeNative { // trait required for javah/native interface
+class OpeNative { // `class` required for javah/native interface
   @native def nativeEncrypt(
     password: String, plaintext: String, plainTextBits: Int, cipherTextBits: Int): String
 
@@ -11,8 +11,8 @@ class OpeNative { // trait required for javah/native interface
 }
 
 object Ope {
-  val home = System.getProperty("user.home");
-  System.load(home + "/libope.so");
+  val home = System.getProperty("user.home")
+  System.load(home + "/libope.so")
 
   private val numPlainTextBits = 64
   private val numCipherTextBits = 96
