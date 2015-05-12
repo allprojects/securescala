@@ -29,7 +29,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
       val sumThenDecrypt = Common.decrypt(keyRing.priv) {
         interpret {
-          xs.traverse(toPaillier).map(_.reduce(_+_)).monadic
+          xs.traverse(toPaillier).map(_.reduce(_+_))
         }
       }
 
@@ -42,7 +42,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {
         interpret {
-          xs.traverse(toGamal).map(_.reduce(_*_)).monadic
+          xs.traverse(toGamal).map(_.reduce(_*_))
         }
       }
 
@@ -55,7 +55,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
       val monadicSum = interpret { sumM(zero)(xs) }
 
-      val applicativeSum = interpret { sumA(zero)(xs).monadic }
+      val applicativeSum = interpret { sumA(zero)(xs) }
 
       Common.decrypt(keyRing.priv)(monadicSum) == Common.decrypt(keyRing.priv)(applicativeSum)
     }
