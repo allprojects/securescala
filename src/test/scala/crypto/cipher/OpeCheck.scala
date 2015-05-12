@@ -9,10 +9,13 @@ import org.scalacheck.Prop.BooleanOperators
 import scalaz.syntax.order._
 import scalaz.std.math.bigInt._
 
+import crypto._
+
+import TestUtils._
+
 object OpeCheck extends Properties("OPE") {
   val (encrypt,decrypt,key) = Ope.createNum(128)
 
-  val allowedBigInts = arbitrary[BigInt] retryUntil (x => x >=0 && x.bitLength <= key.plainBits)
 
   property("decrypt · encrypt = id (Int)") =
     forAll(arbitrary[Int].retryUntil(_ >= 0) ){ (input: Int) =>
@@ -20,12 +23,13 @@ object OpeCheck extends Properties("OPE") {
     }
 
   property("decrypt · encrypt = id (limited BigInt)") =
-    forAll(allowedBigInts) { (input: BigInt) =>
+    forAll(opeAllowedInts(key)) { (input: BigInt) =>
       decrypt(encrypt(input)) == input
     }
 
-  property("preserves ordering") = forAll(allowedBigInts,allowedBigInts) { (a: BigInt, b: BigInt) =>
-    a ?|? b == encrypt(a) ?|? encrypt(b)
+  property("preserves ordering") =
+    forAll(opeAllowedInts(key),opeAllowedInts(key)) { (a: BigInt, b: BigInt) =>
+      a ?|? b == encrypt(a) ?|? encrypt(b)
   }
 
 }
