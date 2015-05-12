@@ -6,6 +6,7 @@ import akka.pattern.ask
 import scalaz._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
+import scalaz.std.scalaFuture._
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -15,6 +16,7 @@ import crypto.remote._
 
 case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: ExecutionContext)
     extends CryptoInterpreter[Future] {
+
   def interpret[A] = _.resume match {
 
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
@@ -79,6 +81,13 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
     case \/-(x) =>
       Future.successful(x)
   }
+
+  def interpretA[A](p: Crypto[A]): Future[A] = {
+    p.foldMap(new (CryptoF ~> Future) {
+      // Peform regular interpretation inside future
+      def apply[A](fa: CryptoF[A]): Future[A] = interpret(Free.liftF(fa))
+    })
+  }
 }
 
 object ActorInterpretation extends App {
@@ -86,9 +95,11 @@ object ActorInterpretation extends App {
 
   val system = ActorSystem("CryptoService")
 
-  val cryptoService: CryptoServicePlus =
-    TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-      new CryptoServiceImpl(keyRing)), "cryptoServer")
+  val cryptoService = new CryptoServiceImpl(keyRing)
+
+  // val cryptoService: CryptoServicePlus =
+  //   TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
+  //     new CryptoServiceImpl(keyRing)), "cryptoServer")
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val remoteInterpreter = new RemoteInterpreter(cryptoService)
