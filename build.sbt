@@ -23,6 +23,10 @@ scalacOptions ++= Seq(
   "-Ywarn-value-discard"
 )
 
+libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6"
+
+testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+
 libraryDependencies += "org.scalaz" % "scalaz-core_2.11" % "7.1.1"
 
 libraryDependencies += "commons-codec" % "commons-codec" % "1.10"
