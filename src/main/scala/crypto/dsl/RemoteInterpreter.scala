@@ -4,9 +4,10 @@ import akka.actor._
 import akka.pattern.ask
 
 import scalaz._
+import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
-import scalaz.std.scalaFuture._
+import scalaz.syntax.traverse._
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -108,9 +109,9 @@ object ActorInterpretation extends App {
 
   import crypto.cipher._
   import scalaz.std.list._
-  val encryptedList: List[Enc] = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keyRing.pub))
+  val \/-(encryptedList) = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keyRing.pub)).sequenceU
 
-  val zero@PaillierEnc(_) = Common.encryptPub(Additive, keyRing.pub)(0)
+  val \/-(zero@PaillierEnc(_)) = Common.encryptPub(Additive, keyRing.pub)(0)
 
   val result = remoteInterpreter.interpret {
     sumA(zero)(encryptedList)

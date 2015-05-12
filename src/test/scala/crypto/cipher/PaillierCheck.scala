@@ -5,6 +5,8 @@ import org.scalacheck.Properties
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.forAll
 
+import scalaz._
+
 import crypto.TestUtils._
 
 object PaillierCheck extends Properties("Paillier") {
@@ -12,15 +14,17 @@ object PaillierCheck extends Properties("Paillier") {
 
   property("decrypt · encrypt = id for positive ints") =
     forAll(posInt) { (input: BigInt) =>
-      decrypt(encrypt(input)) == input
+      encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
   property("decrypt · encrypt = id (with modulus)") = forAll { (input: BigInt) =>
-    decrypt(encrypt(input)) == input.mod(pub.n)
+    encrypt(input).map(decrypt.apply) == \/-(input.mod(pub.n))
   }
 
   property("additive homomorphic") = forAll { (a: BigInt, b: BigInt) =>
-    decrypt((encrypt(a) * encrypt(b)) mod pub.nSquare) == (a + b).mod(pub.n)
+    val \/-(ea) = encrypt(a)
+    val \/-(eb) = encrypt(b)
+    decrypt((ea * eb) mod pub.nSquare) == (a + b).mod(pub.n)
   }
 
 }

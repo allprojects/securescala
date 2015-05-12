@@ -6,6 +6,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.BooleanOperators
 
+import scalaz._
 import scalaz.syntax.order._
 import scalaz.std.math.bigInt._
 
@@ -19,17 +20,18 @@ object OpeCheck extends Properties("OPE") {
 
   property("decrypt · encrypt = id (Int)") =
     forAll(arbitrary[Int].retryUntil(_ >= 0) ){ (input: Int) =>
-      decrypt(encrypt(input)) == input
+      encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
   property("decrypt · encrypt = id (limited BigInt)") =
     forAll(opeAllowedInts(key)) { (input: BigInt) =>
-      decrypt(encrypt(input)) == input
+      encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
   property("preserves ordering") =
     forAll(opeAllowedInts(key),opeAllowedInts(key)) { (a: BigInt, b: BigInt) =>
-      a ?|? b == encrypt(a) ?|? encrypt(b)
+      val \/-(ea) = encrypt(a)
+      val \/-(eb) = encrypt(b)
+      a ?|? b == ea ?|? eb
   }
-
 }

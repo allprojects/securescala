@@ -37,8 +37,8 @@ object Repl {
 
   def runProgram[A](p: CryptoM[A]): A = locally.interpret(p)
 
-  val zero@PaillierEnc(_) = Common.encryptPub(Additive, keyRing.pub)(0)
-  val one@GamalEnc(_,_) = Common.encryptPub(Multiplicative, keyRing.pub)(1)
+  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing)(0)
+  val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(1)
 }
 
 object SumExample extends App {
@@ -47,7 +47,8 @@ object SumExample extends App {
   val randomNumbers = List.fill(20)(Random.nextInt.abs).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
-  val encryptedList: List[Enc] = randomNumbers.map(Common.encryptPub(Additive, keyRing.pub))
+  val encryptedList: List[Enc] =
+    randomNumbers.map(Common.encrypt(Additive, keyRing))
 
   val sumResult = Repl.runProgram(sumA(zero)(encryptedList))
 
@@ -61,7 +62,8 @@ object MultExample extends App {
   val randomNumbers = List.fill(5)(Random.nextInt.abs+1).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
-  val encryptedList: List[Enc] = randomNumbers.map(Common.encryptPub(Multiplicative, keyRing.pub))
+  val encryptedList: List[Enc] =
+    randomNumbers.map(Common.encrypt(Multiplicative, keyRing))
 
   val productResult: Enc = Repl.runProgram(productA(one)(encryptedList))
 
@@ -73,7 +75,7 @@ object FactExample extends App {
   import ExamplePrograms._
   import Repl._
 
-  val six = Common.encryptPub(Multiplicative, keyRing.pub)(6)
+  val six = Common.encrypt(Multiplicative, keyRing)(6)
   val result = Repl.runProgram(factorial(six))
 
   println(s"Result of factorial(6) is ${decryption(result)}")
@@ -86,7 +88,8 @@ object AverageExample extends App {
   val randomNumbers = List.fill(5)(Random.nextInt.abs)
   println(randomNumbers)
 
-  val encNums = randomNumbers.map(Common.encryptPub(Additive, keyRing.pub) compose BigInt.apply)
+  val encNums: List[Enc] =
+    randomNumbers.map(Common.encrypt(Additive, keyRing) compose BigInt.apply)
 
   val (sum,len) = Repl.runProgram(sumAndLength(zero)(encNums))
   val resultEnc = Common.decrypt(keyRing.priv)(sum) / Common.decrypt(keyRing.priv)(len)
@@ -101,7 +104,7 @@ object ParallelExample extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   // List.fill(500)(Random.nextInt(1000).abs).map(BigInt(_))
-  val encryptedList: List[Enc] = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keyRing.pub))
+  val encryptedList: List[Enc] = SampleData.fixed1.map(Common.encrypt(Multiplicative, keyRing))
 
   // parallel version
   val startPar = System.currentTimeMillis

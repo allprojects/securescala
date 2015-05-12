@@ -53,7 +53,7 @@ trait InterpreterCheck[F[_]] { this: Properties =>
 
   property("monadic sum == applicative sum") =
     forAll(nonEmptyEncryptedList(5)(keyRing)) { (xs: List[Enc]) =>
-      val zero@PaillierEnc(_) = Common.encryptPub(Additive, keyRing.pub)(0)
+      val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing)(0)
 
       val monadicSum = interpret { sumM(zero)(xs) }
 

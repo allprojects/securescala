@@ -53,14 +53,14 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
     val plainLhs = Common.decrypt(keyRing.priv)(lhs)
     val plainRhs = Common.decrypt(keyRing.priv)(rhs)
     val result = plainLhs / plainRhs
-    Common.encryptPub(Additive, keyRing.pub)(result)
+    Common.encrypt(Additive, keyRing)(result)
   }
 
   override def subtract(lhs: Enc, rhs: Enc): Future[Enc] = Future.successful {
     val plainLhs = Common.decrypt(keyRing.priv)(lhs)
     val plainRhs = Common.decrypt(keyRing.priv)(rhs)
     val result = plainLhs - plainRhs
-    Common.encryptPub(Additive, keyRing.pub)(result)
+    Common.encrypt(Additive, keyRing)(result)
   }
 }
 
