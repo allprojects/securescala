@@ -14,11 +14,8 @@ import crypto.cipher._
 // - This is equivalent to `type Identity[A] = A` enabling the
 //   interpreter to return a type that is not higher kinded
 case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>α]] {
-  val KeyRing(pub,priv) = keyRing
-
   // One possible optimization is to use futures
-  def interpPar[A](p: Crypto[A])(
-    implicit executionContext: ExecutionContext): Future[A] = {
+  def interpPar[A](p: Crypto[A])(implicit C: ExecutionContext): Future[A] = {
 
     p.foldMap(new (CryptoF ~> Future) {
       // Peform regular interpretation inside future
@@ -37,7 +34,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
     case -\/(Plus(lhs,rhs,k)) =>
       val PaillierEnc(lhs_) = Common.convert(keyRing)(Additive, lhs)
       val PaillierEnc(rhs_) = Common.convert(keyRing)(Additive, rhs)
-      val r = PaillierEnc((lhs_ * rhs_) mod pub.paillier.nSquare)
+      val r = PaillierEnc((lhs_ * rhs_) mod keyRing.pub.paillier.nSquare)
       interpret(k(r))
 
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
@@ -73,15 +70,15 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
     // Offline operations
 
     case -\/(Sub(lhs,rhs,k)) =>
-      val plainLhs = Common.decrypt(priv)(lhs)
-      val plainRhs = Common.decrypt(priv)(rhs)
-      val r = Common.encryptPub(Additive, pub)(plainLhs - plainRhs)
+      val plainLhs = Common.decrypt(keyRing.priv)(lhs)
+      val plainRhs = Common.decrypt(keyRing.priv)(rhs)
+      val r = Common.encryptPub(Additive, keyRing.pub)(plainLhs - plainRhs)
       interpret(k(r))
 
     case -\/(Div(lhs,rhs,k)) =>
-      val plainLhs = Common.decrypt(priv)(lhs)
-      val plainRhs = Common.decrypt(priv)(rhs)
-      val r = Common.encryptPub(Additive, pub)(plainLhs / plainRhs)
+      val plainLhs = Common.decrypt(keyRing.priv)(lhs)
+      val plainRhs = Common.decrypt(keyRing.priv)(rhs)
+      val r = Common.encryptPub(Additive, keyRing.pub)(plainLhs / plainRhs)
       interpret(k(r))
 
     case -\/(Embed(p,k)) =>
