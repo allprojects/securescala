@@ -26,10 +26,10 @@ object Common {
       case Additive => Paillier.encrypt(keys.paillier)(input).map(PaillierEnc(_))
       case Multiplicative =>
         ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => GamalEnc(x,y)}
-  }
+    }
 
   def encrypt(s: Scheme, keys: KeyRing): BigInt => Enc = input =>
-    encryptChecked(s,keys)(input).valueOr(sys.error)
+  encryptChecked(s,keys)(input).valueOr(sys.error)
 
   def encryptChecked(s: Scheme, keys: KeyRing): BigInt => String \/ Enc = input => s match {
     case Additive => encryptPub(Additive, keys.pub)(input)
@@ -52,7 +52,14 @@ object Common {
     case (Comparable,in) => keys.priv.opeIntEnc(decrypt(keys.priv)(in)).map(OpeEnc(_))
   }
 
-  def convert(keys: KeyRing): (Scheme, Enc) => Enc = (scheme,enc) =>
-    safeConvert(keys)(scheme,enc).valueOr(sys.error)
+  def convert(keys: KeyRing): (Scheme, Enc) => Enc =
+    (scheme,enc) => safeConvert(keys)(scheme,enc).valueOr(sys.error)
 
+  def zero(keys: KeyRing): PaillierEnc = {
+    Common.encrypt(Additive, keys)(0).asInstanceOf[PaillierEnc]
+  }
+
+  def one(keys: KeyRing): GamalEnc = {
+    Common.encrypt(Multiplicative, keys)(1).asInstanceOf[GamalEnc]
+  }
 }

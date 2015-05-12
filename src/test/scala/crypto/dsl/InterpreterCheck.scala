@@ -23,6 +23,9 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
   def interpret[A](p: CryptoM[A]): A = finalize { interpreter.interpret(p) }
 
+  val zero = Common.zero(keyRing)
+  val one = Common.one(keyRing)
+
   property("sum of a list") =
     forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
       val decryptThenSum = xs.map(Common.decrypt(keyRing.priv)).sum
@@ -39,7 +42,6 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   property("product of a list") =
     forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
       val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
-      val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(0)
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {
         interpret { productA(one)(xs) }
@@ -50,7 +52,6 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
   property("monadic sum == applicative sum") =
     forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
-      val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing)(0)
 
       val monadicSum = interpret { sumM(zero)(xs) }
 
@@ -61,8 +62,6 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
   property("monadic product == applicative product") =
     forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
-      val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(0)
-
       val monadicProduct = interpret {productM(one)(xs) }
 
       val applicativeProduct = interpret { productA(one)(xs) }

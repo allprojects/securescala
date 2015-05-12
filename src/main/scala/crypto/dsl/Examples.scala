@@ -37,8 +37,8 @@ object Repl {
 
   def runProgram[A](p: CryptoM[A]): A = locally.interpret(p)
 
-  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing)(0)
-  val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(1)
+  val zero = Common.zero(keyRing)
+  val one = Common.one(keyRing)
 }
 
 object SumExample extends App {

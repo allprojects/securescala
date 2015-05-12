@@ -20,8 +20,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait InterpreterBench[F[_]] extends CryptoCheck {
   this: PerformanceTest =>
 
-  val zero@PaillierEnc(_) = Common.encrypt(Additive, keyRing)(0)
-  val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(0)
+  val zero = Common.zero(keyRing)
+  val one = Common.one(keyRing)
 
   val sizes = Gen.range("size")(10,50,20)
   val lists = for (size <- sizes) yield SCGen.listOfN(size, generators.encryptedNumber).sample.get
