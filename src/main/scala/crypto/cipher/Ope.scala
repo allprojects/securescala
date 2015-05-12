@@ -45,7 +45,9 @@ object Ope {
     case x if x > BigInt(2).pow(priv.plainBits-1) - 1 => -\/("OPE: Input is too big")
     case x =>
       val encrypted = Try {
-        instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
+        this.synchronized {
+          instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
+        }
       } match {
         case scala.util.Success(enc) => \/-(enc)
         case scala.util.Failure(e) => -\/(e)
