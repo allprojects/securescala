@@ -1,5 +1,10 @@
 package crypto.cipher
 
+import scala.concurrent.duration._
+import scala.concurrent._
+
+import org.scalatest._
+
 import org.scalacheck.Gen
 import org.scalacheck.Properties
 import org.scalacheck.Arbitrary.arbitrary
@@ -38,4 +43,21 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
       val decrypted = Common.decrypt(keyRing.priv)(x)
       encrypt(decrypted).isRight
     }
+}
+
+class OpeSpec extends WordSpec with Matchers {
+  val keys = KeyRing.create
+
+  "Ope encryption" can {
+    "be used in a thread safe way" in {
+      import scala.concurrent.ExecutionContext.Implicits.global
+      val list: List[BigInt] = (1 to 100).map(BigInt(_)).toList
+
+      val result = Future.sequence(
+        list.map(x => Future(Common.encrypt(Comparable, keys)(x)))).
+        map(_.map(Common.decrypt(keys.priv)))
+
+      Await.result(result, Duration.Inf) should equal(list)
+    }
+  }
 }
