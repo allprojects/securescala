@@ -60,6 +60,17 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
       Common.decrypt(keyRing.priv)(monadicSum) == Common.decrypt(keyRing.priv)(applicativeSum)
     }
 
+  property("monadic product == applicative product") =
+    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
+      val one@GamalEnc(_,_) = Common.encrypt(Multiplicative, keyRing)(0)
+
+      val monadicProduct = interpret {productM(one)(xs) }
+
+      val applicativeProduct = interpret { productA(one)(xs) }
+
+      Common.decrypt(keyRing.priv)(monadicProduct) == Common.decrypt(keyRing.priv)(applicativeProduct)
+    }
+
   property("encrypted sorting") = {
     // Integers can not be larger than bit size of ope key
     val list = for {
