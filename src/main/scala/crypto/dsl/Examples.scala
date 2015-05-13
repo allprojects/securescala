@@ -13,15 +13,11 @@ import crypto.cipher._
 import crypto.dsl.Implicits._
 
 object ExamplePrograms {
+
   def factorial(n: Enc): CryptoM[Enc] = for {
     zero <- encrypt(Multiplicative)(0)
-    r <- embed(equal(n,zero)).ifM(encrypt(Multiplicative)(1),
-      for {
-        one <- encrypt(Multiplicative)(1)
-        newN <- subtract(n,one)
-        intermediateR <- factorial(newN)
-        result <- multiply(n,intermediateR)
-      } yield result)
+    one <- encrypt(Multiplicative)(1)
+    r <- embed(n =:= zero).ifM(Free.point(one), (n-one).flatMap(factorial).flatMap(_*n))
   } yield r
 
   def sumAndLength[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[(Enc,Enc)] =
