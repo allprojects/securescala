@@ -28,8 +28,15 @@ object Common {
         ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => GamalEnc(x,y)}
     }
 
-  def encrypt(s: Scheme, keys: KeyRing): BigInt => Enc = input =>
-  encryptChecked(s,keys)(input).valueOr(sys.error)
+  def depEncrypt(s: Scheme, keys: KeyRing)(in: BigInt): s.Out = s match {
+    case Additive => encrypt(s,keys)(in).asInstanceOf[s.Out]
+    case Multiplicative => encrypt(s,keys)(in).asInstanceOf[s.Out]
+    case Equality => encrypt(s,keys)(in).asInstanceOf[s.Out]
+    case Comparable => encrypt(s,keys)(in).asInstanceOf[s.Out]
+  }
+
+  def encrypt(s: Scheme, keys: KeyRing): BigInt => Enc =
+    input => encryptChecked(s,keys)(input).valueOr(sys.error)
 
   def encryptChecked(s: Scheme, keys: KeyRing): BigInt => String \/ Enc = input => s match {
     case Additive => encryptPub(Additive, keys.pub)(input)
