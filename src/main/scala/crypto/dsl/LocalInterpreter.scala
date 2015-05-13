@@ -1,11 +1,8 @@
 package crypto.dsl
 
 import scalaz._
-import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
-
-import scala.concurrent._
 
 import crypto._
 import crypto.cipher._
@@ -14,15 +11,6 @@ import crypto.cipher._
 // - This is equivalent to `type Identity[A] = A` enabling the
 //   interpreter to return a type that is not higher kinded
 case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>α]] {
-  // One possible optimization is to use futures
-  def interpPar[A](p: Crypto[A])(implicit C: ExecutionContext): Future[A] = {
-
-    p.foldMap(new (CryptoF ~> Future) {
-      // Peform regular interpretation inside future
-      def apply[A](fa: CryptoF[A]): Future[A] = Future { interpret(Free.liftF(fa)) }
-    })
-  }
-
   private def doConvert(s: Scheme, in: Enc) = Common.depConvert(keyRing)(s,in)
   private def additive(x: Enc): PaillierEnc = doConvert(Additive, x)
   private def multiplicative(x: Enc): GamalEnc = doConvert(Multiplicative, x)
