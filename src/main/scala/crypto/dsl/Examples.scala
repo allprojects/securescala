@@ -25,15 +25,13 @@ object ExamplePrograms {
     cmp <- n ?|? one
     r <- if (cmp == LT || cmp == EQ) {
       one.point[CryptoM]
-    } else {
-      for {
-        n1 <- n - one
-        n2 <- n - two
-        f1 <- fibHelper(one,two)(n1)
-        f2 <- fibHelper(one,two)(n2)
-        s <- f1 + f2
-      } yield s
-    }
+    } else for {
+      n1 <- n - one
+      n2 <- n - two
+      f1 <- fibHelper(one,two)(n1)
+      f2 <- fibHelper(one,two)(n2)
+      s <- f1 + f2
+    } yield s
   } yield r
 
   def factorial(n: Enc): CryptoM[Enc] = for {
@@ -43,11 +41,14 @@ object ExamplePrograms {
   } yield r
 
   def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
-    r <- embed(n =:= zero).ifM(one.point[Crypto], for {
+    cond <- n =:= zero
+    r <- if (cond) {
+      one.point[CryptoM]
+    } else for {
       n1 <- n - one
       fact <- factorialHelper(zero,one)(n1)
       s <- n * fact
-    } yield s)
+    } yield s
   } yield r
 
   def sumAndLength[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[(Enc,Enc)] =
