@@ -20,7 +20,7 @@ object ExamplePrograms {
     //   embed(n =:= zero).ifM(Free.point(one), (n-one).flatMap(factorialHelper(zero,one)).flatMap(_*n))
 
     def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
-      r <- embed(n =:= zero).ifM(Free.point(one), for {
+      r <- embed(n =:= zero).ifM(one, for {
         n1 <- n - one
         fact <- factorialHelper(zero,one)(n1)
         r <- n * fact
