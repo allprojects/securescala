@@ -3,6 +3,7 @@ package crypto.dsl
 import scala.language.higherKinds
 
 import scalaz._
+import scalaz.Ordering._
 import Scalaz._
 import scalaz.std.list
 
@@ -14,13 +15,35 @@ import crypto.dsl.Implicits._
 
 object ExamplePrograms {
 
+  def fib(n: Enc): CryptoM[Enc] = for {
+    one <- encrypt(Additive)(1)
+    two <- encrypt(Additive)(2)
+    r <- fibHelper(one,two)(n)
+  } yield r
+
+  def fibHelper(one: Enc, two: Enc)(n: Enc): CryptoM[Enc] = for {
+    cmp <- n ?|? one
+    r <- if (cmp == LT || cmp == EQ) {
+      one.point[CryptoM]
+    } else {
+      for {
+        n1 <- n - one
+        n2 <- n - two
+        f1 <- fibHelper(one,two)(n1)
+        f2 <- fibHelper(one,two)(n2)
+        s <- f1 + f2
+      } yield s
+    }
+  } yield r
+
   def factorial(n: Enc): CryptoM[Enc] = {
     // shorter but harder to read?
     // def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] =
     //   embed(n =:= zero).ifM(Free.point(one), (n-one).flatMap(factorialHelper(zero,one)).flatMap(_*n))
 
     def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
-      r <- embed(n =:= zero).ifM(one, for {
+
+      r <- embed(n =:= zero).ifM(one.point[Crypto], for {
         n1 <- n - one
         fact <- factorialHelper(zero,one)(n1)
         r <- n * fact
@@ -89,6 +112,16 @@ object FactExample extends App {
   val result = Repl.runProgram(factorial(six))
 
   println(s"Result of factorial(6) is ${decryption(result)}")
+}
+
+object FibExample extends App {
+  import ExamplePrograms._
+  import Repl._
+
+  val six = Common.encrypt(Multiplicative, keyRing)(6)
+  val result = Repl.runProgram(fib(six))
+
+  println(s"Result of fib(6) is ${decryption(result)}")
 }
 
 object AverageExample extends App {
