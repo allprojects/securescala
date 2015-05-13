@@ -62,11 +62,7 @@ object Common {
   def convert(keys: KeyRing): (Scheme, Enc) => Enc =
     (scheme,enc) => safeConvert(keys)(scheme,enc).valueOr(sys.error)
 
-  def zero(keys: KeyRing): PaillierEnc = {
-    Common.encrypt(Additive, keys)(0).asInstanceOf[PaillierEnc]
-  }
+  def zero(keys: KeyRing): PaillierEnc = depEncrypt(Additive, keys)(0)
 
-  def one(keys: KeyRing): GamalEnc = {
-    Common.encrypt(Multiplicative, keys)(1).asInstanceOf[GamalEnc]
-  }
+  def one(keys: KeyRing): GamalEnc = depEncrypt(Multiplicative, keys)(1)
 }
