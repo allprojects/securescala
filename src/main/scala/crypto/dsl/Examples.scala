@@ -36,27 +36,19 @@ object ExamplePrograms {
     }
   } yield r
 
-  def factorial(n: Enc): CryptoM[Enc] = {
-    // shorter but harder to read?
-    // def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] =
-    //   embed(n =:= zero).ifM(Free.point(one), (n-one).flatMap(factorialHelper(zero,one)).flatMap(_*n))
+  def factorial(n: Enc): CryptoM[Enc] = for {
+    zero <- encrypt(Multiplicative)(0)
+    one <- encrypt(Multiplicative)(1)
+    r <- factorialHelper(zero,one)(n)
+  } yield r
 
-    def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
-
-      r <- embed(n =:= zero).ifM(one.point[Crypto], for {
-        n1 <- n - one
-        fact <- factorialHelper(zero,one)(n1)
-        r <- n * fact
-      } yield r)
-    } yield r
-
-    for {
-      zero <- encrypt(Multiplicative)(0)
-      one <- encrypt(Multiplicative)(1)
-      r <- factorialHelper(zero,one)(n)
-    } yield r
-
-  }
+  def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
+    r <- embed(n =:= zero).ifM(one.point[Crypto], for {
+      n1 <- n - one
+      fact <- factorialHelper(zero,one)(n1)
+      s <- n * fact
+    } yield s)
+  } yield r
 
   def sumAndLength[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[(Enc,Enc)] =
     embed { (sumA(zero)(xs) |@| encrypt(Additive)(xs.length))((x,y) => (x,y))}
