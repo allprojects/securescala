@@ -100,9 +100,12 @@ object FactExample extends App {
   import Repl._
 
   val six = Common.encrypt(Multiplicative, keyRing)(6)
+  val fortyTwo = Common.encrypt(Multiplicative, keyRing)(42)
   val result = Repl.runProgram(factorial(six))
+  val result2 = Repl.runProgram(factorial(fortyTwo))
 
   println(s"Result of factorial(6) is ${decryption(result)}")
+  println(s"Result of factorial(42) is ${decryption(result2)}")
 }
 
 object FibExample extends App {
