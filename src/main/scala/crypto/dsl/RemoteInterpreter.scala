@@ -111,10 +111,8 @@ object ActorInterpretation extends App {
   import scalaz.std.list._
   val \/-(encryptedList) = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keyRing.pub)).sequenceU
 
-  val \/-(zero@PaillierEnc(_)) = Common.encryptPub(Additive, keyRing.pub)(0)
-
   val result = remoteInterpreter.interpret {
-    sumA(zero)(encryptedList)
+    sumA(Common.zero(keyRing))(encryptedList)
   }
 
   val r = Common.decrypt(keyRing.priv)(Await.result(result, Duration.Inf))
