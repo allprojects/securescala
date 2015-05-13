@@ -7,8 +7,6 @@ import Scalaz._
 import scalaz.std.list
 
 import scala.util.Random
-import scala.concurrent._
-import scala.concurrent.duration.Duration
 
 import crypto._
 import crypto.cipher._
@@ -97,32 +95,6 @@ object AverageExample extends App {
   val normalAverage = randomNumbers.map(BigInt(_)).reduce(_+_) / randomNumbers.length
   println(s"Result for normal    program: ${normalAverage}")
   println(s"Result for encrypted program: ${resultEnc}")
-}
-
-object ParallelExample extends App {
-  import Repl._
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  // List.fill(500)(Random.nextInt(1000).abs).map(BigInt(_))
-  val encryptedList: List[Enc] = SampleData.fixed1.map(Common.encrypt(Multiplicative, keyRing))
-
-  // parallel version
-  val startPar = System.currentTimeMillis
-  val sumResult = Repl.locally.interpPar(sumA(zero)(encryptedList))
-  val finalResult = sumResult.map(decryption)
-  val rPar = Await.result(finalResult, Duration.Inf)
-  val endPar = System.currentTimeMillis
-  println(s"Parallel result:   $rPar")
-
-  //sequential
-  val startSeq = System.currentTimeMillis
-  val rSeq = decryption(Repl.runProgram(sumA(zero)(encryptedList)))
-  val endSeq = System.currentTimeMillis
-  println(s"Sequential result: $rSeq")
-
-  println(s"Parallel time:   ${endPar-startPar}")
-  println(s"Sequential time: ${endSeq-startSeq}")
-  println(s"Speedup:         ${(endSeq-startSeq).toFloat/(endPar-startPar)}")
 }
 
 object SampleData {
