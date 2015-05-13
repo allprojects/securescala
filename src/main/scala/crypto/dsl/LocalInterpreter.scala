@@ -27,45 +27,37 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
 
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
     case -\/(Mult(lhs,rhs,k)) =>
-      val lhs2@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, lhs)
-      val rhs2@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, rhs)
+      val lhs2 = Common.depConvert(keyRing)(Multiplicative, lhs)
+      val rhs2 = Common.depConvert(keyRing)(Multiplicative, rhs)
       interpret(k(lhs2*rhs2))
 
     case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
     case -\/(Plus(lhs,rhs,k)) =>
-      val lhs2@PaillierEnc(_) = Common.convert(keyRing)(Additive, lhs)
-      val rhs2@PaillierEnc(_) = Common.convert(keyRing)(Additive, rhs)
+      val lhs2 = Common.depConvert(keyRing)(Additive, lhs)
+      val rhs2 = Common.depConvert(keyRing)(Additive, rhs)
       interpret(k(lhs2 + rhs2))
 
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
     case -\/(Compare(lhs,rhs,k)) =>
-      val lhs2@OpeEnc(_) = Common.convert(keyRing)(Comparable, lhs)
-      val rhs2@OpeEnc(_) = Common.convert(keyRing)(Comparable, rhs)
+      val lhs2 = Common.depConvert(keyRing)(Comparable, lhs)
+      val rhs2 = Common.depConvert(keyRing)(Comparable, rhs)
       interpret(k(lhs2 ?|? rhs2))
 
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
     case -\/(Equals(lhs,rhs,k)) =>
-      val lhs2@AesEnc(_) = Common.convert(keyRing)(Equality,lhs)
-      val rhs2@AesEnc(_) = Common.convert(keyRing)(Equality,rhs)
+      val lhs2 = Common.depConvert(keyRing)(Equality,lhs)
+      val rhs2 = Common.depConvert(keyRing)(Equality,rhs)
       interpret(k(lhs2 =:= rhs2))
 
     case -\/(Encrypt(s,v,k)) => interpret(k(Common.encrypt(s, keyRing)(v)))
 
-    case -\/(ToPaillier(v,k)) =>
-      val r@PaillierEnc(_) = Common.convert(keyRing)(Additive,v)
-      interpret(k(r))
+    case -\/(ToPaillier(v,k)) => interpret(k(Common.depConvert(keyRing)(Additive,v)))
 
-    case -\/(ToGamal(v,k)) =>
-      val r@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative,v)
-      interpret(k(r))
+    case -\/(ToGamal(v,k)) => interpret(k(Common.depConvert(keyRing)(Multiplicative,v)))
 
-    case -\/(ToAes(v,k)) =>
-      val r@AesEnc(_) = Common.convert(keyRing)(Equality,v)
-      interpret(k(r))
+    case -\/(ToAes(v,k)) => interpret(k(Common.depConvert(keyRing)(Equality,v)))
 
-    case -\/(ToOpe(v,k)) =>
-      val r@OpeEnc(_) = Common.convert(keyRing)(Comparable,v)
-      interpret(k(r))
+    case -\/(ToOpe(v,k)) => interpret(k(Common.depConvert(keyRing)(Comparable,v)))
 
     // Offline operations
 
