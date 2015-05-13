@@ -28,12 +28,8 @@ object Common {
         ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => GamalEnc(x,y)}
     }
 
-  def depEncrypt(s: Scheme, keys: KeyRing)(in: BigInt): s.Out = s match {
-    case Additive => encrypt(s,keys)(in).asInstanceOf[s.Out]
-    case Multiplicative => encrypt(s,keys)(in).asInstanceOf[s.Out]
-    case Equality => encrypt(s,keys)(in).asInstanceOf[s.Out]
-    case Comparable => encrypt(s,keys)(in).asInstanceOf[s.Out]
-  }
+  def depEncrypt(s: Scheme, keys: KeyRing): BigInt => s.Out =
+    input => encryptChecked(s,keys)(input).valueOr(sys.error).asInstanceOf[s.Out]
 
   def encrypt(s: Scheme, keys: KeyRing): BigInt => Enc =
     input => encryptChecked(s,keys)(input).valueOr(sys.error)
@@ -61,6 +57,9 @@ object Common {
 
   def convert(keys: KeyRing): (Scheme, Enc) => Enc =
     (scheme,enc) => safeConvert(keys)(scheme,enc).valueOr(sys.error)
+
+  def depConvert(keys: KeyRing)(s: Scheme, in: Enc): s.Out =
+    convert(keys)(s,in).asInstanceOf[s.Out]
 
   def zero(keys: KeyRing): PaillierEnc = depEncrypt(Additive, keys)(0)
 
