@@ -10,6 +10,7 @@ import scala.util.Random
 
 import crypto._
 import crypto.cipher._
+import crypto.dsl.Implicits._
 
 object ExamplePrograms {
   def factorial(n: Enc): CryptoM[Enc] = for {

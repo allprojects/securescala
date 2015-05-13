@@ -11,6 +11,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 
 import crypto._
+import crypto.dsl.Implicits._
 import crypto.remote._
 import crypto.cipher._
 

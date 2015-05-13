@@ -11,6 +11,9 @@ import crypto.cipher._
 
 package object dsl extends BaseDsl with DeriveDsl {
   object base extends BaseDsl
+  object Implicits {
+    implicit def liftCryptoToMonadic[A](p: Crypto[A]): CryptoM[A] = embed(p)
+  }
 }
 
 trait BaseDsl {
@@ -35,11 +38,11 @@ trait BaseDsl {
 
   def embed[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
 
-  implicit def liftCryptoToMonadic[A](p: Crypto[A]): CryptoM[A] = embed(p)
 }
 
 trait DeriveDsl {
   self: BaseDsl =>
+  import dsl.Implicits._
 
   def sumM[F[_]:Foldable](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] =
     xs.foldLeftM[CryptoM,Enc](zero)(add(_,_))

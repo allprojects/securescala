@@ -108,6 +108,7 @@ object ActorInterpretation extends App {
   ///////////////////////////////////////////////////////////////////////
 
   import crypto.cipher._
+  import crypto.dsl.Implicits._
   import scalaz.std.list._
   val \/-(encryptedList) = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keyRing.pub)).sequenceU
 

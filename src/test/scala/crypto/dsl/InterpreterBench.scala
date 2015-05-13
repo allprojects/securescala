@@ -13,6 +13,7 @@ import org.scalacheck.{Gen => SCGen}
 import org.scalameter.api._
 
 import crypto._
+import crypto.dsl.Implicits._
 import crypto.cipher._
 import crypto.remote._
 
