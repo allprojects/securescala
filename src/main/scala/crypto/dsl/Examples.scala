@@ -26,18 +26,16 @@ object ExamplePrograms {
     r <- if (cmp == LT || cmp == EQ) {
       one.point[CryptoM]
     } else for {
-      n1 <- n - one
-      n2 <- n - two
-      f1 <- fibHelper(one,two)(n1)
-      f2 <- fibHelper(one,two)(n2)
+      n12 <- (n-one).tuple(n-two)
+      f1 <- fibHelper(one,two)(n12._1)
+      f2 <- fibHelper(one,two)(n12._2)
       s <- f1 + f2
     } yield s
   } yield r
 
   def factorial(n: Enc): CryptoM[Enc] = for {
-    zero <- encrypt(Multiplicative)(0)
-    one <- encrypt(Multiplicative)(1)
-    r <- factorialHelper(zero,one)(n)
+    zeroOne <- encrypt(Multiplicative)(0).tuple(encrypt(Multiplicative)(1))
+    r <- factorialHelper(zeroOne._1,zeroOne._2)(n)
   } yield r
 
   def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
@@ -51,8 +49,8 @@ object ExamplePrograms {
     } yield s
   } yield r
 
-  def sumAndLength[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[(Enc,Enc)] =
-    embed { (sumA(zero)(xs) |@| encrypt(Additive)(xs.length))((x,y) => (x,y))}
+  def sumAndLength[F[_]:Traverse](z: PaillierEnc)(xs: F[Enc]): Crypto[(PaillierEnc,Enc)] =
+    sumA(z)(xs).tuple(encrypt(Additive)(xs.length))
 }
 
 object Repl {
