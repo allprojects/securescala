@@ -4,14 +4,14 @@ import crypto._
 
 import scalaz._
 
-sealed trait Scheme
+sealed trait Scheme { type Out }
 sealed trait AsymmetricScheme extends Scheme
 
-case object Additive extends AsymmetricScheme
-case object Multiplicative extends AsymmetricScheme
+case object Additive extends AsymmetricScheme { type Out = PaillierEnc}
+case object Multiplicative extends AsymmetricScheme { type Out = GamalEnc }
 
-case object Equality extends Scheme
-case object Comparable extends Scheme
+case object Equality extends Scheme { type Out = AesEnc }
+case object Comparable extends Scheme { type Out = OpeEnc }
 
 object Common {
   def decrypt(keys: PrivKeys): Enc => BigInt = _ match {
