@@ -6,11 +6,11 @@ import java.security.SecureRandom
 import scalaz._
 
 object Paillier {
-  case class Encryptor(f: BigInt => String \/ BigInt) extends Function1[BigInt,String \/ BigInt]{
+  case class Encryptor(f: BigInt => String \/ BigInt) extends (BigInt => String \/ BigInt) {
     def apply(x: BigInt) = f(x)
   }
 
-  case class Decryptor(f: BigInt => BigInt) extends Function1[BigInt,BigInt]{
+  case class Decryptor(f: BigInt => BigInt) extends (BigInt => BigInt){
     def apply(x: BigInt) = f(x)
   }
 

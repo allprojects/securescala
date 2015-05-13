@@ -15,12 +15,12 @@ object Aes {
 
   private val algorithmString = "AES/ECB/PKCS5Padding"
 
-  case class Encryptor(f: Array[Byte] => Array[Byte]) extends Function1[Array[Byte],Array[Byte]]{
+  case class Encryptor(f: Array[Byte] => Array[Byte]) extends (Array[Byte] => Array[Byte]) {
     def apply(x: Array[Byte]) = f(x)
     def apply(x: BigInt) = f(x.toByteArray)
   }
 
-  case class Decryptor(f: Array[Byte] => Array[Byte]) extends Function1[Array[Byte],Array[Byte]]{
+  case class Decryptor(f: Array[Byte] => Array[Byte]) extends (Array[Byte] => Array[Byte]){
     def apply(x: Array[Byte]) = f(x)
   }
 

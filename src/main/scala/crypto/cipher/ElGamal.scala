@@ -5,11 +5,12 @@ import java.security.SecureRandom
 import scalaz._
 
 object ElGamal {
-  case class Encryptor(f: BigInt => String \/ (BigInt,BigInt)) extends Function1[BigInt,String \/ (BigInt,BigInt)]{
+  case class Encryptor(f: BigInt => String \/ (BigInt,BigInt))
+      extends (BigInt => String \/ (BigInt,BigInt)) {
     def apply(x: BigInt) = f(x)
   }
 
-  case class Decryptor(f: (BigInt,BigInt) => BigInt) extends Function2[BigInt,BigInt,BigInt]{
+  case class Decryptor(f: (BigInt,BigInt) => BigInt) extends ((BigInt,BigInt) => BigInt) {
     def apply(x: BigInt, y: BigInt) = f(x,y)
     def apply(xy: (BigInt,BigInt)) = f(xy._1, xy._2)
   }
