@@ -23,36 +23,25 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
     })
   }
 
-  def additive(x: Enc): PaillierEnc = Common.depConvert(keyRing)(Additive, x)
-  def multiplicative(x: Enc): GamalEnc = Common.depConvert(keyRing)(Multiplicative, x)
-  def equality(x: Enc): AesEnc = Common.depConvert(keyRing)(Equality, x)
-  def comparable(x: Enc): OpeEnc = Common.depConvert(keyRing)(Comparable, x)
+  private def doConvert(s: Scheme, in: Enc) = Common.depConvert(keyRing)(s,in)
+  private def additive(x: Enc): PaillierEnc = doConvert(Additive, x)
+  private def multiplicative(x: Enc): GamalEnc = doConvert(Multiplicative, x)
+  private def equality(x: Enc): AesEnc = doConvert(Equality, x)
+  private def comparable(x: Enc): OpeEnc = doConvert(Comparable, x)
 
   def interpret[A]: CryptoM[A] => A = _.resume match {
 
     case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
-    case -\/(Mult(lhs,rhs,k)) =>
-      val lhs2 = multiplicative(lhs)
-      val rhs2 = multiplicative(rhs)
-      interpret(k(lhs2*rhs2))
+    case -\/(Mult(lhs,rhs,k)) => interpret(k(multiplicative(lhs)*multiplicative(rhs)))
 
     case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
-    case -\/(Plus(lhs,rhs,k)) =>
-      val lhs2 = additive(lhs)
-      val rhs2 = additive(rhs)
-      interpret(k(lhs2 + rhs2))
+    case -\/(Plus(lhs,rhs,k)) => interpret(k(additive(lhs) + additive(rhs)))
 
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
-    case -\/(Compare(lhs,rhs,k)) =>
-      val lhs2 = comparable(lhs)
-      val rhs2 = comparable(rhs)
-      interpret(k(lhs2 ?|? rhs2))
+    case -\/(Compare(lhs,rhs,k)) => interpret(k(comparable(lhs) ?|? comparable(rhs)))
 
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
-    case -\/(Equals(lhs,rhs,k)) =>
-      val lhs2 = equality(lhs)
-      val rhs2 = equality(rhs)
-      interpret(k(lhs2 =:= rhs2))
+    case -\/(Equals(lhs,rhs,k)) => interpret(k(equality(lhs) =:= equality(rhs)))
 
     case -\/(Encrypt(s,v,k)) => interpret(k(Common.encrypt(s, keyRing)(v)))
 
