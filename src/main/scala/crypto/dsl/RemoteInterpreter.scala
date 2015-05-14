@@ -84,7 +84,7 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
   def interpretA[A](p: Crypto[A]): Future[A] = {
     p.foldMap(new (CryptoF ~> Future) {
       // Peform regular interpretation inside future
-      def apply[A](fa: CryptoF[A]): Future[A] = interpret(Free.liftF(fa))
+      def apply[B](fa: CryptoF[B]): Future[B] = interpret(Free.liftF(fa))
     })
   }
 }

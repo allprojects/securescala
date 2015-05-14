@@ -8,9 +8,17 @@ resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
 scalacOptions ++= Seq(
   "-deprecation",
-  "-unchecked",
+  "-encoding", "UTF-8",
   "-feature",
+  "-language:existentials",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-unchecked",
+  "-Xfatal-warnings",
+  "-Xfuture",
+  "-Xlint",
   "-Yinline-warnings",
+  "-Yno-adapted-args",
   "-Ywarn-adapted-args",
   "-Ywarn-dead-code",
   "-Ywarn-inaccessible",

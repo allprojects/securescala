@@ -38,7 +38,7 @@ object Analysis {
   // eliminate all trivial conversions, e.g. toPaillier(PaillierEnc(_))
   def eliminateTrivalConversion[A](p: Crypto[A]): Crypto[A] = {
     p.foldMap(new (CryptoF ~> Crypto) {
-      def apply[A](fa: CryptoF[A]): Crypto[A] = {
+      def apply[B](fa: CryptoF[B]): Crypto[B] = {
         fa match {
           case ToPaillier(p@PaillierEnc(_),k) => FreeAp.point(k(p))
           case ToGamal(g@GamalEnc(_,_),k) => FreeAp.point(k(g))
@@ -53,7 +53,7 @@ object Analysis {
   // perform all explicit conversions
   def preconvert[A](keyRing: KeyRing)(p: Crypto[A]): Crypto[A] = {
     p.foldMap(new (CryptoF ~> Crypto) {
-      def apply[A](fa: CryptoF[A]): Crypto[A] = {
+      def apply[B](fa: CryptoF[B]): Crypto[B] = {
         fa match {
           case ToPaillier(v,k) =>
             val r@PaillierEnc(_) = Common.convert(keyRing)(Additive, v)
@@ -75,7 +75,7 @@ object Analysis {
 
   def extractNumbers[A](p: Crypto[A]): List[Enc] = {
     p.analyze(new (CryptoF ~> λ[α => List[Enc]]) {
-      def apply[A](a: CryptoF[A]) = a match {
+      def apply[B](a: CryptoF[B]) = a match {
         case ToPaillier(v,k) => List(v)
         case ToGamal(v,k) => List(v)
         case ToAes(v,k) => List(v)
@@ -104,7 +104,7 @@ object Analysis {
     }
 
     p.foldMap(new (CryptoF ~> Crypto) {
-      def apply[A](fa: CryptoF[A]): Crypto[A] =
+      def apply[B](fa: CryptoF[B]): Crypto[B] =
       fa match {
         case ToPaillier(v,k) =>
           val x = takeHead()
