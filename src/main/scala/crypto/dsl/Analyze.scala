@@ -154,7 +154,7 @@ object AnalysisMain extends App {
   val keyRing = KeyRing.create
   val interpreter = LocalInterpreter(keyRing)
 
-  val xs = SampleData.fixed1.map(Common.encrypt(Multiplicative, keyRing)).take(200)
+  val xs = SampleData.fixed1.map(Common.encrypt(Multiplicative, keyRing)).take(300)
 
   val prog = sumA(Common.zero(keyRing))(xs)
 
@@ -172,7 +172,7 @@ object AnalysisMain extends App {
   println("Done replacing")
   val nums2 = Analysis.extractNumbers(newProg)
   println(s"Num extracted: ${nums2.length}")
-  println(s"Required conversions: ${Analysis.requiredConversions(newProg)}")
+  println(s"Required conversions after optimization: ${Analysis.requiredConversions(newProg)}")
 
   val r = interpreter.interpretA(newProg)
   println(Common.decrypt(keyRing.priv)(r))
