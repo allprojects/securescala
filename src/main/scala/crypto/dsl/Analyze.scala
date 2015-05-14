@@ -85,13 +85,95 @@ object Analysis {
         case Plus(lhs,rhs,k) => List(lhs,rhs)
         case Equals(lhs,rhs,k) => List(lhs,rhs)
         case Compare(lhs,rhs,k) => List(lhs,rhs)
-        case Encrypt(s,v,k) => List()
 
         case Sub(lhs,rhs,k) => List(lhs,rhs)
         case Div(lhs,rhs,k) => List(lhs,rhs)
 
-        case Embed(v,k) => extractNumbers(v)
+        case Encrypt(s,v,k) => List()
+        case Embed(p,k) => extractNumbers(p)
+      }
+    }).reverse
+  }
+
+  def replaceNumbers[A](p: Crypto[A])(subs: List[Enc]): Crypto[A] = {
+    var cSubs = subs
+    def takeHead(): Enc = {
+      val h = cSubs.head
+      cSubs = cSubs.tail
+      h
+    }
+
+    p.foldMap(new (CryptoF ~> Crypto) {
+      def apply[A](fa: CryptoF[A]): Crypto[A] =
+      fa match {
+        case ToPaillier(v,k) =>
+          val x = takeHead()
+          FreeAp.lift(ToPaillier(x,k))
+        case ToGamal(v,k) =>
+          val x = takeHead()
+          FreeAp.lift(ToGamal(x,k))
+        case ToAes(v,k) =>
+          val x = takeHead()
+          FreeAp.lift(ToAes(x,k))
+        case ToOpe(v,k) =>
+          val x = takeHead()
+          FreeAp.lift(ToOpe(x,k))
+        case Mult(lhs,rhs,k) =>
+          val l = takeHead()
+          val r = takeHead()
+          FreeAp.lift(Mult(l,r,k))
+        case Plus(lhs,rhs,k) =>
+          val l = takeHead()
+          val r = takeHead()
+          FreeAp.lift(Plus(l,r,k))
+        case Equals(lhs,rhs,k) =>
+          val l = takeHead()
+          val r = takeHead()
+          FreeAp.lift(Equals(l,r,k))
+        case Compare(lhs,rhs,k) =>
+          val l = takeHead()
+          val r = takeHead()
+          FreeAp.lift(Compare(l,r,k))
+        case Sub(lhs,rhs,k) =>
+          val l = takeHead()
+          val r = takeHead()
+          FreeAp.lift(Sub(l,r,k))
+        case Div(lhs,rhs,k) =>
+          val l = takeHead()
+          val r = takeHead()
+          FreeAp.lift(Div(l,r,k))
+
+        case Encrypt(s,v,k) => FreeAp.lift(Encrypt(s,v,k))
+        case Embed(p,k) => FreeAp.lift(Embed(p,k))
       }
     })
   }
+}
+
+object AnalysisMain extends App {
+  val keyRing = KeyRing.create
+  val interpreter = LocalInterpreter(keyRing)
+
+  val xs = SampleData.fixed1.map(Common.encrypt(Multiplicative, keyRing)).take(200)
+
+  val prog = sumA(Common.zero(keyRing))(xs)
+
+  println(Common.decrypt(keyRing.priv)(interpreter.interpretA(prog)))
+
+  println(s"Required conversions: ${Analysis.requiredConversions(prog)}")
+  val nums = Analysis.extractNumbers(prog)
+  println(s"Num extracted: ${nums.length}")
+  println(s"Extracted numbers == original?: ${nums == xs}")
+
+  val newXs = nums.map(Common.convert(keyRing)(Additive, _))
+
+  println("Replacing...")
+  val newProg = Analysis.replaceNumbers(prog)(newXs)
+  println("Done replacing")
+  val nums2 = Analysis.extractNumbers(newProg)
+  println(s"Num extracted: ${nums2.length}")
+  println(s"Required conversions: ${Analysis.requiredConversions(newProg)}")
+
+  val r = interpreter.interpretA(newProg)
+  println(Common.decrypt(keyRing.priv)(r))
 }
