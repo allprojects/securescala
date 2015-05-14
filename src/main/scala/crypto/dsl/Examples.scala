@@ -4,8 +4,9 @@ import scala.language.higherKinds
 
 import scalaz._
 import scalaz.Ordering._
-import Scalaz._
-import scalaz.std.list
+import scalaz.std.list._
+import scalaz.syntax.traverse._
+import scalaz.syntax.applicative._
 
 import scala.util.Random
 
