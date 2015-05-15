@@ -16,6 +16,7 @@ trait CryptoService {
   def toOpe(in: Enc): Future[OpeEnc]
   def convert(s: Scheme)(in: Enc): Future[Enc]
   def encrypt(s: Scheme)(in: Int): Future[Enc]
+  def publicKeys: Future[PubKeys]
 }
 
 trait CryptoServicePlus extends CryptoService {
@@ -52,6 +53,8 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
     val result = plainLhs - plainRhs
     Common.encrypt(Additive, keyRing)(result)
   }
+
+  override def publicKeys = Future.successful(keyRing.pub)
 }
 
 object CryptoServiceActor extends App {
