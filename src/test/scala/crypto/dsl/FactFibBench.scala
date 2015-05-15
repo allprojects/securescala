@@ -3,7 +3,6 @@ package crypto.dsl
 import scala.language.higherKinds
 
 import scala.concurrent._
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 import scalaz.Ordering._
@@ -80,20 +79,19 @@ object FactFibBench extends PerformanceTest.OfflineReport {
 
   import Programs._
 
-  // The specific test cases
-  // performance of "Factorial" in {
-  //   measure method "local interpreter" in {
-  //     using(factNs) in { n =>
-  //       local.interpret(factorial(n._2))
-  //     }
-  //   }
+  performance of "Factorial" in {
+    measure method "local interpreter" in {
+      using(factNs) in { n =>
+        local.interpret(factorial(n._2))
+      }
+    }
 
-  //   measure method "remote interpreter" in {
-  //     using(factNs) in { n =>
-  //       remote.interpret(factorial(n._2))
-  //     }
-  //   }
-  // }
+    measure method "remote interpreter" in {
+      using(factNs) in { n =>
+        remote.interpret(factorial(n._2))
+      }
+    }
+  }
 
   performance of "Fibonacci" in {
     measure method "local interpreter" in {
