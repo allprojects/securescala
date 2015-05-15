@@ -3,6 +3,7 @@ package crypto.dsl
 import scala.language.higherKinds
 
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 import scalaz.Ordering._
@@ -88,7 +89,7 @@ object FactFibBench extends PerformanceTest.OfflineReport {
 
     measure method "remote interpreter" in {
       using(factNs) in { n =>
-        remote.interpret(factorial(n._2))
+        Await.result(remote.interpret(factorial(n._2)),Duration.Inf)
       }
     }
   }
