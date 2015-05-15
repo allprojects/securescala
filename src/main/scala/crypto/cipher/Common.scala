@@ -21,6 +21,9 @@ object Common {
     case OpeEnc(x) => keys.opeIntDec(x)
   }
 
+  def depEncryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => s.Out =
+    input => encryptPub(s,keys)(input).map(_.asInstanceOf[s.Out]).valueOr(sys.error)
+
   def encryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => String \/ Enc =
     input => s match {
       case Additive => Paillier.encrypt(keys.paillier)(input).map(PaillierEnc(_))
@@ -61,7 +64,6 @@ object Common {
   def depConvert(keys: KeyRing)(s: Scheme, in: Enc): s.Out =
     convert(keys)(s,in).asInstanceOf[s.Out]
 
-  def zero(keys: KeyRing): PaillierEnc = depEncrypt(Additive, keys)(0)
-
-  def one(keys: KeyRing): GamalEnc = depEncrypt(Multiplicative, keys)(1)
+  def zero(keys: PubKeys): PaillierEnc = depEncryptPub(Additive, keys)(0)
+  def one(keys: PubKeys): GamalEnc = depEncryptPub(Multiplicative, keys)(1)
 }
