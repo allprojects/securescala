@@ -1,9 +1,13 @@
 package crypto.dsl
 
+import com.typesafe.config.ConfigFactory
+
 import akka.actor._
 import akka.pattern.ask
+import akka.util.Timeout
 
 import scalaz._
+import scalaz.std.list._
 import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
@@ -13,6 +17,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 
 import crypto._
+import crypto.cipher._
 import crypto.remote._
 
 case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: ExecutionContext)
@@ -89,6 +94,89 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
   }
 }
 
+object StartCryptoServiceActor extends App {
+  val config = ConfigFactory.parseString("""
+akka {
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+  remote {
+    enabled-transports = ["akka.remote.netty.tcp"]
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 4242
+      maximum-frame-size = 256000b
+    }
+  }
+}
+""")
+
+  val keyRing = KeyRing.create
+
+  val system = ActorSystem("CryptoService", config)
+
+  val cryptoService: CryptoServicePlus =
+    TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
+      new CryptoServiceImpl(keyRing)), "cryptoServer")
+}
+
+object RunProgramUsingService extends App {
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import crypto.dsl.Implicits._
+
+
+  // 1. Request the crypto service and create interpreter
+  val service = Await.result(setupCryptoService, 10.seconds)
+  val remoteInterpreter = new RemoteInterpreter(service)
+
+  // 2. Get the public keys from the service and encrypt some sample data
+  val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
+  val \/-(encryptedList) = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keys)).sequenceU
+
+  // 3. Check for a small program
+  val f = remoteInterpreter.interpret(Common.one(keys) + Common.one(keys)).map(service.decryptAndPrint)
+  Await.result(f, 60.seconds)
+
+  // 4. Run a program, e.g. sum up all the numbers
+  val result = remoteInterpreter.interpret {
+    sumA(Common.zero(keys))(encryptedList)
+  }
+
+  val finalRes = Await.result(result, 60.seconds)
+
+  service.decryptAndPrint(finalRes)
+
+  def setupCryptoService: Future[CryptoServicePlus] = {
+
+    val config = ConfigFactory.parseString("""
+akka {
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+  remote {
+    enabled-transports = ["akka.remote.netty.tcp"]
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 0
+      maximum-frame-size = 256000b
+    }
+  }
+}
+""")
+
+    val system = ActorSystem("CryptoServiceClient", config)
+
+    implicit val timeOut = Timeout(10.seconds)
+    val futureRef =
+      system.actorSelection("akka.tcp://CryptoService@127.0.0.1:4242/user/cryptoServer").
+        resolveOne().map { ref =>
+          TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus]).
+            withTimeout(timeOut), ref)
+        }
+    futureRef
+  }
+}
+
 object ActorInterpretation extends App {
   val keyRing = KeyRing.create
 
@@ -114,7 +202,7 @@ object ActorInterpretation extends App {
     sumA(Common.zero(keyRing))(encryptedList)
   }
 
-  val r = Common.decrypt(keyRing.priv)(Await.result(result, Duration.Inf))
+  val r = Common.decrypt(keyRing.priv)(Await.result(result, 60.seconds))
 
   println(r)
 
