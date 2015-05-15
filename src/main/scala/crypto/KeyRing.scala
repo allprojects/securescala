@@ -14,6 +14,7 @@ case class PrivKeys(
   opePriv: Ope.PrivKey)
 
 object KeyRing {
+  implicit def narrowToPublicKeys: KeyRing => PubKeys = _.pub
   def create: KeyRing = {
     val (_, paillierDec, paillierPub) = Paillier.create(1024)
     val (_, gamalDec, gamalPub) = ElGamal.create(1024)
