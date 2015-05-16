@@ -5,7 +5,9 @@ import scala.language.implicitConversions
 
 import scalaz._
 import scalaz.std.list._
+import scalaz.std.option._
 import scalaz.syntax.traverse._
+import scalaz.syntax.semigroup._
 
 import crypto.cipher._
 
@@ -56,13 +58,19 @@ trait DeriveDsl {
     xs.foldLeftM[CryptoM,Enc](zero)(add(_,_))
 
   def sumA[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): Crypto[PaillierEnc] =
-    xs.traverse(toPaillier(_)).map(_.foldLeft(zero)(_+_))
+    sumOpt(xs).map(_.getOrElse(zero))
+
+  def sumOpt[F[_]:Traverse](xs: F[Enc]): Crypto[Option[PaillierEnc]] =
+    xs.traverse(toPaillier).map(_.foldLeft(None: Option[PaillierEnc])(_ ⊹ Some(_)))
 
   def productM[F[_]:Foldable](one: GamalEnc)(xs: F[Enc]): CryptoM[Enc] =
     xs.foldLeftM[CryptoM,Enc](one)(multiply(_,_))
 
   def productA[F[_]:Traverse](one: GamalEnc)(xs: F[Enc]): Crypto[GamalEnc] =
-    xs.traverse(toGamal(_)).map(_.foldLeft(one)(_*_))
+    productOpt(xs).map(_.getOrElse(one))
+
+  def productOpt[F[_]:Traverse](xs: F[Enc]): Crypto[Option[GamalEnc]] =
+    xs.traverse(toGamal).map(_.foldLeft(None: Option[GamalEnc])(_ ⊹ Some(_)))
 
   def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] = for {
     sum <- sumA(zero)(xs)
