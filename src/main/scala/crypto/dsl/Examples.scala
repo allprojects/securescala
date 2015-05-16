@@ -59,12 +59,12 @@ object ExamplePrograms {
   def exampleMapSumValuesApplicative[A](zero: PaillierEnc)(
     input: Map[A,List[Enc]]): Crypto[Map[A,PaillierEnc]] = {
 
-    input.traverse(xs => sumOpt(xs)).map(_.mapValues(_.getOrElse(zero)))
+    input.traverse(xs => xs.sumOpt).map(_.mapValues(_.getOrElse(zero)))
   }
 
   // Does not require zero to be passed in but uses monadic style
   def exampleMapSumValuesMonad[A](input: Map[A,List[Enc]]): CryptoM[Map[A,Enc]] = for {
-    maybeSums <- input.traverse((xs: List[Enc]) => sumOpt(xs))
+    maybeSums <- input.traverse(_.sumOpt)
     zero <- encrypt(Additive)(0)
   } yield maybeSums.mapValues(_.getOrElse(zero))
 
