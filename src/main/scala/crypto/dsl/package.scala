@@ -51,7 +51,7 @@ trait BaseDsl {
 }
 
 trait DeriveDsl {
-  self: BaseDsl =>
+  deriveDsl: BaseDsl =>
   import dsl.Implicits._
 
   def sumM[F[_]:Foldable](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] =
@@ -80,4 +80,9 @@ trait DeriveDsl {
 
   def sorted(xs: List[Enc]): Crypto[List[OpeEnc]] =
     xs.traverse(toOpe).map(_.sorted)
+
+  implicit class DslTraverseOps[F[_]:Traverse](self: F[Enc]) {
+    def sumOpt: Crypto[Option[PaillierEnc]] = deriveDsl.sumOpt(self)
+    def productOpt: Crypto[Option[GamalEnc]] = deriveDsl.productOpt(self)
+  }
 }
