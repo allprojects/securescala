@@ -5,6 +5,7 @@ import scala.language.higherKinds
 import scalaz._
 import scalaz.Ordering._
 import scalaz.std.list._
+import scalaz.std.map._
 import scalaz.syntax.traverse._
 import scalaz.syntax.applicative._
 
@@ -52,6 +53,21 @@ object ExamplePrograms {
 
   def sumAndLength[F[_]:Traverse](z: PaillierEnc)(xs: F[Enc]): Crypto[(PaillierEnc,Enc)] =
     sumA(z)(xs).tuple(encrypt(Additive)(xs.length))
+
+  // Requires zero to be passed in but uses applicative style and more specific
+  // return type PaillierEnc
+  def exampleMapSumValuesApplicative[A](zero: PaillierEnc)(
+    input: Map[A,List[Enc]]): Crypto[Map[A,PaillierEnc]] = {
+
+    input.traverse(xs => sumOpt(xs)).map(_.mapValues(_.getOrElse(zero)))
+  }
+
+  // Does not require zero to be passed in but uses monadic style
+  def exampleMapSumValuesMonad[A](input: Map[A,List[Enc]]): CryptoM[Map[A,Enc]] = for {
+    maybeSums <- input.traverse((xs: List[Enc]) => sumOpt(xs))
+    zero <- encrypt(Additive)(0)
+  } yield maybeSums.mapValues(_.getOrElse(zero))
+
 }
 
 object Repl {
