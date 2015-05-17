@@ -40,7 +40,7 @@ object CryptoF {
       case ToOpe(v,k) => ToOpe(v,f compose k)
       case Sub(lhs,rhs,k) => Sub(lhs,rhs,f compose k)
       case Div(lhs,rhs,k) => Div(lhs,rhs,f compose k)
-      case Embed(v,k) => Embed(v,(x: CryptoM[Any]) => k(x).map(f))
+      case e: Embed[a,k] => Embed(e.v,(x: CryptoM[a]) => e.k(x).map(f))
     }
   }
 }
