@@ -95,58 +95,60 @@ object Analysis {
     }).reverse
   }
 
-  def replaceNumbers[A](p: Crypto[A])(subs: List[Enc]): Crypto[A] = {
-    var cSubs = subs
-    def takeHead(): Enc = {
-      val h = cSubs.head
-      cSubs = cSubs.tail
-      h
-    }
+  type StateCrypto[α] = State[List[Enc],Crypto[α]]
 
-    p.foldMap(new (CryptoF ~> Crypto) {
-      def apply[B](fa: CryptoF[B]): Crypto[B] =
-      fa match {
-        case ToPaillier(v,k) =>
-          val x = takeHead()
-          FreeAp.lift(ToPaillier(x,k))
-        case ToGamal(v,k) =>
-          val x = takeHead()
-          FreeAp.lift(ToGamal(x,k))
-        case ToAes(v,k) =>
-          val x = takeHead()
-          FreeAp.lift(ToAes(x,k))
-        case ToOpe(v,k) =>
-          val x = takeHead()
-          FreeAp.lift(ToOpe(x,k))
-        case Mult(lhs,rhs,k) =>
-          val l = takeHead()
-          val r = takeHead()
-          FreeAp.lift(Mult(l,r,k))
-        case Plus(lhs,rhs,k) =>
-          val l = takeHead()
-          val r = takeHead()
-          FreeAp.lift(Plus(l,r,k))
-        case Equals(lhs,rhs,k) =>
-          val l = takeHead()
-          val r = takeHead()
-          FreeAp.lift(Equals(l,r,k))
-        case Compare(lhs,rhs,k) =>
-          val l = takeHead()
-          val r = takeHead()
-          FreeAp.lift(Compare(l,r,k))
-        case Sub(lhs,rhs,k) =>
-          val l = takeHead()
-          val r = takeHead()
-          FreeAp.lift(Sub(l,r,k))
-        case Div(lhs,rhs,k) =>
-          val l = takeHead()
-          val r = takeHead()
-          FreeAp.lift(Div(l,r,k))
+  def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
+    implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
 
-        case Encrypt(s,v,k) => FreeAp.lift(Encrypt(s,v,k))
-        case Embed(p,k) => FreeAp.lift(Embed(p,k))
+    def takeHead(): State[List[Enc],Enc] = for {
+      head <- State.gets{ (s:List[Enc]) =>
+        s.headOption.getOrElse(sys.error("Not enough numbers for replacement"))
       }
-    })
+      _ <- State.modify((s:List[Enc]) => s.tail)
+    } yield head
+
+    p.foldMap[StateCrypto](new (CryptoF ~> StateCrypto) {
+      def apply[B](fa: CryptoF[B]): StateCrypto[B] = fa match {
+        case ToPaillier(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToPaillier(head,k))
+        case ToGamal(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToGamal(head,k))
+        case ToAes(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToAes(head,k))
+        case ToOpe(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToOpe(head,k))
+        case Mult(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Mult(l,r,k))
+        case Plus(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Plus(l,r,k))
+        case Equals(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Equals(l,r,k))
+        case Compare(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Compare(l,r,k))
+        case Sub(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Sub(l,r,k))
+        case Div(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Div(l,r,k))
+        case Encrypt(s,v,k) => State.state(FreeAp.lift(Encrypt(s,v,k)))
+        case Embed(p,k) => State.state(FreeAp.lift(Embed(p,k)))
+      }
+    })(ev)
   }
 }
 
@@ -168,7 +170,7 @@ object AnalysisMain extends App {
   val newXs = nums.map(Common.convert(keyRing)(Additive, _))
 
   println("Replacing...")
-  val newProg = Analysis.replaceNumbers(prog)(newXs)
+  val newProg = Analysis.replaceNumbers(prog).eval(newXs)
   println("Done replacing")
   val nums2 = Analysis.extractNumbers(newProg)
   println(s"Num extracted: ${nums2.length}")
