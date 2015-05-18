@@ -26,7 +26,7 @@ object Common {
 
   def encryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => String \/ Enc =
     input => s match {
-      case Additive => Paillier.encrypt(keys.paillier)(input).map(PaillierEnc(_))
+      case Additive => Paillier.encrypt(keys.paillier)(input).map(PaillierEnc(keys.paillier))
       case Multiplicative =>
         ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => ElGamalEnc(x,y)}
     }

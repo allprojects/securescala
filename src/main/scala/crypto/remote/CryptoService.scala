@@ -1,10 +1,6 @@
 package crypto.remote
 
-import akka.actor._
-import akka.pattern.ask
-
 import scala.concurrent._
-import scala.concurrent.duration._
 
 import crypto._
 import crypto.cipher._
@@ -57,22 +53,4 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
 
   override def publicKeys = Future.successful(keyRing.pub)
   override def decryptAndPrint(v: Enc): Unit = println(Common.decrypt(keyRing.priv)(v))
-}
-
-object CryptoServiceActor extends App {
-
-  val keyRing = KeyRing.create
-
-  val system = ActorSystem("CryptoService")
-
-  val cryptoService: CryptoServicePlus =
-    TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-      new CryptoServiceImpl(keyRing)), "cryptoServer")
-
-  val response: Future[Enc] = cryptoService.toPaillier(PaillierEnc(1))
-  println { Await.result(response, 1.second) }
-
-  TypedActor(system).poisonPill(cryptoService)
-
-  system.shutdown()
 }
