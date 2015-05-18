@@ -8,7 +8,7 @@ sealed trait Scheme { type Out }
 sealed trait AsymmetricScheme extends Scheme
 
 case object Additive extends AsymmetricScheme { type Out = PaillierEnc}
-case object Multiplicative extends AsymmetricScheme { type Out = GamalEnc }
+case object Multiplicative extends AsymmetricScheme { type Out = ElGamalEnc }
 
 case object Equality extends Scheme { type Out = AesEnc }
 case object Comparable extends Scheme { type Out = OpeEnc }
@@ -16,7 +16,7 @@ case object Comparable extends Scheme { type Out = OpeEnc }
 object Common {
   def decrypt(keys: PrivKeys): Enc => BigInt = _ match {
     case PaillierEnc(x) => keys.paillier(x)
-    case GamalEnc(x,y) => keys.gamal(x,y)
+    case ElGamalEnc(x,y) => keys.gamal(x,y)
     case AesEnc(x) => BigInt(keys.aesDec(x))
     case OpeEnc(x) => keys.opeIntDec(x)
   }
@@ -28,7 +28,7 @@ object Common {
     input => s match {
       case Additive => Paillier.encrypt(keys.paillier)(input).map(PaillierEnc(_))
       case Multiplicative =>
-        ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => GamalEnc(x,y)}
+        ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => ElGamalEnc(x,y)}
     }
 
   def depEncrypt(s: Scheme, keys: KeyRing): BigInt => s.Out =
@@ -47,7 +47,7 @@ object Common {
   def safeConvert(keys: KeyRing): (Scheme, Enc) => String \/ Enc = {
     // Nothing to do
     case (Additive,in@PaillierEnc(_)) => \/-(in)
-    case (Multiplicative,in@GamalEnc(_,_)) => \/-(in)
+    case (Multiplicative,in@ElGamalEnc(_,_)) => \/-(in)
     case (Equality,in@AesEnc(_)) => \/-(in)
     case (Comparable,in@OpeEnc(_)) => \/-(in)
 
@@ -65,5 +65,5 @@ object Common {
     convert(keys)(s,in).asInstanceOf[s.Out]
 
   def zero(keys: PubKeys): PaillierEnc = depEncryptPub(Additive, keys)(0)
-  def one(keys: PubKeys): GamalEnc = depEncryptPub(Multiplicative, keys)(1)
+  def one(keys: PubKeys): ElGamalEnc = depEncryptPub(Multiplicative, keys)(1)
 }

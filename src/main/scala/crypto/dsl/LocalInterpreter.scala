@@ -13,13 +13,13 @@ import crypto.cipher._
 case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>α]] {
   private def doConvert(s: Scheme, in: Enc) = Common.depConvert(keyRing)(s,in)
   private def additive(x: Enc): PaillierEnc = doConvert(Additive, x)
-  private def multiplicative(x: Enc): GamalEnc = doConvert(Multiplicative, x)
+  private def multiplicative(x: Enc): ElGamalEnc = doConvert(Multiplicative, x)
   private def equality(x: Enc): AesEnc = doConvert(Equality, x)
   private def comparable(x: Enc): OpeEnc = doConvert(Comparable, x)
 
   def interpret[A]: CryptoM[A] => A = _.resume match {
 
-    case -\/(Mult(lhs@GamalEnc(_,_),rhs@GamalEnc(_,_),k)) => interpret(k(lhs * rhs))
+    case -\/(Mult(lhs@ElGamalEnc(_,_),rhs@ElGamalEnc(_,_),k)) => interpret(k(lhs * rhs))
     case -\/(Mult(lhs,rhs,k)) => interpret(k(multiplicative(lhs)*multiplicative(rhs)))
 
     case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))

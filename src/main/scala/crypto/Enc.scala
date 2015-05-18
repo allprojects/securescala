@@ -11,10 +11,10 @@ case class PaillierEnc(underlying: BigInt) extends Enc {
     case (PaillierEnc(lhs),PaillierEnc(rhs)) => PaillierEnc(lhs * rhs)
   }
 }
-case class GamalEnc(ca: BigInt, cb: BigInt) extends Enc {
+case class ElGamalEnc(ca: BigInt, cb: BigInt) extends Enc {
   // TODO: modulus public key
-  def *(that: GamalEnc): GamalEnc = (this,that) match {
-    case (GamalEnc(ca1,ca2),GamalEnc(cb1,cb2)) => GamalEnc(ca1 * cb1, ca2 * cb2)
+  def *(that: ElGamalEnc): ElGamalEnc = (this,that) match {
+    case (ElGamalEnc(ca1,ca2),ElGamalEnc(cb1,cb2)) => ElGamalEnc(ca1 * cb1, ca2 * cb2)
   }
 }
 case class AesEnc(underlying: Array[Byte]) extends Enc {
@@ -30,9 +30,9 @@ object PaillierEnc {
   }
 }
 
-object GamalEnc {
-  implicit val gamalSemigroup = new Semigroup[GamalEnc] {
-    def append(f1: GamalEnc, f2: => GamalEnc): GamalEnc = f1*f2
+object ElGamalEnc {
+  implicit val gamalSemigroup = new Semigroup[ElGamalEnc] {
+    def append(f1: ElGamalEnc, f2: => ElGamalEnc): ElGamalEnc = f1*f2
   }
 }
 

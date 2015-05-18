@@ -11,7 +11,7 @@ import crypto.cipher._
 
 trait CryptoService {
   def toPaillier(in: Enc): Future[PaillierEnc]
-  def toElGamal(in: Enc): Future[GamalEnc]
+  def toElGamal(in: Enc): Future[ElGamalEnc]
   def toAes(in: Enc): Future[AesEnc]
   def toOpe(in: Enc): Future[OpeEnc]
   def convert(s: Scheme)(in: Enc): Future[Enc]
@@ -28,12 +28,12 @@ trait CryptoServicePlus extends CryptoService {
 class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServicePlus {
   private def doConvert(s: Scheme, in: Enc) = Common.depConvert(keyRing)(s,in)
   private def additive(x: Enc): PaillierEnc = doConvert(Additive, x)
-  private def multiplicative(x: Enc): GamalEnc = doConvert(Multiplicative, x)
+  private def multiplicative(x: Enc): ElGamalEnc = doConvert(Multiplicative, x)
   private def equality(x: Enc): AesEnc = doConvert(Equality, x)
   private def comparable(x: Enc): OpeEnc = doConvert(Comparable, x)
 
   override def toPaillier(in: Enc): Future[PaillierEnc] = Future.successful(additive(in))
-  override def toElGamal(in: Enc): Future[GamalEnc] = Future.successful(multiplicative(in))
+  override def toElGamal(in: Enc): Future[ElGamalEnc] = Future.successful(multiplicative(in))
   override def toAes(in: Enc): Future[AesEnc] = Future.successful(equality(in))
   override def toOpe(in: Enc): Future[OpeEnc] = Future.successful(comparable(in))
   override def convert(s: Scheme)(in: Enc): Future[Enc] =

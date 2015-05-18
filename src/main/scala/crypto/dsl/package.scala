@@ -39,7 +39,7 @@ trait BaseDsl {
 
   def encrypt(s: Scheme)(v: Int): Crypto[Enc] = FreeAp.lift(Encrypt(s,v,identity))
   def toPaillier(v: Enc): Crypto[PaillierEnc] = FreeAp.lift(ToPaillier(v,identity))
-  def toGamal(v: Enc): Crypto[GamalEnc] = FreeAp.lift(ToGamal(v,identity))
+  def toGamal(v: Enc): Crypto[ElGamalEnc] = FreeAp.lift(ToGamal(v,identity))
   def toAes(v: Enc): Crypto[AesEnc] = FreeAp.lift(ToAes(v,identity))
   def toOpe(v: Enc): Crypto[OpeEnc] = FreeAp.lift(ToOpe(v,identity))
 
@@ -63,14 +63,14 @@ trait DeriveDsl {
   def sumOpt[F[_]:Traverse](xs: F[Enc]): Crypto[Option[PaillierEnc]] =
     xs.traverse(toPaillier).map(_.foldLeft(None: Option[PaillierEnc])(_ ⊹ Some(_)))
 
-  def productM[F[_]:Foldable](one: GamalEnc)(xs: F[Enc]): CryptoM[Enc] =
+  def productM[F[_]:Foldable](one: ElGamalEnc)(xs: F[Enc]): CryptoM[Enc] =
     xs.foldLeftM[CryptoM,Enc](one)(multiply(_,_))
 
-  def productA[F[_]:Traverse](one: GamalEnc)(xs: F[Enc]): Crypto[GamalEnc] =
+  def productA[F[_]:Traverse](one: ElGamalEnc)(xs: F[Enc]): Crypto[ElGamalEnc] =
     productOpt(xs).map(_.getOrElse(one))
 
-  def productOpt[F[_]:Traverse](xs: F[Enc]): Crypto[Option[GamalEnc]] =
-    xs.traverse(toGamal).map(_.foldLeft(None: Option[GamalEnc])(_ ⊹ Some(_)))
+  def productOpt[F[_]:Traverse](xs: F[Enc]): Crypto[Option[ElGamalEnc]] =
+    xs.traverse(toGamal).map(_.foldLeft(None: Option[ElGamalEnc])(_ ⊹ Some(_)))
 
   def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] = for {
     sum <- sumA(zero)(xs)
@@ -83,6 +83,6 @@ trait DeriveDsl {
 
   implicit class DslTraverseOps[F[_]:Traverse](self: F[Enc]) {
     def sumOpt: Crypto[Option[PaillierEnc]] = deriveDsl.sumOpt(self)
-    def productOpt: Crypto[Option[GamalEnc]] = deriveDsl.productOpt(self)
+    def productOpt: Crypto[Option[ElGamalEnc]] = deriveDsl.productOpt(self)
   }
 }

@@ -13,7 +13,7 @@ object Analysis {
       def apply[B](fa: CryptoF[B]): Int = fa match {
         case ToPaillier(PaillierEnc(_),_) => 0
         case ToPaillier(_,_) => 1
-        case ToGamal(GamalEnc(_,_),_) => 0
+        case ToGamal(ElGamalEnc(_,_),_) => 0
         case ToGamal(_,_) => 1
         case ToAes(AesEnc(_),_) => 0
         case ToAes(_,_) => 1
@@ -25,9 +25,9 @@ object Analysis {
         case Plus(PaillierEnc(_),_,_) => 1
         case Plus(_,_,_) => 2
 
-        case Mult(GamalEnc(_,_),GamalEnc(_,_),_) => 0
-        case Mult(_,GamalEnc(_,_),_) => 1
-        case Mult(GamalEnc(_,_),_,_) => 1
+        case Mult(ElGamalEnc(_,_),ElGamalEnc(_,_),_) => 0
+        case Mult(_,ElGamalEnc(_,_),_) => 1
+        case Mult(ElGamalEnc(_,_),_,_) => 1
         case Mult(_,_,_) => 2
 
         case x => sys.error(s"don't know how many conversion for ${x}")
@@ -41,9 +41,9 @@ object Analysis {
       def apply[B](fa: CryptoF[B]): Crypto[B] = {
         fa match {
           case ToPaillier(p@PaillierEnc(_),k) => FreeAp.point(k(p))
-          case ToGamal(g@GamalEnc(_,_),k) => FreeAp.point(k(g))
+          case ToGamal(g@ElGamalEnc(_,_),k) => FreeAp.point(k(g))
           case Plus(x@PaillierEnc(_),y@PaillierEnc(_),k) => FreeAp.point(k(x+y))
-          case Mult(x@GamalEnc(_,_),y@GamalEnc(_,_),k) => FreeAp.point(k(x*y))
+          case Mult(x@ElGamalEnc(_,_),y@ElGamalEnc(_,_),k) => FreeAp.point(k(x*y))
           case x => FreeAp.lift(x)
         }
       }
@@ -59,7 +59,7 @@ object Analysis {
             val r@PaillierEnc(_) = Common.convert(keyRing)(Additive, v)
             FreeAp.point(k(r))
           case ToGamal(v,k) =>
-            val r@GamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, v)
+            val r@ElGamalEnc(_,_) = Common.convert(keyRing)(Multiplicative, v)
             FreeAp.point(k(r))
           case ToAes(v,k) =>
             val r@AesEnc(_) = Common.convert(keyRing)(Equality, v)
