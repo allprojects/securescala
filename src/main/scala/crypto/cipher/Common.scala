@@ -16,7 +16,7 @@ case object Comparable extends Scheme { type Out = OpeEnc }
 object Common {
   def decrypt(keys: PrivKeys): Enc => BigInt = _ match {
     case PaillierEnc(x) => keys.paillier(x)
-    case ElGamalEnc(x,y) => keys.gamal(x,y)
+    case ElGamalEnc(x,y) => keys.elgamal(x,y)
     case AesEnc(x) => BigInt(keys.aesDec(x))
     case OpeEnc(x) => keys.opeIntDec(x)
   }
@@ -26,9 +26,13 @@ object Common {
 
   def encryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => String \/ Enc =
     input => s match {
-      case Additive => Paillier.encrypt(keys.paillier)(input).map(PaillierEnc(keys.paillier))
+      case Additive => Paillier.encrypt(keys.paillier)(input).map { x =>
+        PaillierEnc(keys.paillier)(x)
+      }
       case Multiplicative =>
-        ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => ElGamalEnc(keys.gamal)(x,y)}
+        ElGamal.encrypt(keys.elgamal)(input).map {
+          case (x,y) => ElGamalEnc(keys.elgamal)(x,y)
+        }
     }
 
   def depEncrypt(s: Scheme, keys: KeyRing): BigInt => s.Out =

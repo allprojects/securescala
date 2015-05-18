@@ -108,7 +108,7 @@ object MultExample extends App {
 
   val productResult: Enc = Repl.runProgram(productA(one)(encryptedList))
 
-  println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.pub.gamal.p}")
+  println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.pub.elgamal.p}")
   println(s"Result of product with    encryption: ${decryption(productResult)}")
 }
 
