@@ -12,9 +12,9 @@ class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends Enc {
     case (PaillierEnc(lhs),PaillierEnc(rhs)) => new PaillierEnc((lhs * rhs).mod(nSquare), nSquare)
   }
 }
-case class ElGamalEnc(ca: BigInt, cb: BigInt) extends Enc {
+class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends Enc {
   def *(that: ElGamalEnc): ElGamalEnc = (this,that) match {
-    case (ElGamalEnc(ca1,ca2),ElGamalEnc(cb1,cb2)) => ElGamalEnc(ca1 * cb1, ca2 * cb2)
+    case (ElGamalEnc(ca1,ca2),ElGamalEnc(cb1,cb2)) => new ElGamalEnc((ca1 * cb1).mod(p), (ca2 * cb2).mod(p), p)
   }
 }
 case class AesEnc(underlying: Array[Byte]) extends Enc {
@@ -37,6 +37,9 @@ object ElGamalEnc {
   implicit val gamalSemigroup = new Semigroup[ElGamalEnc] {
     def append(f1: ElGamalEnc, f2: => ElGamalEnc): ElGamalEnc = f1*f2
   }
+
+  def unapply(eg: ElGamalEnc): Option[(BigInt,BigInt)] = Some((eg.ca, eg.cb))
+  def apply(k: ElGamal.PubKey)(ca: BigInt, cb: BigInt) = new ElGamalEnc(ca, cb, k.p)
 }
 
 object OpeEnc {

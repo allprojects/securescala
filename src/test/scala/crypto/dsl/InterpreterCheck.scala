@@ -28,7 +28,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   val one = Common.one(keyRing)
 
   property("sum of a list") =
-    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
       val decryptThenSum = xs.map(Common.decrypt(keyRing.priv)).sum
 
       val sumThenDecrypt = Common.decrypt(keyRing.priv) {
@@ -41,7 +41,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
     }
 
   property("product of a list") =
-    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
       val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {

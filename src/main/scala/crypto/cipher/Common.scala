@@ -28,7 +28,7 @@ object Common {
     input => s match {
       case Additive => Paillier.encrypt(keys.paillier)(input).map(PaillierEnc(keys.paillier))
       case Multiplicative =>
-        ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => ElGamalEnc(x,y)}
+        ElGamal.encrypt(keys.gamal)(input).map { case (x,y) => ElGamalEnc(keys.gamal)(x,y)}
     }
 
   def depEncrypt(s: Scheme, keys: KeyRing): BigInt => s.Out =
