@@ -3,7 +3,6 @@ package crypto.dsl
 import scala.language.higherKinds
 
 import scalaz._
-import scalaz.Ordering._
 import scalaz.std.list._
 import scalaz.std.map._
 import scalaz.syntax.traverse._
@@ -24,8 +23,8 @@ object ExamplePrograms {
   } yield r
 
   def fibHelper(one: Enc, two: Enc)(n: Enc): CryptoM[Enc] = for {
-    cmp <- n ?|? one
-    r <- if (cmp == LT || cmp == EQ) {
+    cmp <- n <= one
+    r <- if (cmp) {
       one.point[CryptoM]
     } else for {
       n12 <- (n-one).tuple(n-two)

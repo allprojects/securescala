@@ -4,6 +4,7 @@ import scala.language.higherKinds
 import scala.language.implicitConversions
 
 import scalaz._
+import scalaz.Ordering._
 import scalaz.std.list._
 import scalaz.std.option._
 import scalaz.syntax.traverse._
@@ -22,6 +23,10 @@ package object dsl extends BaseDsl with DeriveDsl {
       def /(that: Enc) = divide(self,that)
       def =:=(that: Enc) = equal(self,that)
       def ?|?(that: Enc) = compare(self,that)
+      def <(that: Enc) = compare(self,that).map(_ == LT)
+      def <=(that: Enc) = compare(self,that).map(x => x == LT || x == EQ)
+      def >(that: Enc) = compare(self,that).map(_ == GT)
+      def >=(that: Enc) = compare(self,that).map(x => x == GT || x == EQ)
     }
   }
 }
