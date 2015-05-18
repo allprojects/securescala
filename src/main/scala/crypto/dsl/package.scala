@@ -4,6 +4,8 @@ import scala.language.higherKinds
 import scala.language.implicitConversions
 
 import scalaz._
+
+import scalaz.Leibniz._
 import scalaz.Ordering._
 import scalaz.std.list._
 import scalaz.std.option._
@@ -52,7 +54,6 @@ trait BaseDsl {
   def divide(lhs: Enc, rhs: Enc): Crypto[Enc] = FreeAp.lift(Div(lhs,rhs,identity))
 
   def embed[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
-
 }
 
 trait DeriveDsl {
@@ -89,5 +90,16 @@ trait DeriveDsl {
   implicit class DslTraverseOps[F[_]:Traverse](self: F[Enc]) {
     def sumOpt: Crypto[Option[PaillierEnc]] = deriveDsl.sumOpt(self)
     def productOpt: Crypto[Option[ElGamalEnc]] = deriveDsl.productOpt(self)
+  }
+
+  implicit class DslCryptoSyntax[A](self: CryptoM[A]) {
+    def ifM[B](ifTrue: => CryptoM[B])(ifFalse: => CryptoM[B])(
+      implicit ev: A === Boolean): CryptoM[B] = {
+      val value: CryptoM[Boolean] = ev.subst(self)
+      for {
+        c <- value
+        r <- if (c) ifTrue else ifFalse
+      } yield r
+    }
   }
 }
