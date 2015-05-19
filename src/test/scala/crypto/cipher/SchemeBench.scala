@@ -2,6 +2,7 @@ package crypto.cipher
 
 import scala.util._
 
+import crypto._
 import org.scalameter.api._
 
 trait SchemeBench[A] { this: PerformanceTest =>
@@ -25,7 +26,7 @@ trait SchemeBench[A] { this: PerformanceTest =>
   }
 }
 
-object AesBench extends PerformanceTest.OfflineReport with SchemeBench[Array[Byte]] {
+object AesBench extends CustomPerformanceTest with SchemeBench[Array[Byte]] {
   def name = "AES"
   def sizes = Gen.range("sizes")(5000,20000,5000)
 
@@ -35,7 +36,7 @@ object AesBench extends PerformanceTest.OfflineReport with SchemeBench[Array[Byt
   val decrypt = (x: Array[Byte]) => BigInt(aesDecrypt(x))
 }
 
-object OpeBench extends PerformanceTest.OfflineReport with SchemeBench[BigInt] {
+object OpeBench extends CustomPerformanceTest with SchemeBench[BigInt] {
   def name = "OPE"
   def sizes = Gen.enumeration("sizes")(1, 5, 10, 15)
 
@@ -46,7 +47,7 @@ object OpeBench extends PerformanceTest.OfflineReport with SchemeBench[BigInt] {
 }
 
 object ElGamalBench
-    extends PerformanceTest.OfflineReport
+    extends CustomPerformanceTest
     with SchemeBench[(BigInt,BigInt)] {
 
   def name = "ElGamal"
@@ -58,7 +59,7 @@ object ElGamalBench
   val decrypt = (x: (BigInt,BigInt)) => elGamalDec(x._1,x._2)
 }
 
-object PaillierBench extends PerformanceTest.OfflineReport with SchemeBench[BigInt] {
+object PaillierBench extends CustomPerformanceTest with SchemeBench[BigInt] {
   def name = "Paillier"
   def sizes = Gen.enumeration("sizes")(1, 5, 10, 15)
 

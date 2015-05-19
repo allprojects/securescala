@@ -55,7 +55,7 @@ private object Programs {
 
 }
 
-object FactFibBench extends PerformanceTest.OfflineReport {
+object FactFibBench extends CustomPerformanceTest {
 
   val keyRing = KeyRing.create
    @transient val cryptoService = new CryptoServiceImpl(keyRing)

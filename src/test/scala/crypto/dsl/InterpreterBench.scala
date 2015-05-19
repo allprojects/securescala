@@ -60,7 +60,7 @@ trait InterpreterBench[F[_]] {
 }
 
 object RemoteInterpreterBench
-    extends PerformanceTest.OfflineReport
+    extends CustomPerformanceTest
     with InterpreterBench[Future] {
 
   def name = "Remote interpreter (locally)"
@@ -74,7 +74,7 @@ object RemoteInterpreterBench
 }
 
 object LocalInterpreterBench
-    extends PerformanceTest.OfflineReport
+    extends CustomPerformanceTest
     with InterpreterBench[λ[α=>α]] {
 
   def name = "Local interpreter"
