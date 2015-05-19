@@ -54,3 +54,6 @@ fork := true
 
 // Otherwise problems with forking (too many)
 parallelExecution in Test := false
+
+// Forward stdinput of sbt to forked process for interactive use
+connectInput in run := true
