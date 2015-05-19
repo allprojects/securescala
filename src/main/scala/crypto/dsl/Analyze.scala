@@ -73,6 +73,19 @@ object Analysis {
     })
   }
 
+  def withNumbers[A](p: Crypto[A])(
+    f: List[(Option[Scheme],Enc)] => List[Enc]): Crypto[A] = {
+
+    val nums = extractNumbers(p)
+    val newNums = f(nums)
+    if (newNums.length != nums.length) {
+      sys.error(s"withNumbers: The given function returned an invalid list:" +
+        s"expected size ${nums.length} but was ${newNums.length}")
+    }
+
+    replaceNumbers(p).eval(newNums)
+  }
+
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],Enc)] = {
     p.analyze(new (CryptoF ~> λ[α => List[(Option[Scheme],Enc)]]) {
       def apply[B](a: CryptoF[B]) = a match {
