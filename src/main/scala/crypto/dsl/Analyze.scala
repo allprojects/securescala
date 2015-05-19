@@ -13,10 +13,13 @@ object Analysis {
       def apply[B](fa: CryptoF[B]): Int = fa match {
         case ToPaillier(PaillierEnc(_),_) => 0
         case ToPaillier(_,_) => 1
+
         case ToGamal(ElGamalEnc(_,_),_) => 0
         case ToGamal(_,_) => 1
+
         case ToAes(AesEnc(_),_) => 0
         case ToAes(_,_) => 1
+
         case ToOpe(OpeEnc(_),_) => 0
         case ToOpe(_,_) => 1
 
@@ -30,7 +33,20 @@ object Analysis {
         case Mult(ElGamalEnc(_,_),_,_) => 1
         case Mult(_,_,_) => 2
 
-        case x => sys.error(s"don't know how many conversion for ${x}")
+        case Equals(AesEnc(_),AesEnc(_),_) => 0
+        case Equals(_,AesEnc(_),_) => 1
+        case Equals(AesEnc(_),_,_) => 1
+        case Equals(_,_,_) => 2
+
+        case Compare(OpeEnc(_),OpeEnc(_),_) => 0
+        case Compare(OpeEnc(_),_,_) => 1
+        case Compare(_,OpeEnc(_),_) => 1
+        case Compare(_,_,_) => 2
+
+        case Sub(_,_,_) => 2
+        case Div(_,_,_) => 2
+
+        case x => 0
       }
     })
   }
@@ -50,7 +66,7 @@ object Analysis {
     })
   }
 
-  // perform all explicit conversions
+  // perform all explicit conversions locally
   def preconvert[A](keyRing: KeyRing)(p: Crypto[A]): Crypto[A] = {
     p.foldMap(new (CryptoF ~> Crypto) {
       def apply[B](fa: CryptoF[B]): Crypto[B] = {
