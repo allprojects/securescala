@@ -73,21 +73,21 @@ object Analysis {
     })
   }
 
-  def extractNumbers[A](p: Crypto[A]): List[Enc] = {
-    p.analyze(new (CryptoF ~> λ[α => List[Enc]]) {
+  def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],Enc)] = {
+    p.analyze(new (CryptoF ~> λ[α => List[(Option[Scheme],Enc)]]) {
       def apply[B](a: CryptoF[B]) = a match {
-        case ToPaillier(v,k) => List(v)
-        case ToGamal(v,k) => List(v)
-        case ToAes(v,k) => List(v)
-        case ToOpe(v,k) => List(v)
+        case ToPaillier(v,k) => List((Some(Additive),v))
+        case ToGamal(v,k) => List((Some(Multiplicative),v))
+        case ToAes(v,k) => List((Some(Equality),v))
+        case ToOpe(v,k) => List((Some(Comparable),v))
 
-        case Mult(lhs,rhs,k) => List(lhs,rhs)
-        case Plus(lhs,rhs,k) => List(lhs,rhs)
-        case Equals(lhs,rhs,k) => List(lhs,rhs)
-        case Compare(lhs,rhs,k) => List(lhs,rhs)
+        case Mult(lhs,rhs,k) => List((Some(Multiplicative),lhs),(Some(Multiplicative),rhs))
+        case Plus(lhs,rhs,k) => List((Some(Additive),lhs),(Some(Additive),rhs))
+        case Equals(lhs,rhs,k) => List((Some(Equality),lhs),(Some(Equality),rhs))
+        case Compare(lhs,rhs,k) => List((Some(Comparable),lhs),(Some(Comparable),rhs))
 
-        case Sub(lhs,rhs,k) => List(lhs,rhs)
-        case Div(lhs,rhs,k) => List(lhs,rhs)
+        case Sub(lhs,rhs,k) => List((None,lhs),(None,rhs))
+        case Div(lhs,rhs,k) => List((None,lhs),(None,rhs))
 
         case Encrypt(s,v,k) => List()
         case Embed(p,k) => extractNumbers(p)
@@ -96,7 +96,6 @@ object Analysis {
   }
 
   type StateCrypto[α] = State[List[Enc],Crypto[α]]
-
   def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
     implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
 
@@ -167,7 +166,9 @@ object AnalysisMain extends App {
   println(s"Num extracted: ${nums.length}")
   println(s"Extracted numbers == original?: ${nums == xs}")
 
-  val newXs = nums.map(Common.convert(keyRing)(Additive, _))
+  val newXs = nums.map { case (_,num) =>
+    (Common.convert(keyRing)(Additive, num))
+  }
 
   println("Replacing...")
   val newProg = Analysis.replaceNumbers(prog).eval(newXs)
