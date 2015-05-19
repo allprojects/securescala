@@ -177,39 +177,3 @@ akka {
     futureRef
   }
 }
-
-object ActorInterpretation extends App {
-  val keyRing = KeyRing.create
-
-  val system = ActorSystem("CryptoService")
-
-  val cryptoService = new CryptoServiceImpl(keyRing)
-
-  // val cryptoService: CryptoServicePlus =
-  //   TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-  //     new CryptoServiceImpl(keyRing)), "cryptoServer")
-
-  import scala.concurrent.ExecutionContext.Implicits.global
-  val remoteInterpreter = new RemoteInterpreter(cryptoService)
-
-  ///////////////////////////////////////////////////////////////////////
-
-  import crypto.cipher._
-  import crypto.dsl.Implicits._
-  import scalaz.std.list._
-  val \/-(encryptedList) = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keyRing.pub)).sequenceU
-
-  val result = remoteInterpreter.interpret {
-    sumA(Common.zero(keyRing))(encryptedList)
-  }
-
-  val r = Common.decrypt(keyRing.priv)(Await.result(result, 60.seconds))
-
-  println(r)
-
-  ///////////////////////////////////////////////////////////////////////
-
-  TypedActor(system).poisonPill(cryptoService)
-
-  system.shutdown()
-}
