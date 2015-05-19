@@ -40,7 +40,7 @@ trait CryptoService {
 
 trait CryptoServicePlus extends CryptoService {
   def subtract(lhs: Enc, rhs: Enc): Future[Enc]
-  def divide(lhs: Enc, rhs: Enc): Future[Enc]
+  def integerDivide(lhs: Enc, rhs: Enc): Future[Enc]
 }
 
 class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServicePlus {
@@ -70,7 +70,7 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
 
   override def decryptAndPrint(v: Enc): Unit = println(Common.decrypt(keyRing.priv)(v))
 
-  override def divide(lhs: Enc, rhs: Enc): Future[Enc] = Future.successful {
+  override def integerDivide(lhs: Enc, rhs: Enc): Future[Enc] = Future.successful {
     val plainLhs = Common.decrypt(keyRing.priv)(lhs)
     val plainRhs = Common.decrypt(keyRing.priv)(rhs)
     val result = plainLhs / plainRhs

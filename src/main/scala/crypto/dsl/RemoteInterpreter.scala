@@ -75,7 +75,8 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
 
     case -\/(Encrypt(s,v,k)) => service.encrypt(s)(v).flatMap(x => interpret(k(x)))
     case -\/(Sub(lhs,rhs,k)) => service.subtract(lhs,rhs).flatMap(x => interpret(k(x)))
-    case -\/(Div(lhs,rhs,k)) => service.divide(lhs,rhs).flatMap(x => interpret(k(x)))
+    case -\/(Div(lhs,rhs,k)) =>
+      service.integerDivide(lhs,rhs).flatMap(x => interpret(k(x)))
 
     case -\/(Embed(p,k)) => for {
       v <- interpretA(p)
