@@ -14,12 +14,27 @@ trait CryptoService {
   def toAes(in: Enc): Future[AesEnc]
   def toOpe(in: Enc): Future[OpeEnc]
 
+  /** Convert the encoded value for the given scheme */
   def convert(s: Scheme)(in: Enc): Future[Enc]
+  /** Process the list of (scheme,encoding) and convert the encoding to
+    * scheme (if necessary) before replying with the whole list of
+    * results
+    */
   def batchConvert(xs: List[(Scheme,Enc)]): Future[List[Enc]]
 
+  /** Encrypt the plain number with the given scheme NOTE: the value is
+    * NOT encrypted for sending and therefore may be visible to
+    * others!  If possible you should use the public keys and encrypt
+    * them with an asymmetric scheme like paillier or elgamal before
+    * sending it.
+    */
   def encrypt(s: Scheme)(in: Int): Future[Enc]
+  /** Process the list of (scheme,integer) and encrypt them, reply after
+    * the whole list is processed
+    */
   def batchEncrypt(xs: List[(Scheme,Int)]): Future[List[Enc]]
 
+  /** Decrypt the value and print it locally (where the service runs) to stdout */
   def decryptAndPrint(v: Enc): Unit
 }
 
