@@ -7,14 +7,16 @@ import scalaz.std.math.bigInt._
 import scalaz.syntax.order._
 
 sealed trait Enc
-class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends Enc {
+class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends Enc with Serializable {
   def +(that: PaillierEnc): PaillierEnc = (this,that) match {
-    case (PaillierEnc(lhs),PaillierEnc(rhs)) => new PaillierEnc((lhs * rhs).mod(nSquare), nSquare)
+    case (PaillierEnc(lhs),PaillierEnc(rhs)) =>
+      new PaillierEnc((lhs * rhs).mod(nSquare), nSquare)
   }
 }
-class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends Enc {
+class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends Enc with Serializable {
   def *(that: ElGamalEnc): ElGamalEnc = (this,that) match {
-    case (ElGamalEnc(ca1,ca2),ElGamalEnc(cb1,cb2)) => new ElGamalEnc((ca1 * cb1).mod(p), (ca2 * cb2).mod(p), p)
+    case (ElGamalEnc(ca1,ca2),ElGamalEnc(cb1,cb2)) =>
+      new ElGamalEnc((ca1 * cb1).mod(p), (ca2 * cb2).mod(p), p)
   }
 }
 case class AesEnc(underlying: Array[Byte]) extends Enc {
