@@ -6,12 +6,13 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 
+import scala.util.Try
+import scala.io.StdIn
+
 import scalaz._
-import scalaz.std.list._
 import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
-import scalaz.syntax.traverse._
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -125,29 +126,42 @@ object RunProgramUsingService extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
   import crypto.dsl.Implicits._
 
-
-  // 1. Request the crypto service and create interpreter
   val service = Await.result(setupCryptoService, 10.seconds)
   val remoteInterpreter = new RemoteInterpreter(service)
 
-  // 2. Get the public keys from the service and encrypt some sample data
+  // 2. Get the public keys from the service
   val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
-  val \/-(encryptedList) = SampleData.fixed1.map(Common.encryptPub(Multiplicative, keys)).sequenceU
 
   // 3. Check for a small program
   val f = remoteInterpreter.interpret(Common.one(keys) + Common.one(keys)).map(service.decryptAndPrint)
   Await.result(f, 60.seconds)
 
-  // 4. Run a program, e.g. sum up all the numbers
-  val result = remoteInterpreter.interpret {
-    sumA(Common.zero(keys))(encryptedList)
+  // 4. Run a program
+  while (true) {
+    println("factorial of?")
+    val input = StdIn.readLine
+
+    if (input.startsWith("q")) System.exit(0)
+
+    val number = Try(input.toInt) match {
+      case scala.util.Success(x) => \/-(x)
+      case scala.util.Failure(e) => -\/(e)
+    }
+    number match {
+      case \/-(i) =>
+        val result = remoteInterpreter.interpret {
+          ExamplePrograms.factorial(Common.encryptPub(Additive, keys)(i).valueOr(sys.error))
+        }
+        val finalRes = Await.result(result, 60.minutes)
+        service.decryptAndPrint(finalRes)
+      case -\/(e) => println("I didn't understand that")
+    }
   }
 
-  val finalRes = Await.result(result, 60.seconds)
 
-  service.decryptAndPrint(finalRes)
+  /////////// setup
 
-  def setupCryptoService: Future[CryptoServicePlus] = {
+  private def setupCryptoService: Future[CryptoServicePlus] = {
 
     val config = ConfigFactory.parseString("""
 akka {
