@@ -25,8 +25,16 @@ trait ProgaaS {
   def run(): Unit = {
     print("Trying to connect to crypto service...")
     val (system,futService) = CryptoService.connect
-    val service = Await.result(futService, 10.seconds)
-    println("ok")
+    val service = \/.fromTryCatchNonFatal(Await.result(futService, 10.seconds)) match {
+      case -\/(err) =>
+        println("failed!")
+        println(s"Error connecting to crypto service: ${err}")
+        println("Did you start the crypto service before running this?")
+        sys.exit(1)
+      case \/-(service) =>
+        println("ok")
+        service
+    }
 
     val remoteInterpreter = new RemoteInterpreter(service)
 
@@ -58,6 +66,8 @@ trait ProgaaS {
         loop
       }
     }
+
+    loop
   }
 }
 
