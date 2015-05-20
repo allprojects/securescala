@@ -30,6 +30,7 @@ trait ProgaaS {
         println("failed!")
         println(s"Error connecting to crypto service: ${err}")
         println("Did you start the crypto service before running this?")
+        system.shutdown()
         sys.exit(1)
       case \/-(service) =>
         println("ok")

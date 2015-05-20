@@ -97,8 +97,11 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
 }
 
 object CryptoService {
-  def start: CryptoServicePlus = startWith(4242, KeyRing.create, "cryptoService")
-  def startWith(port: Int, keyRing: KeyRing, name: String): CryptoServicePlus = {
+  def start: (ActorSystem, CryptoServicePlus) =
+    startWith(4242, KeyRing.create, "cryptoService")
+  def startWith(port: Int, keyRing: KeyRing, name: String):
+      (ActorSystem, CryptoServicePlus) = {
+
     val config = ConfigFactory.parseString(s"""
 akka {
   loglevel = "WARNING"
@@ -123,14 +126,14 @@ akka {
       TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
         new CryptoServiceImpl(keyRing)), name)
 
-    cryptoService
+    (system, cryptoService)
   }
 
   def connect(implicit ec: ExecutionContext) =
     connectWith("127.0.0.1", 4242, "cryptoService")
 
   def connectWith(address: String, port: Int, name: String)(
-    implicit ec: ExecutionContext): Future[CryptoServicePlus] = {
+    implicit ec: ExecutionContext): (ActorSystem, Future[CryptoServicePlus]) = {
 
     val config = ConfigFactory.parseString("""
 akka {
@@ -159,7 +162,7 @@ akka {
           TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus]).
             withTimeout(timeOut), ref)
         }
-    futureRef
+    (system, futureRef)
   }
 }
 
