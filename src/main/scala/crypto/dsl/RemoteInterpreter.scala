@@ -97,30 +97,41 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
 
 object FactaaS extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
+  import ExamplePrograms.factorial
 
+  print("Trying to connect to crypto service...")
   val service = Await.result(CryptoService.connect, 10.seconds)
+  println("ok")
+
   val remoteInterpreter = new RemoteInterpreter(service)
 
+  print("Requesting public keys...")
   val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
+  println("ok")
 
-  while (true) {
-    println("factorial of?")
+  def loop(): Unit = {
+    println("Your input:")
     val input = StdIn.readLine
+    if (input.startsWith("quit")) {
 
-    if (input.startsWith("q")) System.exit(0)
-
-    val number = Try(input.toInt) match {
-      case scala.util.Success(x) => \/-(x)
-      case scala.util.Failure(e) => -\/(e)
-    }
-    number match {
-      case \/-(i) =>
-        val result = remoteInterpreter.interpret {
-          ExamplePrograms.fib(Common.encryptPub(Additive, keys)(i).valueOr(sys.error))
-        }
-        val finalRes = Await.result(result, 60.minutes)
-        service.decryptAndPrint(finalRes)
-      case -\/(e) => println("I didn't understand that")
+    } else {
+      \/.fromTryCatchNonFatal(input.toInt) match {
+        case \/-(i) =>
+          Common.encryptPub(Additive, keys)(i) match {
+            case -\/(err) => println("Failed during public key encryption with: " + err)
+            case \/-(encryptedInput) =>
+              val result = remoteInterpreter.interpret {
+                factorial(encryptedInput)
+              }
+              val finalRes = Await.result(result, 60.minutes)
+              service.decryptAndPrint(finalRes)
+          }
+        case -\/(e) => "Invalid input, type `quit` to exit"
+      }
+      loop
     }
   }
+
+  println("Entering input loop.")
+  loop()
 }
