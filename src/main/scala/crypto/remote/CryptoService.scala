@@ -1,6 +1,13 @@
 package crypto.remote
 
 import scala.concurrent._
+import scala.concurrent.duration._
+
+import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
+
+import com.typesafe.config.ConfigFactory
 
 import crypto._
 import crypto.cipher._
@@ -83,5 +90,72 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
     val result = plainLhs - plainRhs
     Common.encrypt(Additive, keyRing)(result)
   }
+}
 
+object CryptoService {
+  def start: CryptoServicePlus = startWith(4242, KeyRing.create, "cryptoService")
+  def startWith(port: Int, keyRing: KeyRing, name: String): CryptoServicePlus = {
+    val config = ConfigFactory.parseString(s"""
+akka {
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+  remote {
+    enabled-transports = ["akka.remote.netty.tcp"]
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = ${port}
+      maximum-frame-size = 256000b
+    }
+  }
+}
+""")
+
+    val system = ActorSystem("CryptoService", config)
+
+    val cryptoService: CryptoServicePlus =
+      TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
+        new CryptoServiceImpl(keyRing)), name)
+
+    cryptoService
+  }
+
+  def connect(implicit ec: ExecutionContext) =
+    connectWith("127.0.0.1", 4242, "cryptoService")
+
+  def connectWith(address: String, port: Int, name: String)(
+    implicit ec: ExecutionContext): Future[CryptoServicePlus] = {
+
+    val config = ConfigFactory.parseString("""
+akka {
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+  remote {
+    enabled-transports = ["akka.remote.netty.tcp"]
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 0
+      maximum-frame-size = 256000b
+    }
+  }
+}
+""")
+
+    val system = ActorSystem("CryptoServiceClient", config)
+
+    implicit val timeOut = Timeout(60.seconds)
+    val futureRef =
+      system.actorSelection(s"akka.tcp://CryptoService@${address}:${port}/user/${name}").
+        resolveOne().map { ref =>
+          TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus]).
+            withTimeout(timeOut), ref)
+        }
+    futureRef
+  }
+}
+
+object StartCryptoService extends App {
+  CryptoService.start
+  println("CryptoService is up and running.")
 }
