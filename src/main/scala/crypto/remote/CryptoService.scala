@@ -97,6 +97,8 @@ object CryptoService {
   def startWith(port: Int, keyRing: KeyRing, name: String): CryptoServicePlus = {
     val config = ConfigFactory.parseString(s"""
 akka {
+  loglevel = "WARNING"
+  stdout-loglevel = "WARNING"
   actor {
     provider = "akka.remote.RemoteActorRefProvider"
   }
@@ -128,6 +130,8 @@ akka {
 
     val config = ConfigFactory.parseString("""
 akka {
+  loglevel = "WARNING"
+  stdout-loglevel = "WARNING"
   actor {
     provider = "akka.remote.RemoteActorRefProvider"
   }

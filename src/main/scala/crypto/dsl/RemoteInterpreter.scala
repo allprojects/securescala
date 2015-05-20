@@ -2,7 +2,6 @@ package crypto.dsl
 
 import com.typesafe.config.ConfigFactory
 
-import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -96,47 +95,14 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
   }
 }
 
-object StartCryptoServiceActor extends App {
-  val config = ConfigFactory.parseString("""
-akka {
-  actor {
-    provider = "akka.remote.RemoteActorRefProvider"
-  }
-  remote {
-    enabled-transports = ["akka.remote.netty.tcp"]
-    netty.tcp {
-      hostname = "127.0.0.1"
-      port = 4242
-      maximum-frame-size = 256000b
-    }
-  }
-}
-""")
-
-  val keyRing = KeyRing.create
-
-  val system = ActorSystem("CryptoService", config)
-
-  val cryptoService: CryptoServicePlus =
-    TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-      new CryptoServiceImpl(keyRing)), "cryptoServer")
-}
-
-object RunProgramUsingService extends App {
+object FactaaS extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
-  import crypto.dsl.Implicits._
 
-  val service = Await.result(setupCryptoService, 10.seconds)
+  val service = Await.result(CryptoService.connect, 10.seconds)
   val remoteInterpreter = new RemoteInterpreter(service)
 
-  // 2. Get the public keys from the service
   val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
 
-  // 3. Check for a small program
-  val f = remoteInterpreter.interpret(Common.one(keys) + Common.one(keys)).map(service.decryptAndPrint)
-  Await.result(f, 60.seconds)
-
-  // 4. Run a program
   while (true) {
     println("factorial of?")
     val input = StdIn.readLine
@@ -150,44 +116,11 @@ object RunProgramUsingService extends App {
     number match {
       case \/-(i) =>
         val result = remoteInterpreter.interpret {
-          ExamplePrograms.factorial(Common.encryptPub(Additive, keys)(i).valueOr(sys.error))
+          ExamplePrograms.fib(Common.encryptPub(Additive, keys)(i).valueOr(sys.error))
         }
         val finalRes = Await.result(result, 60.minutes)
         service.decryptAndPrint(finalRes)
       case -\/(e) => println("I didn't understand that")
     }
-  }
-
-
-  /////////// setup
-
-  private def setupCryptoService: Future[CryptoServicePlus] = {
-
-    val config = ConfigFactory.parseString("""
-akka {
-  actor {
-    provider = "akka.remote.RemoteActorRefProvider"
-  }
-  remote {
-    enabled-transports = ["akka.remote.netty.tcp"]
-    netty.tcp {
-      hostname = "127.0.0.1"
-      port = 0
-      maximum-frame-size = 256000b
-    }
-  }
-}
-""")
-
-    val system = ActorSystem("CryptoServiceClient", config)
-
-    implicit val timeOut = Timeout(10.seconds)
-    val futureRef =
-      system.actorSelection("akka.tcp://CryptoService@127.0.0.1:4242/user/cryptoServer").
-        resolveOne().map { ref =>
-          TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus]).
-            withTimeout(timeOut), ref)
-        }
-    futureRef
   }
 }
