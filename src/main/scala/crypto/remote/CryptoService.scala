@@ -115,7 +115,7 @@ akka {
     netty.tcp {
       hostname = "127.0.0.1"
       port = ${port}
-      maximum-frame-size = 256000b
+      maximum-frame-size = 512000b
     }
   }
 }
@@ -123,17 +123,24 @@ akka {
 
     val system = ActorSystem("CryptoService", config)
 
-    val routees: List[CryptoServicePlus] = List.tabulate(numActors) { i =>
-      TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-        new CryptoServiceImpl(keyRing)), name + s"_${i}")
-    }
-    val routeePaths = routees.map { r =>
-      TypedActor(system).getActorRefFor(r).path.toStringWithoutAddress
-    }
+    // Create numActors routees and a router that mediates
+    val cryptoService: CryptoServicePlus = {
+      val routees: List[CryptoServicePlus] = List.tabulate(numActors) { i =>
+        TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
+          new CryptoServiceImpl(keyRing)), name + s"_${i}")
+      }
 
-    val router: ActorRef = system.actorOf(RoundRobinGroup(routeePaths).props(), "cryptoService")
-    val cryptoService: CryptoServicePlus = TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-      new CryptoServiceImpl(keyRing)), actorRef = router)
+      val routeePaths = routees.map { r =>
+        TypedActor(system).getActorRefFor(r).path.toStringWithoutAddress
+      }
+
+      val router: ActorRef = system.actorOf(
+        RoundRobinGroup(routeePaths).props(), "cryptoService")
+
+      TypedActor(system).typedActorOf(
+        TypedProps(classOf[CryptoServicePlus],
+          new CryptoServiceImpl(keyRing)), actorRef = router)
+    }
 
     (system, cryptoService)
   }
