@@ -43,6 +43,9 @@ trait CryptoService {
 
   /** Decrypt the value and print it locally (where the service runs) to stdout */
   def decryptAndPrint(v: Enc): Unit
+
+  /** Print the string on the CrytpoService side */
+  def println[A](a: A): Unit
 }
 
 trait CryptoServicePlus extends CryptoService {
@@ -76,6 +79,7 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
     Future.successful(xs.map { case (s, i) => Common.encrypt(s, keyRing)(i)})
 
   override def decryptAndPrint(v: Enc): Unit = println(Common.decrypt(keyRing.priv)(v))
+  override def println[A](a: A): Unit = Predef.println(a)
 
   override def integerDivide(lhs: Enc, rhs: Enc): Future[Enc] = Future.successful {
     val plainLhs = Common.decrypt(keyRing.priv)(lhs)
@@ -160,6 +164,10 @@ akka {
 }
 
 object StartCryptoService extends App {
-  CryptoService.start
+  val (system, service) = CryptoService.start
   println("CryptoService is up and running.")
+  System.in.read()
+  print("Shutting down...")
+  system.shutdown()
+  println("bye!")
 }
