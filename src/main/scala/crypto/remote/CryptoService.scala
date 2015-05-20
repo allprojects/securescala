@@ -135,7 +135,7 @@ akka {
       }
 
       val router: ActorRef = system.actorOf(
-        RoundRobinGroup(routeePaths).props(), "cryptoService")
+        RoundRobinGroup(routeePaths).props(), name)
 
       TypedActor(system).typedActorOf(
         TypedProps(classOf[CryptoServicePlus],
