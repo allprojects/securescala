@@ -104,8 +104,8 @@ object CryptoService {
 
     val config = ConfigFactory.parseString(s"""
 akka {
-  loglevel = "WARNING"
-  stdout-loglevel = "WARNING"
+  loglevel = "ERROR"
+  stdout-loglevel = "ERROR"
   actor {
     provider = "akka.remote.RemoteActorRefProvider"
   }
@@ -137,8 +137,8 @@ akka {
 
     val config = ConfigFactory.parseString("""
 akka {
-  loglevel = "WARNING"
-  stdout-loglevel = "WARNING"
+  loglevel = "ERROR"
+  stdout-loglevel = "ERROR"
   actor {
     provider = "akka.remote.RemoteActorRefProvider"
   }
