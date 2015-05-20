@@ -95,9 +95,10 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
   }
 }
 
-object FactaaS extends App {
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import ExamplePrograms.factorial
+trait ProgaaS {
+  implicit def ec: ExecutionContext
+  def name: String
+  def program(in: Enc): CryptoM[Enc]
 
   print("Trying to connect to crypto service...")
   val service = Await.result(CryptoService.connect, 10.seconds)
@@ -110,10 +111,10 @@ object FactaaS extends App {
   println("ok")
 
   def loop(): Unit = {
-    println("Your input:")
+    println(s"Your input for program '${name}':")
     val input = StdIn.readLine
     if (input.startsWith("quit")) {
-
+      sys.exit(0)
     } else {
       \/.fromTryCatchNonFatal(input.toInt) match {
         case \/-(i) =>
@@ -121,9 +122,10 @@ object FactaaS extends App {
             case -\/(err) => println("Failed during public key encryption with: " + err)
             case \/-(encryptedInput) =>
               val result = remoteInterpreter.interpret {
-                factorial(encryptedInput)
+                program(encryptedInput)
               }
               val finalRes = Await.result(result, 60.minutes)
+              service.println(s"Result for input ${i} and program ${name}:")
               service.decryptAndPrint(finalRes)
           }
         case -\/(e) => "Invalid input, type `quit` to exit"
@@ -131,7 +133,18 @@ object FactaaS extends App {
       loop
     }
   }
+}
 
-  println("Entering input loop.")
-  loop()
+object FactaaS extends ProgaaS with App {
+  def ec = scala.concurrent.ExecutionContext.Implicits.global
+  def name = "factorial"
+  def program(in: Enc) = ExamplePrograms.factorial(in)
+
+  loop
+}
+
+object FibaaS extends ProgaaS with App {
+  def ec = scala.concurrent.ExecutionContext.Implicits.global
+  def name = "fibonacci"
+  def program(in: Enc) = ExamplePrograms.fib(in)
 }
