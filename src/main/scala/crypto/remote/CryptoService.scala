@@ -4,6 +4,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 
 import akka.actor._
+import akka.routing._
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -98,8 +99,8 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
 
 object CryptoService {
   def start: (ActorSystem, CryptoServicePlus) =
-    startWith(4242, KeyRing.create, "cryptoService")
-  def startWith(port: Int, keyRing: KeyRing, name: String):
+    startWith(4242, KeyRing.create, "cryptoService", 5)
+  def startWith(port: Int, keyRing: KeyRing, name: String, numActors: Int):
       (ActorSystem, CryptoServicePlus) = {
 
     val config = ConfigFactory.parseString(s"""
@@ -122,9 +123,17 @@ akka {
 
     val system = ActorSystem("CryptoService", config)
 
-    val cryptoService: CryptoServicePlus =
+    val routees: List[CryptoServicePlus] = List.tabulate(numActors) { i =>
       TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-        new CryptoServiceImpl(keyRing)), name)
+        new CryptoServiceImpl(keyRing)), name + s"_${i}")
+    }
+    val routeePaths = routees.map { r =>
+      TypedActor(system).getActorRefFor(r).path.toStringWithoutAddress
+    }
+
+    val router: ActorRef = system.actorOf(RoundRobinGroup(routeePaths).props(), "cryptoService")
+    val cryptoService: CryptoServicePlus = TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
+      new CryptoServiceImpl(keyRing)), actorRef = router)
 
     (system, cryptoService)
   }
