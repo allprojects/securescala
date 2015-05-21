@@ -81,8 +81,7 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
       r <- interpret(k(Free.point(v)).join)
     } yield r
 
-    case \/-(x) =>
-      Future.successful(x)
+    case \/-(x) => Future.successful(x)
   }
 
   def interpretA[A](p: Crypto[A]): Future[A] = {
