@@ -15,6 +15,25 @@ import crypto.cipher._
 import crypto.dsl.Implicits._
 
 object ExamplePrograms {
+  def collatzConjecture(n: Enc): CryptoM[Enc] = for {
+    zero <- encrypt(Comparable)(0)
+    xs <- List(1,2,3).traverse(encrypt(Multiplicative))
+    r <- collatzConjectureHelper(zero,xs(0),xs(1),xs(2))(n)
+  } yield r
+
+  def collatzConjectureHelper(zero: Enc, one: Enc, two: Enc, three: Enc)(
+    n: Enc): CryptoM[Enc] = for {
+
+      greaterOne <- n > one
+      r <- if (!greaterOne) n.point[CryptoM] else for {
+        cond <- isEven(n)
+        r <- if (cond) {
+          n / two >>= collatzConjectureHelper(zero,one,two,three)
+        } else {
+          three * n >>= (_+one) >>= collatzConjectureHelper(zero,one,two,three)
+        }
+      } yield r
+  } yield r
 
   def fib(n: Enc): CryptoM[Enc] = for {
     one <- encrypt(Additive)(1)

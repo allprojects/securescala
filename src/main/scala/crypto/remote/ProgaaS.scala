@@ -87,3 +87,11 @@ object FibaaS extends ProgaaS with App {
 
   run
 }
+
+object CollatzaaS extends ProgaaS with App {
+  def ec = scala.concurrent.ExecutionContext.Implicits.global
+  def name = "collatz conjecture"
+  def program(in: Enc) = ExamplePrograms.collatzConjecture(in)
+
+  run
+}
