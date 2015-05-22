@@ -46,7 +46,8 @@ object Analysis {
         case Sub(_,_,_) => 2
         case Div(_,_,_) => 2
 
-        case x => 0
+        case IsEven(_,_) => 0
+        case IsOdd(_,_) => 0
       }
     })
   }
@@ -117,6 +118,8 @@ object Analysis {
 
         case Sub(lhs,rhs,k) => List((None,lhs),(None,rhs))
         case Div(lhs,rhs,k) => List((None,lhs),(None,rhs))
+        case IsEven(v,k) => List((None,v))
+        case IsOdd(v,k) => List((None,v))
 
         case Encrypt(s,v,k) => List()
         case Embed(p,k) => extractNumbers(p)
@@ -173,6 +176,12 @@ object Analysis {
           l <- takeHead()
           r <- takeHead()
         } yield FreeAp.lift(Div(l,r,k))
+        case IsEven(v,k) => for {
+          x <- takeHead()
+        } yield FreeAp.lift(IsEven(x,k))
+        case IsOdd(v,k) => for {
+          x <- takeHead()
+        } yield FreeAp.lift(IsOdd(x,k))
         case Encrypt(s,v,k) => State.state(FreeAp.lift(Encrypt(s,v,k)))
         case Embed(p,k) => State.state(FreeAp.lift(Embed(p,k)))
       }

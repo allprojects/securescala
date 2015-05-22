@@ -23,6 +23,10 @@ case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 // Has to be offline because no phe scheme available
 case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
 
+case class IsEven[K](v: Enc, k: Boolean => K) extends CryptoF[K]
+case class IsOdd[K](v: Enc, k: Boolean => K) extends CryptoF[K]
+
+// Embed the applicative part into monadic language
 case class Embed[A,K](v: Crypto[A], k: CryptoM[A] => CryptoM[K]) extends CryptoF[K]
 
 object CryptoF {
@@ -40,6 +44,8 @@ object CryptoF {
       case ToOpe(v,k) => ToOpe(v,f compose k)
       case Sub(lhs,rhs,k) => Sub(lhs,rhs,f compose k)
       case Div(lhs,rhs,k) => Div(lhs,rhs,f compose k)
+      case IsEven(v,k) => IsEven(v,f compose k)
+      case IsOdd(v,k) => IsOdd(v,f compose k)
       case e: Embed[a,k] => Embed(e.v,(x: CryptoM[a]) => e.k(x).map(f))
     }
   }

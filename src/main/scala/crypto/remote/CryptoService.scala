@@ -52,6 +52,8 @@ trait CryptoService {
 trait CryptoServicePlus extends CryptoService {
   def subtract(lhs: Enc, rhs: Enc): Future[Enc]
   def integerDivide(lhs: Enc, rhs: Enc): Future[Enc]
+  def isEven(enc: Enc): Future[Boolean]
+  def isOdd(enc: Enc): Future[Boolean]
 }
 
 class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServicePlus {
@@ -94,6 +96,14 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
     val plainRhs = Common.decrypt(keyRing.priv)(rhs)
     val result = plainLhs - plainRhs
     Common.encrypt(Additive, keyRing)(result)
+  }
+
+  override def isEven(enc: Enc): Future[Boolean] = Future.successful {
+    Common.decrypt(keyRing.priv)(enc).mod(2) == 0
+  }
+
+  override def isOdd(enc: Enc): Future[Boolean] = Future.successful {
+    Common.decrypt(keyRing.priv)(enc).mod(2) == 1
   }
 }
 
