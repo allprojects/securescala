@@ -15,6 +15,7 @@ import crypto.cipher._
 import crypto.dsl.Implicits._
 
 object ExamplePrograms {
+  // https://en.wikipedia.org/wiki/Collatz_conjecture
   def collatzConjecture(n: Enc): CryptoM[Enc] = for {
     zero <- encrypt(Comparable)(0)
     xs <- List(1,2,3).traverse(encrypt(Multiplicative))
