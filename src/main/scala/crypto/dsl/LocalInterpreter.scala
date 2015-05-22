@@ -55,6 +55,16 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
       val r = Common.encrypt(Additive, keyRing)(plainLhs / plainRhs)
       interpret(k(r))
 
+    case -\/(IsEven(v,k)) =>
+      val plain = Common.decrypt(keyRing.priv)(v)
+      interpret(k(plain.mod(2) == 0))
+
+    case -\/(IsOdd(v,k)) =>
+      val plain = Common.decrypt(keyRing.priv)(v)
+      interpret(k(plain.mod(2) == 1))
+
+    // Embedding
+
     case -\/(Embed(p,k)) =>
       val r: CryptoM[A] = k(Free.point(interpretA(p))).join
       interpret(r)
