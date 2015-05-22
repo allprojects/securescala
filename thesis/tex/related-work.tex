@@ -126,7 +126,15 @@
 \label{sec:free-monads}
 
 \cite{Haxl}
+- essentially a free monad, here specialized as a DSL for fetching
+data from different sources, used by facebook in production
+
 \cite{DataTypesALaCarte}
+- at the end presents free monads and offers approach of composing
+  languages via the coproduct of functors
+- while the composition offers a nice way to use several DSL's not
+  necessary here because we have defined all operations the encryption
+  schemes support
 
 \subsection{Applicative Functors}
 \label{sec:applicative-functors}
@@ -136,6 +144,8 @@ Applicatives compose \cite{EssenceIterator}
 \subsection{Free Applicative Functors}
 \label{sec:free-appl-funct}
 
+- If we resign from the power of monads and use applicative functors,
+  we get the ability to analyze the program without executing it
 \cite{FreeApplicatives}
 
 %%% Local Variables:
