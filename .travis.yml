@@ -1,0 +1,23 @@
+sudo: required
+
+scala:
+  - "2.11.6"
+
+env:
+  - PATH="$HOME/bin:$PATH"
+
+install:
+  - mkdir -p "$HOME/bin"
+  - curl -s "https://raw.githubusercontent.com/paulp/sbt-extras/master/sbt" > "$HOME/bin/sbt"
+  - chmod +x "$HOME/bin/sbt"
+
+  - sudo apt-get -y install libntl-dev libssl-dev
+  - (cd cryptdb; make)
+  - cp cryptdb/libope.so ~/
+
+before_script:
+  - sbt test:compile
+
+script:
+  - sbt 'test-only *Check'
+  - sbt 'test-only *Spec'
