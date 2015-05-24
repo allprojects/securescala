@@ -105,4 +105,8 @@ trait DeriveDsl {
       } yield r
     }
   }
+  implicit class AnyValLifting[A](self: A) {
+    import scalaz.syntax.applicative._
+    def lifted: CryptoM[A] = self.point[CryptoM]
+  }
 }

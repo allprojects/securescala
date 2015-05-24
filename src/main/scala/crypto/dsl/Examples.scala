@@ -26,7 +26,7 @@ object ExamplePrograms {
     n: Enc): CryptoM[Enc] = for {
 
       greaterOne <- n > one
-      r <- if (!greaterOne) n.point[CryptoM] else for {
+      r <- if (!greaterOne) n.lifted else for {
         cond <- isEven(n)
         r <- if (cond) {
           n / two >>= collatzConjectureHelper(zero,one,two,three)
@@ -45,7 +45,7 @@ object ExamplePrograms {
   def fibHelper(one: Enc, two: Enc)(n: Enc): CryptoM[Enc] = for {
     cmp <- n <= one
     r <- if (cmp) {
-      one.point[CryptoM]
+      one.lifted
     } else for {
       n12 <- (n-one).tuple(n-two)
       f1 <- fibHelper(one,two)(n12._1)
@@ -62,7 +62,7 @@ object ExamplePrograms {
   def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
     cond <- n =:= zero
     r <- if (cond) {
-      one.point[CryptoM]
+      one.lifted
     } else for {
       n1 <- n - one
       fact <- factorialHelper(zero,one)(n1)
