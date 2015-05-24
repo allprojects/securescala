@@ -37,11 +37,11 @@ trait ProgaaS {
         service
     }
 
-    val remoteInterpreter = new RemoteInterpreter(service)
-
     print("Requesting public keys...")
     val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
     println("ok")
+
+    val remoteInterpreter = new RemoteInterpreter(service, keys)
 
     def loop(): Unit = {
       println(s"Your input for program '${name}':")

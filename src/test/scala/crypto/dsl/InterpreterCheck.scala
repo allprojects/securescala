@@ -99,7 +99,8 @@ object RemoteInterpreterCheck
     with InterpreterCheck[Future] {
 
   val cryptoService = new CryptoServiceImpl(keyRing)
-  override val interpreter = RemoteInterpreter(cryptoService)(
+  val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+  override val interpreter = RemoteInterpreter(cryptoService, pubKeys)(
     scala.concurrent.ExecutionContext.Implicits.global)
   override def finalize[A](x: Future[A]) = Await.result(x, Duration.Inf)
 }

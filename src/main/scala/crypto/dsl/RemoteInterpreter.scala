@@ -16,10 +16,11 @@ import scalaz.syntax.order._
 import scala.concurrent._
 
 import crypto._
+import crypto.cipher._
 import crypto.remote._
 
-case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: ExecutionContext)
-    extends CryptoInterpreter[Future] {
+case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
+  implicit ctxt: ExecutionContext) extends CryptoInterpreter[Future] {
 
   def interpret[A] = _.resume match {
 
@@ -71,7 +72,16 @@ case class RemoteInterpreter(service: CryptoServicePlus)(implicit ctxt: Executio
       case _ => service.toOpe(v).flatMap(x => interpret(k(x)))
     }
 
-    case -\/(Encrypt(s,v,k)) => service.encrypt(s)(v).flatMap(x => interpret(k(x)))
+    case -\/(Encrypt(s,v,k)) => {
+      val res: Future[Enc] = s match {
+        case Additive =>
+          Future.successful(Common.depEncryptPub(Additive, pubKeys)(v))
+        case Multiplicative =>
+          Future.successful(Common.depEncryptPub(Multiplicative, pubKeys)(v))
+        case _ => service.encrypt(s)(v)
+      }
+      res.flatMap(x => interpret(k(x)))
+    }
     case -\/(Sub(lhs,rhs,k)) => service.subtract(lhs,rhs).flatMap(x => interpret(k(x)))
     case -\/(Div(lhs,rhs,k)) => service.integerDivide(lhs,rhs).flatMap(x => interpret(k(x)))
     case -\/(IsEven(v,k)) => service.isEven(v).flatMap(x => interpret(k(x)))

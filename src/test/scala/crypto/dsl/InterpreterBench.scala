@@ -66,8 +66,10 @@ object RemoteInterpreterBench
   def name = "Remote interpreter (locally)"
   @transient val cryptoService = new CryptoServiceImpl(keyRing)
 
+  val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+
   @transient val interpreter =
-    new RemoteInterpreter(cryptoService)(ExecutionContext.Implicits.global)
+    new RemoteInterpreter(cryptoService, pubKeys)(ExecutionContext.Implicits.global)
 
   override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
   override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
