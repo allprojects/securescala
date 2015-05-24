@@ -24,7 +24,6 @@ object ExamplePrograms {
 
   def collatzConjectureHelper(zero: Enc, one: Enc, two: Enc, three: Enc)(
     n: Enc): CryptoM[Enc] = for {
-
       greaterOne <- n > one
       r <- if (!greaterOne) n.lifted else for {
         cond <- isEven(n)
@@ -46,8 +45,8 @@ object ExamplePrograms {
     r <- if (cmp) {
       one.lifted
     } else for {
-      n12 <- (n-one) tuple (n-two)
-      (f1,f2) <- fibHelper(one,two)(n12._1) tuple fibHelper(one,two)(n12._2)
+      (n1,n2) <- (n-one) tuple (n-two)
+      (f1,f2) <- fibHelper(one,two)(n1) tuple fibHelper(one,two)(n2)
       s <- f1 + f2
     } yield s
   } yield r
