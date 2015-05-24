@@ -4,6 +4,7 @@ import scala.language.higherKinds
 
 import scalaz._
 import scalaz.std.list._
+import scalaz.syntax.std.list._
 import scalaz.std.map._
 import scalaz.syntax.traverse._
 import scalaz.syntax.applicative._
@@ -68,7 +69,7 @@ object ExamplePrograms {
   } yield r
 
   def sumAndLength[F[_]:Traverse](z: PaillierEnc)(xs: F[Enc]): Crypto[(PaillierEnc,Enc)] =
-    sumA(z)(xs).tuple(encrypt(Additive)(xs.length))
+    sumA(z)(xs) tuple encrypt(Additive)(xs.length)
 
   // Requires zero to be passed in but uses applicative style and more specific
   // return type PaillierEnc
@@ -84,6 +85,15 @@ object ExamplePrograms {
     zero <- encrypt(Additive)(0)
   } yield maybeSums.mapValues(_.getOrElse(zero))
 
+  // Parition the input list into even and odd (predefined in scalaz)
+  def evenAndOdd(input: List[Enc]): Crypto[(List[Enc],List[Enc])] =
+    input.partitionM(isEven)
+
+  // Group if the two are smaller than delta apart
+  def groupWithDelta(delta: Enc)(input: List[Enc]): CryptoM[List[NonEmptyList[Enc]]] =
+    input.groupWhenM[CryptoM]( (x,y) => (x - y) >>= (_ < delta))
+
+  def firstEven(input: List[Enc]): CryptoM[Option[Enc]] = input.findM(isEven)
 }
 
 object Repl {
