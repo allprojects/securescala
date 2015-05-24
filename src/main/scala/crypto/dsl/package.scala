@@ -106,7 +106,7 @@ trait DeriveDsl {
   implicit class DslCryptoMSyntax[A](self: CryptoM[A]) {
     // https://issues.scala-lang.org/browse/SI-1336
     def withFilter(p: A => Boolean): CryptoM[A] =
-      self.map(x => cond(p(x),x,sys.error("pattern match fail in withFilter of Crypto")))
+      self.map(x => cond(p(x),x,sys.error("pattern match fail in withFilter of CryptoM")))
 
     def ifM[B](ifTrue: => CryptoM[B])(ifFalse: => CryptoM[B])(
       implicit ev: A === Boolean): CryptoM[B] = {

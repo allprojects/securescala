@@ -37,8 +37,7 @@ object ExamplePrograms {
   } yield r
 
   def fib(n: Enc): CryptoM[Enc] = for {
-    one <- encrypt(Additive)(1)
-    two <- encrypt(Additive)(2)
+    (one,two) <- encrypt(Additive)(1) tuple encrypt(Additive)(2)
     r <- fibHelper(one,two)(n)
   } yield r
 
@@ -47,16 +46,15 @@ object ExamplePrograms {
     r <- if (cmp) {
       one.lifted
     } else for {
-      n12 <- (n-one).tuple(n-two)
-      f1 <- fibHelper(one,two)(n12._1)
-      f2 <- fibHelper(one,two)(n12._2)
+      n12 <- (n-one) tuple (n-two)
+      (f1,f2) <- fibHelper(one,two)(n12._1) tuple fibHelper(one,two)(n12._2)
       s <- f1 + f2
     } yield s
   } yield r
 
   def factorial(n: Enc): CryptoM[Enc] = for {
-    zeroOne <- encrypt(Multiplicative)(0).tuple(encrypt(Multiplicative)(1))
-    r <- factorialHelper(zeroOne._1,zeroOne._2)(n)
+    (zero,one) <- encrypt(Multiplicative)(0) tuple (encrypt(Multiplicative)(1))
+    r <- factorialHelper(zero, one)(n)
   } yield r
 
   def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
