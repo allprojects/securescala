@@ -5,6 +5,7 @@ import scala.language.implicitConversions
 
 import scalaz._
 
+import scalaz.std.boolean.{fold => cond}
 import scalaz.Leibniz._
 import scalaz.Ordering._
 import scalaz.std.list._
@@ -95,7 +96,18 @@ trait DeriveDsl {
     def productOpt: Crypto[Option[ElGamalEnc]] = deriveDsl.productOpt(self)
   }
 
-  implicit class DslCryptoSyntax[A](self: CryptoM[A]) {
+
+  implicit class DslCryptoSyntax[A](self: Crypto[A]) {
+    // https://issues.scala-lang.org/browse/SI-1336
+    def withFilter(p: A => Boolean): Crypto[A] =
+      self.map(x => cond(p(x),x,sys.error("pattern match fail in withFilter of Crypto")))
+  }
+
+  implicit class DslCryptoMSyntax[A](self: CryptoM[A]) {
+    // https://issues.scala-lang.org/browse/SI-1336
+    def withFilter(p: A => Boolean): CryptoM[A] =
+      self.map(x => cond(p(x),x,sys.error("pattern match fail in withFilter of Crypto")))
+
     def ifM[B](ifTrue: => CryptoM[B])(ifFalse: => CryptoM[B])(
       implicit ev: A === Boolean): CryptoM[B] = {
       val value: CryptoM[Boolean] = ev.subst(self)
