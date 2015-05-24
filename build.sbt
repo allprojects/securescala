@@ -14,7 +14,6 @@ scalacOptions ++= Seq(
   "-language:higherKinds",
   "-language:implicitConversions",
   "-unchecked",
-  "-Xfatal-warnings",
   "-Xfuture",
   "-Xlint",
   "-Yinline-warnings",
@@ -30,6 +29,12 @@ scalacOptions ++= Seq(
   "-Ywarn-unused-import",
   "-Ywarn-value-discard"
 )
+
+scalacOptions in compile += "-Xfatal-warnings"
+
+scalacOptions in test += "-Xfatal-warnings"
+
+scalacOptions in run += "-Xfatal-warnings"
 
 libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6"
 
