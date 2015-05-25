@@ -103,6 +103,9 @@ object Analysis {
     replaceNumbers(p).eval(newNums)
   }
 
+  def mapNumbers[A](p: Crypto[A])(f: (Option[Scheme],Enc) => Enc): Crypto[A] =
+    withNumbers(p)(_.map { case (optScheme,enc) => f(optScheme,enc) })
+
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],Enc)] = {
     p.analyze(new (CryptoF ~> λ[α => List[(Option[Scheme],Enc)]]) {
       def apply[B](a: CryptoF[B]) = a match {
