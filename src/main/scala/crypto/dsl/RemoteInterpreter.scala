@@ -22,7 +22,7 @@ import crypto.remote._
 case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
   implicit ctxt: ExecutionContext) extends CryptoInterpreter[Future] {
 
-  def interpret[A] = _.resume match {
+  def interpret[A]: CryptoM[A] => Future[A] = _.resume match {
 
     case -\/(Mult(lhs@ElGamalEnc(_,_),rhs@ElGamalEnc(_,_),k)) => interpret(k(lhs*rhs))
     case -\/(Mult(lhs,rhs,k)) => for {
@@ -74,6 +74,7 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
 
     case -\/(Encrypt(s,v,k)) => {
       val res: Future[Enc] = s match {
+        // For public key encryption, we do not even have to send anything
         case Additive =>
           Future.successful(Common.depEncryptPub(Additive, pubKeys)(v))
         case Multiplicative =>
