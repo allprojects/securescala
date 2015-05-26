@@ -130,6 +130,7 @@ object Analysis {
     }).reverse
   }
 
+  // TODO hoist + retract better?
   type StateCrypto[α] = State[List[Enc],Crypto[α]]
   def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
     implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
