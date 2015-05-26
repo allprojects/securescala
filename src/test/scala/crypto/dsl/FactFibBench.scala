@@ -46,7 +46,7 @@ object FactFibBench extends CustomPerformanceTest {
   } yield (n, Common.encrypt(Comparable, keyRing)(n))
 
   val collatzNs = for {
-    n <- Gen.range("n")(5,30,5)
+    n <- Gen.range("n")(1,9,2)
   } yield (n, Common.encrypt(Comparable, keyRing)(n))
 
   import ExamplePrograms.factorial
