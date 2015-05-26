@@ -95,10 +95,13 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
 
     case \/-(x) => Future.successful(x)
   }
+}
+
+class RemoteInterpreterOpt(service: CryptoServicePlus, pubKeys: PubKeys)(
+  implicit ctxt: ExecutionContext) extends RemoteInterpreter(service, pubKeys)(ctxt) {
 
   def interpretA[A](p: Crypto[A]): Future[A] = {
     p.foldMap(new (CryptoF ~> Future) {
-      // Peform regular interpretation inside future
       def apply[B](fa: CryptoF[B]): Future[B] = interpret(Free.liftF(fa))
     })
   }
