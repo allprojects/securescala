@@ -6,53 +6,20 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-import scalaz.Ordering._
-import scalaz.syntax.applicative._
-
 import org.scalacheck.{Gen => SCGen}
 
 import org.scalameter.api._
 
 import crypto._
-import crypto.dsl.Implicits._
 import crypto.cipher._
 import crypto.remote._
 
-private object Programs {
-  def factorial(n: Enc): CryptoM[Enc] = for {
-    zeroOne <- encrypt(Multiplicative)(0).tuple(encrypt(Multiplicative)(1))
-    r <- factorialHelper(zeroOne._1,zeroOne._2)(n)
-  } yield r
-
-  def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
-    cond <- n =:= zero
-    r <- if (cond) {
-      one.point[CryptoM]
-    } else for {
-      n1 <- n - one
-      fact <- factorialHelper(zero,one)(n1)
-      s <- n * fact
-    } yield s
-  } yield r
-
-  def fib(n: Enc): CryptoM[Enc] = for {
-    one <- encrypt(Additive)(1)
-    two <- encrypt(Additive)(2)
-    r <- fibHelper(one,two)(n)
-  } yield r
-
-  def fibHelper(one: Enc, two: Enc)(n: Enc): CryptoM[Enc] = for {
-    cmp <- n ?|? one
-    r <- if (cmp == LT || cmp == EQ) {
-      one.point[CryptoM]
-    } else for {
-      n12 <- (n-one).tuple(n-two)
-      f1 <- fibHelper(one,two)(n12._1)
-      f2 <- fibHelper(one,two)(n12._2)
-      s <- f1 + f2
-    } yield s
-  } yield r
-
+private object ScalaPrograms {
+  def factorial(i: Int): Int = if (i == 0) 1 else i*factorial(i-1)
+  def fib(i: Int): Int = if (i <= 1) 1 else fib(i-1) + fib(i-2)
+  def collatzConjecture(i: Int): Int = if (! (i > 1)) i else {
+    if (i % 2 == 0) collatzConjecture(i / 2) else collatzConjecture(3*i+1)
+  }
 }
 
 object FactFibBench extends CustomPerformanceTest {
@@ -78,9 +45,19 @@ object FactFibBench extends CustomPerformanceTest {
     n <- Gen.range("n")(0,5,1)
   } yield (n, Common.encrypt(Comparable, keyRing)(n))
 
-  import Programs._
+  val collatzNs = for {
+    n <- Gen.range("n")(5,30,5)
+  } yield (n, Common.encrypt(Comparable, keyRing)(n))
+
+  import ExamplePrograms.factorial
+  import ExamplePrograms.fib
+  import ExamplePrograms.collatzConjecture
 
   performance of "Factorial" in {
+    measure method "plain scala" in {
+      using(factNs) in { n => ScalaPrograms.factorial(n._1) }
+    }
+
     measure method "local interpreter" in {
       using(factNs) in { n =>
         local.interpret(factorial(n._2))
@@ -95,6 +72,10 @@ object FactFibBench extends CustomPerformanceTest {
   }
 
   performance of "Fibonacci" in {
+    measure method "plain scala" in {
+      using(fibNs) in { n => ScalaPrograms.fib(n._1) }
+    }
+
     measure method "local interpreter" in {
       using(fibNs) in { n =>
         local.interpret(fib(n._2))
@@ -105,6 +86,22 @@ object FactFibBench extends CustomPerformanceTest {
       using(fibNs) in { n =>
         Await.result(remote.interpret(fib(n._2)), Duration.Inf)
       }
+    }
+  }
+
+  performance of "Collatz's Conjecture" in {
+    measure method "local interpreter" in {
+      using(collatzNs) in { n => local.interpret(collatzConjecture(n._2)) }
+    }
+
+    measure method "remote  interpreter" in {
+      using(collatzNs) in { n =>
+        Await.result(remote.interpret(collatzConjecture(n._2)),Duration.Inf)
+      }
+    }
+
+    measure method "plain scala" in {
+      using(collatzNs) in { n => ScalaPrograms.collatzConjecture(n._1) }
     }
   }
 }
