@@ -1,5 +1,6 @@
 package crypto.remote
 
+import scala.util.Random
 import scala.concurrent._
 import scala.concurrent.duration._
 
@@ -191,6 +192,14 @@ akka {
             withTimeout(timeOut), ref)
         }
     (system, futureRef)
+  }
+}
+
+class DelayedCryptoService(keyRing: KeyRing) extends CryptoServiceImpl(keyRing) {
+  private val rand = new Random
+  override def wrap[A](x: A): Future[A] = {
+    Thread.sleep(200 + rand.nextInt(50).toLong)
+    Future.successful(x)
   }
 }
 
