@@ -195,10 +195,10 @@ akka {
   }
 }
 
-class DelayedCryptoService(keyRing: KeyRing) extends CryptoServiceImpl(keyRing) {
-  private val rand = new Random
+class DelayedCryptoService(keyRing: KeyRing, d: FiniteDuration)
+    extends CryptoServiceImpl(keyRing) {
   override def wrap[A](x: A): Future[A] = {
-    Thread.sleep(200 + rand.nextInt(50).toLong)
+    Thread.sleep(d.toMillis)
     Future.successful(x)
   }
 }
