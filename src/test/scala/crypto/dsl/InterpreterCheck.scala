@@ -53,7 +53,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
     }
 
   property("monadic sum == applicative sum") =
-    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
 
       val monadicSum = interpret { sumM(zero)(xs) }
 
@@ -63,7 +63,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
     }
 
   property("monadic product == applicative product") =
-    forAll(generators.nonEmptyEncryptedList(5)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
       val monadicProduct = interpret {productM(one)(xs) }
 
       val applicativeProduct = interpret { productA(one)(xs) }
@@ -114,6 +114,28 @@ object RemoteInterpreterCheck
   val cryptoService = new CryptoServiceImpl(keyRing)
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
   override val interpreter = RemoteInterpreter(cryptoService, pubKeys)(
+    scala.concurrent.ExecutionContext.Implicits.global)
+  override def finalize[A](x: Future[A]) = Await.result(x, Duration.Inf)
+}
+
+object RemoteInterpreterOptCheck
+    extends Properties("RemoteInterpreterOpt")
+    with InterpreterCheck[Future] {
+
+  val cryptoService = new CryptoServiceImpl(keyRing)
+  val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+  override val interpreter = new RemoteInterpreterOpt(cryptoService, pubKeys)(
+    scala.concurrent.ExecutionContext.Implicits.global)
+  override def finalize[A](x: Future[A]) = Await.result(x, Duration.Inf)
+}
+
+object RemoteInterpreterOptAnalyzeCheck
+    extends Properties("RemoteInterpreterOptAnalyze")
+    with InterpreterCheck[Future] {
+
+  val cryptoService = new CryptoServiceImpl(keyRing)
+  val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+  override val interpreter = new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, 3)(
     scala.concurrent.ExecutionContext.Implicits.global)
   override def finalize[A](x: Future[A]) = Await.result(x, Duration.Inf)
 }
