@@ -74,12 +74,12 @@ class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServi
   override def convert(s: Scheme)(in: Enc): Future[Enc] =
     Future.successful(Common.convert(keyRing)(s,in))
   override def batchConvert(xs: List[(Scheme,Enc)]): Future[List[Enc]] =
-    Future.successful(xs.map { case (s, enc) => Common.convert(keyRing)(s,enc)})
+    Future.successful(xs.par.map { case (s,e) => Common.convert(keyRing)(s,e)}.toList)
 
   override def encrypt(s: Scheme)(in: Int): Future[Enc] =
     Future.successful(Common.encrypt(s, keyRing)(in))
   override def batchEncrypt(xs: List[(Scheme,Int)]): Future[List[Enc]] =
-    Future.successful(xs.map { case (s, i) => Common.encrypt(s, keyRing)(i)})
+    Future.successful(xs.par.map { case (s,i) => Common.encrypt(s,keyRing)(i)}.toList)
 
   override def decryptAndPrint(v: Enc): Unit = println(Common.decrypt(keyRing.priv)(v))
   override def println[A](a: A): Unit = Predef.println(a)
