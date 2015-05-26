@@ -17,6 +17,7 @@ import crypto.cipher._
 
 import scalaz.syntax.traverse._
 import scalaz.std.list._
+import scalaz.syntax.std.list._
 
 trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   val interpreter: CryptoInterpreter[F]
@@ -82,6 +83,18 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
       val encSort = interpret { sorted(xs) }.map(decrypt)
       val decSort = xs.map(decrypt).sorted
       encSort == decSort
+    }
+  }
+
+  property("filterM vs filter") = {
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
+      def predM(n: Enc): Crypto[Boolean] = isEven(n)
+      def pred(n: BigInt): Boolean = n.mod(2) == 0
+
+      val filterThenDecrypt = interpret(xs.filterM(predM)).map(Common.decrypt(keyRing.priv))
+      val decryptThenFilter = xs.map(Common.decrypt(keyRing.priv)).filter(pred)
+
+      filterThenDecrypt == decryptThenFilter
     }
   }
 }
