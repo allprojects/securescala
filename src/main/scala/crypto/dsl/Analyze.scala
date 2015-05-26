@@ -106,6 +106,81 @@ object Analysis {
   def mapNumbers[A](p: Crypto[A])(f: (Option[Scheme],Enc) => Enc): Crypto[A] =
     withNumbers(p)(_.map { case (optScheme,enc) => f(optScheme,enc) })
 
+  def extractConversions(p: Crypto[_]): List[(Scheme,Enc)] = {
+    p.analyze(new (CryptoF ~> λ[α => List[(Scheme,Enc)]]) {
+      def apply[B](a: CryptoF[B]) = a match {
+        case ToPaillier(v,k) => List((Additive,v))
+        case ToGamal(v,k) => List((Multiplicative,v))
+        case ToAes(v,k) => List((Equality,v))
+        case ToOpe(v,k) => List((Comparable,v))
+
+        case Mult(lhs,rhs,k) => List((Multiplicative,lhs),(Multiplicative,rhs))
+        case Plus(lhs,rhs,k) => List(((Additive),lhs),(Additive,rhs))
+        case Equals(lhs,rhs,k) => List((Equality,lhs),(Equality,rhs))
+        case Compare(lhs,rhs,k) => List((Comparable,lhs),(Comparable,rhs))
+
+        case Sub(lhs,rhs,k) => List()
+        case Div(lhs,rhs,k) => List()
+        case IsEven(v,k) => List()
+        case IsOdd(v,k) => List()
+        case Encrypt(s,v,k) => List()
+        case Embed(p,k) => List()
+      }
+    }).reverse
+  }
+
+    // TODO hoist + retract better?
+  type StateCrypto[α] = State[List[Enc],Crypto[α]]
+  def replaceConversions[A](p: Crypto[A]): StateCrypto[A] = {
+    implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
+
+    def takeHead(): State[List[Enc],Enc] = for {
+      head <- State.gets{ (s:List[Enc]) =>
+        s.headOption.getOrElse(sys.error("Not enough numbers for replacement"))
+      }
+      _ <- State.modify((s:List[Enc]) => s.tail)
+    } yield head
+
+    p.foldMap[StateCrypto](new (CryptoF ~> StateCrypto) {
+      def apply[B](fa: CryptoF[B]): StateCrypto[B] = fa match {
+        case ToPaillier(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToPaillier(head,k))
+        case ToGamal(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToGamal(head,k))
+        case ToAes(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToAes(head,k))
+        case ToOpe(v,k) => for {
+          head <- takeHead()
+        } yield FreeAp.lift(ToOpe(head,k))
+        case Mult(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Mult(l,r,k))
+        case Plus(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Plus(l,r,k))
+        case Equals(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Equals(l,r,k))
+        case Compare(lhs,rhs,k) => for {
+          l <- takeHead()
+          r <- takeHead()
+        } yield FreeAp.lift(Compare(l,r,k))
+        case Sub(lhs,rhs,k) => State.state(FreeAp.lift(fa))
+        case Div(lhs,rhs,k) => State.state(FreeAp.lift(fa))
+        case IsEven(v,k) => State.state(FreeAp.lift(fa))
+        case IsOdd(v,k) => State.state(FreeAp.lift(fa))
+        case Encrypt(s,v,k) => State.state(FreeAp.lift(fa))
+        case Embed(p,k) => State.state(FreeAp.lift(fa))
+      }
+    })(ev)
+  }
+
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],Enc)] = {
     p.analyze(new (CryptoF ~> λ[α => List[(Option[Scheme],Enc)]]) {
       def apply[B](a: CryptoF[B]) = a match {
@@ -131,7 +206,6 @@ object Analysis {
   }
 
   // TODO hoist + retract better?
-  type StateCrypto[α] = State[List[Enc],Crypto[α]]
   def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
     implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
 
