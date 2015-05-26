@@ -106,3 +106,25 @@ class RemoteInterpreterOpt(service: CryptoServicePlus, pubKeys: PubKeys)(
     })
   }
 }
+
+class RemoteInterpreterOptAnalyze(service: CryptoServicePlus, pubKeys: PubKeys)(
+  implicit ctxt: ExecutionContext) extends RemoteInterpreter(service, pubKeys)(ctxt) {
+
+  def parallel[A](p: Crypto[A]): Future[A] = p.foldMap(new (CryptoF ~> Future) {
+    def apply[B](fa: CryptoF[B]): Future[B] = interpret(Free.liftF(fa))
+  })
+
+  def interpretA[A](p: Crypto[A]): Future[A] = {
+    val conversions = Analysis.extractConversions(p)
+    if (conversions.size > 5) {
+      val converted: Future[List[Enc]] =
+        Future.sequence(conversions.grouped(5).map(service.batchConvert)).
+          map(_.flatten.toList)
+
+      converted.map(Analysis.replaceConversions(p).eval) >>= parallel
+
+    } else {
+      parallel(p)
+    }
+  }
+}
