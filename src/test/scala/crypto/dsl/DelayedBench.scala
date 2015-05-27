@@ -22,7 +22,7 @@ object DelayedBench extends CustomPerformanceTest {
 
   val keyRing = KeyRing.create
 
-  val delay = 100.milliseconds
+  val delay = 150.milliseconds
 
   @transient val cryptoService = new DelayedCryptoService(keyRing, delay)
 
