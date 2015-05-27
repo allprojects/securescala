@@ -72,7 +72,7 @@ object DelayedBenchTestApp extends App {
 
   val keyRing = KeyRing.create
 
-  List(200).map(_.milliseconds).foreach { delay =>
+  List(50,100,150,200).map(_.milliseconds).foreach { delay =>
     println(s"**********\nDelay: ${delay}\n**********")
 
     val cryptoService = new DelayedCryptoService(keyRing, delay)
