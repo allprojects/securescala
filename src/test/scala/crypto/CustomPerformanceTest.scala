@@ -7,6 +7,7 @@ trait CustomPerformanceTest extends PerformanceTest.OfflineReport {
   override def reporter: Reporter = Reporter.Composite(
     new RegressionReporter(tester, historian),
     HtmlReporter(!online),
-    DsvReporter(',')
+    DsvReporter(','),
+    ChartReporter(ChartFactory.XYLine())
   )
 }
