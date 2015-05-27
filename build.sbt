@@ -36,23 +36,23 @@ scalacOptions in test += "-Xfatal-warnings"
 
 scalacOptions in run += "-Xfatal-warnings"
 
-libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6"
-
-testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.1.2"
 
 libraryDependencies += "commons-codec" % "commons-codec" % "1.10"
 
-addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
+libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
-
-libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
 
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.11" % "2.3.10"
 
 libraryDependencies += "com.typesafe.akka" % "akka-remote_2.11" % "2.3.10"
+
+libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6" % "test"
+
+testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
 // To avoid classloader problems with sbt console and native ope library
 fork := true
