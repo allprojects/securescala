@@ -17,7 +17,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>�
   private def equality(x: Enc): AesEnc = doConvert(Equality, x)
   private def comparable(x: Enc): OpeEnc = doConvert(Comparable, x)
 
-  def interpret[A]: CryptoM[A] => A = _.resume match {
+  override def interpret[A](p: CryptoM[A]): A = p.resume match {
 
     case -\/(Mult(lhs@ElGamalEnc(_,_),rhs@ElGamalEnc(_,_),k)) => interpret(k(lhs * rhs))
     case -\/(Mult(lhs,rhs,k)) => interpret(k(multiplicative(lhs)*multiplicative(rhs)))

@@ -12,7 +12,7 @@ trait CryptoInterpreter[F[_]] {
   /**
     * Interpret a program written in the monadic DSL and return the result
     */
-  def interpret[A]: CryptoM[A] => F[A]
+  def interpret[A](p: CryptoM[A]): F[A]
 
   /**
     * Interpret a program written in the applicative DSL and therefore
@@ -21,5 +21,5 @@ trait CryptoInterpreter[F[_]] {
     * By default this performs no optimizations, you need to override
     * it and take advantage of the applicative structure
     */
-  def interpretA[A]: Crypto[A] => F[A] = x => interpret(x.monadic)
+  def interpretA[A](p: Crypto[A]): F[A] = interpret(p.monadic)
 }
