@@ -135,7 +135,8 @@ object RemoteInterpreterOptAnalyzeCheck
 
   val cryptoService = new CryptoServiceImpl(keyRing)
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
-  override val interpreter = new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, 3)(
-    scala.concurrent.ExecutionContext.Implicits.global)
+  override val interpreter =
+    new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, 10, _ > 3)(
+      scala.concurrent.ExecutionContext.Implicits.global)
   override def finalize[A](x: Future[A]) = Await.result(x, Duration.Inf)
 }

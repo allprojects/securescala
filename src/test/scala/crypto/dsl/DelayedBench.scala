@@ -32,7 +32,8 @@ object DelayedBench extends CustomPerformanceTest {
   @transient val opt = new RemoteInterpreterOpt(cryptoService,keyRing.pub)
 
   // Start batching if more than 3 conversions
-  @transient val optAnalyze = new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,5)
+  @transient val optAnalyze =
+    new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,10,_ >= 5)
 
   @transient val generators = EncryptedGens(keyRing)
 
