@@ -107,10 +107,14 @@ class RemoteInterpreterOpt(service: CryptoServicePlus, pubKeys: PubKeys)(
   }
 }
 
+sealed trait BatchOpt
+case object SingleBatch extends BatchOpt
+case class FixedBatch(size: Int) extends BatchOpt
+
 class RemoteInterpreterOptAnalyze(
   service: CryptoServicePlus,
   pubKeys: PubKeys,
-  batchSize: Int,
+  batchMode: BatchOpt,
   doBatch: Int => Boolean)(
   implicit ctxt: ExecutionContext) extends RemoteInterpreter(service, pubKeys)(ctxt) {
 
@@ -121,9 +125,13 @@ class RemoteInterpreterOptAnalyze(
   override def interpretA[A](p: Crypto[A]): Future[A] = {
     val conversions = Analysis.extractConversions(p)
     if (doBatch(conversions.size)) {
-      val converted: Future[List[Enc]] =
-        Future.sequence(conversions.grouped(batchSize).map(service.batchConvert)).
-          map(_.flatten.toList)
+      val converted: Future[List[Enc]] = batchMode match {
+        case FixedBatch(batchSize) =>
+          Future.sequence(conversions.grouped(batchSize).map(service.batchConvert)).
+            map(_.flatten.toList)
+        case SingleBatch =>
+          service.batchConvert(conversions)
+      }
 
       converted.map(Analysis.replaceConversions(p).eval) >>= parallel
 
