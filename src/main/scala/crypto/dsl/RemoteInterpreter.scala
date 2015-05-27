@@ -127,7 +127,7 @@ class RemoteInterpreterOptAnalyze(
     if (doBatch(conversions.size)) {
       val converted: Future[List[Enc]] = batchMode match {
         case FixedBatch(batchSize) =>
-          Future.sequence(conversions.grouped(batchSize).map(service.batchConvert)).
+          Future.traverse(conversions.grouped(batchSize))(service.batchConvert).
             map(_.flatten.toList)
         case SingleBatch =>
           service.batchConvert(conversions)

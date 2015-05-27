@@ -26,22 +26,21 @@ object DelayedBench extends CustomPerformanceTest {
 
   @transient val cryptoService = new DelayedCryptoService(keyRing, delay)
 
-  val ec = ExecutionContext.fromExecutorService(new ForkJoinPool(10, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true))
+  val ec = CustomExecutionContext(4)
 
   @transient val noOpt = new RemoteInterpreter(cryptoService,keyRing.pub)(ec)
 
   @transient val opt = new RemoteInterpreterOpt(cryptoService,keyRing.pub)(ec)
 
-  // Start batching if more than 3 conversions
   @transient val optAnalyze =
-    new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,FixedBatch(10),_ > 5)(ec)
+    new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,FixedBatch(15),_ >= 15)(ec)
 
   @transient val generators = EncryptedGens(keyRing)
 
   val zero = Common.zero(keyRing)
   val one = Common.one(keyRing)
 
-  val sizes = Gen.enumeration("size")(1,5,10,15,20)
+  val sizes = Gen.enumeration("size")(1,5,10,15,20,25,30,35)
   val lists =
     for (size <- sizes) yield SCGen.listOfN(size, generators.encryptedNumber).sample.get
 
@@ -73,33 +72,40 @@ object DelayedBenchTestApp extends App {
 
   val keyRing = KeyRing.create
 
-  val delay = 1000.milliseconds
+  List(200).map(_.milliseconds).foreach { delay =>
+    println(s"**********\nDelay: ${delay}\n**********")
 
-  val cryptoService = new DelayedCryptoService(keyRing, delay)
+    val cryptoService = new DelayedCryptoService(keyRing, delay)
 
-  implicit val ec = ExecutionContext.Implicits.global
+    val ec = ExecutionContext.global
 
-  val noOpt = new RemoteInterpreter(cryptoService,keyRing.pub)
+    val noOpt = new RemoteInterpreter(cryptoService,keyRing.pub)(ec)
 
-  val opt = new RemoteInterpreterOpt(cryptoService,keyRing.pub)
+    val opt = new RemoteInterpreterOpt(cryptoService,keyRing.pub)(ec)
 
-  val optAnalyze =
-    new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,FixedBatch(10),_ >= 5)
+    val optAnalyze =
+      new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,FixedBatch(15),_ > 10)(ec)
 
-  val generators = EncryptedGens(keyRing)
+    val zero = Common.zero(keyRing)
 
-  val zero = Common.zero(keyRing)
-  val one = Common.one(keyRing)
+    val data = SampleData.fixed1.map(Common.encrypt(Comparable, keyRing))
+    List(1,5,10,15,20,25,30,35).map(data.take(_)).foreach { xs =>
+      println(s"----- ${xs.size} -----")
 
-  val xs = SampleData.fixed1.map(Common.encrypt(Comparable, keyRing)).take(15)
+      var start = System.currentTimeMillis
+      Await.result(noOpt.interpret(sumA(zero)(xs)), Duration.Inf)
+      println(s"noopt: ${System.currentTimeMillis - start}")
+      start = System.currentTimeMillis
+      Await.result(opt.interpret(sumA(zero)(xs)), Duration.Inf)
+      println(s"opt: ${System.currentTimeMillis - start}")
+      start = System.currentTimeMillis
+      Await.result(optAnalyze.interpret(sumA(zero)(xs)), Duration.Inf)
+      println(s"analyze: ${System.currentTimeMillis - start}")
+    }
+  }
+}
 
-  var start = System.currentTimeMillis
-  Await.result(noOpt.interpret(sumA(zero)(xs)), Duration.Inf)
-  println(s"noopt: ${System.currentTimeMillis - start}")
-  start = System.currentTimeMillis
-  Await.result(opt.interpret(sumA(zero)(xs)), Duration.Inf)
-  println(s"opt: ${System.currentTimeMillis - start}")
-  start = System.currentTimeMillis
-  Await.result(optAnalyze.interpret(sumA(zero)(xs)), Duration.Inf)
-  println(s"analyze: ${System.currentTimeMillis - start}")
+object CustomExecutionContext {
+  def apply(threads: Int): ExecutionContext = ExecutionContext.fromExecutorService(
+    new ForkJoinPool(threads, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true))
 }
