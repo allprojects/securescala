@@ -79,5 +79,9 @@ object AnalysisBench extends CustomPerformanceTest {
     measure method "requiredConversions" in {
       using(programs) in { p => Analysis.requiredConversions(p) }
     }
+
+    measure method "extractConversions" in {
+      using(programs) in { p => Analysis.extractConversions(p) }
+    }
   }
 }
