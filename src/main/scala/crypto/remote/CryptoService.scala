@@ -57,14 +57,16 @@ trait CryptoServicePlus extends CryptoService {
   def isOdd(enc: Enc): Future[Boolean]
 }
 
-class CryptoServiceImpl(keyRing: KeyRing) extends CryptoService with CryptoServicePlus {
+class CryptoServiceImpl(keyRing: KeyRing)(implicit ec: ExecutionContext)
+    extends CryptoService with CryptoServicePlus {
+
   private def doConvert(s: Scheme, in: Enc) = Common.depConvert(keyRing)(s,in)
   private def additive(x: Enc): PaillierEnc = doConvert(Additive, x)
   private def multiplicative(x: Enc): ElGamalEnc = doConvert(Multiplicative, x)
   private def equality(x: Enc): AesEnc = doConvert(Equality, x)
   private def comparable(x: Enc): OpeEnc = doConvert(Comparable, x)
 
-  def wrap[A](x: A): Future[A] = Future.successful(x)
+  def wrap[A](x: => A): Future[A] = Future(x)
 
   override def publicKeys = wrap(keyRing.pub)
 
@@ -140,7 +142,7 @@ akka {
     val cryptoService: CryptoServicePlus = {
       val routees: List[CryptoServicePlus] = List.tabulate(numActors) { i =>
         TypedActor(system).typedActorOf(TypedProps(classOf[CryptoServicePlus],
-          new CryptoServiceImpl(keyRing)), name + s"_${i}")
+          new CryptoServiceImpl(keyRing)(system.dispatcher)), name + s"_${i}")
       }
 
       val routeePaths = routees.map { r =>
@@ -152,7 +154,7 @@ akka {
 
       TypedActor(system).typedActorOf(
         TypedProps(classOf[CryptoServicePlus],
-          new CryptoServiceImpl(keyRing)), actorRef = router)
+          new CryptoServiceImpl(keyRing)(system.dispatcher)), actorRef = router)
     }
 
     (system, cryptoService)
@@ -195,11 +197,11 @@ akka {
   }
 }
 
-class DelayedCryptoService(keyRing: KeyRing, d: FiniteDuration)
-    extends CryptoServiceImpl(keyRing) {
-  override def wrap[A](x: A): Future[A] = {
+class DelayedCryptoService(keyRing: KeyRing, d: FiniteDuration)(
+  implicit ec: ExecutionContext) extends CryptoServiceImpl(keyRing) {
+  override def wrap[A](x: => A): Future[A] = {
     Thread.sleep(d.toMillis)
-    Future.successful(x)
+    Future(x)
   }
 }
 

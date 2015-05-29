@@ -25,7 +25,7 @@ private object ScalaPrograms {
 object FactFibBench extends CustomPerformanceTest {
 
   val keyRing = KeyRing.create
-   @transient val cryptoService = new CryptoServiceImpl(keyRing)
+   @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
 
   @transient val remote =
     new RemoteInterpreterOpt(cryptoService,keyRing.pub)(ExecutionContext.Implicits.global)

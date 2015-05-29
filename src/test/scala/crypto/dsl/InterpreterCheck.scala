@@ -111,7 +111,7 @@ object RemoteInterpreterCheck
     extends Properties("RemoteInterpreter")
     with InterpreterCheck[Future] {
 
-  val cryptoService = new CryptoServiceImpl(keyRing)
+  val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
   override val interpreter = RemoteInterpreter(cryptoService, pubKeys)(
     scala.concurrent.ExecutionContext.Implicits.global)
@@ -122,7 +122,7 @@ object RemoteInterpreterOptCheck
     extends Properties("RemoteInterpreterOpt")
     with InterpreterCheck[Future] {
 
-  val cryptoService = new CryptoServiceImpl(keyRing)
+  val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
   override val interpreter = new RemoteInterpreterOpt(cryptoService, pubKeys)(
     scala.concurrent.ExecutionContext.Implicits.global)
@@ -133,7 +133,7 @@ object RemoteInterpreterOptAnalyzeCheck
     extends Properties("RemoteInterpreterOptAnalyze")
     with InterpreterCheck[Future] {
 
-  val cryptoService = new CryptoServiceImpl(keyRing)
+  val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
   override val interpreter =
     new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, FixedBatch(10), _ > 3)(

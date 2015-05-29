@@ -24,16 +24,17 @@ object DelayedBench extends CustomPerformanceTest {
 
   val delay = 150.milliseconds
 
-  @transient val cryptoService = new DelayedCryptoService(keyRing, delay)
+  val ecLocal = CustomExecutionContext(4)
+  val ecRemote = CustomExecutionContext(4)
 
-  val ec = CustomExecutionContext(4)
+  @transient val cryptoService = new DelayedCryptoService(keyRing, delay)(ecRemote)
 
-  @transient val noOpt = new RemoteInterpreter(cryptoService,keyRing.pub)(ec)
+  @transient val noOpt = new RemoteInterpreter(cryptoService,keyRing.pub)(ecLocal)
 
-  @transient val opt = new RemoteInterpreterOpt(cryptoService,keyRing.pub)(ec)
+  @transient val opt = new RemoteInterpreterOpt(cryptoService,keyRing.pub)(ecLocal)
 
   @transient val optAnalyze =
-    new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,FixedBatch(15),_ >= 15)(ec)
+    new RemoteInterpreterOptAnalyze(cryptoService,keyRing.pub,FixedBatch(15),_ >= 15)(ecLocal)
 
   @transient val generators = EncryptedGens(keyRing)
 
@@ -75,9 +76,10 @@ object DelayedBenchTestApp extends App {
   List(50,100,150,200).map(_.milliseconds).foreach { delay =>
     println(s"**********\nDelay: ${delay}\n**********")
 
-    val cryptoService = new DelayedCryptoService(keyRing, delay)
+    val ecRemote = CustomExecutionContext(4)
+    val ec = CustomExecutionContext(4)
 
-    val ec = ExecutionContext.global
+    val cryptoService = new DelayedCryptoService(keyRing, delay)(ecRemote)
 
     val noOpt = new RemoteInterpreter(cryptoService,keyRing.pub)(ec)
 

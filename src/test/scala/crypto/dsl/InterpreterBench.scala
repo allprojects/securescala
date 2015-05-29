@@ -64,7 +64,7 @@ object RemoteInterpreterBench
     with InterpreterBench[Future] {
 
   def name = "Remote interpreter (locally)"
-  @transient val cryptoService = new CryptoServiceImpl(keyRing)
+  @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
 
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
 
