@@ -28,7 +28,7 @@ object FactFibBench extends CustomPerformanceTest {
    @transient val cryptoService = new CryptoServiceImpl(keyRing)
 
   @transient val remote =
-    new RemoteInterpreter(cryptoService,keyRing.pub)(ExecutionContext.Implicits.global)
+    new RemoteInterpreterOpt(cryptoService,keyRing.pub)(ExecutionContext.Implicits.global)
 
   @transient val local = LocalInterpreter(keyRing)
 
