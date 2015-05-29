@@ -1,6 +1,7 @@
 package crypto.dsl
 
 import scalaz._
+import scalaz.Dual._
 import scalaz.std.anyVal._
 import scalaz.std.list._
 
@@ -107,29 +108,30 @@ object Analysis {
     withNumbers(p)(_.map { case (optScheme,enc) => f(optScheme,enc) })
 
   def extractConversions(p: Crypto[_]): List[(Scheme,Enc)] = {
-    p.analyze(new (CryptoF ~> λ[α => List[(Scheme,Enc)]]) {
-      def apply[B](a: CryptoF[B]) = a match {
-        case ToPaillier(v,k) => List((Additive,v))
-        case ToGamal(v,k) => List((Multiplicative,v))
-        case ToAes(v,k) => List((Equality,v))
-        case ToOpe(v,k) => List((Comparable,v))
+    Tag.unwrap(
+      p.analyze(new (CryptoF ~> λ[α => DList[(Scheme,Enc)] @@ Tags.Dual]) {
+        def apply[B](a: CryptoF[B]) = a match {
+          case ToPaillier(v,k) => Dual(DList((Additive,v)))
+          case ToGamal(v,k) => Dual(DList((Multiplicative,v)))
+          case ToAes(v,k) => Dual(DList((Equality,v)))
+          case ToOpe(v,k) => Dual(DList((Comparable,v)))
 
-        case Mult(lhs,rhs,k) => List((Multiplicative,lhs),(Multiplicative,rhs))
-        case Plus(lhs,rhs,k) => List(((Additive),lhs),(Additive,rhs))
-        case Equals(lhs,rhs,k) => List((Equality,lhs),(Equality,rhs))
-        case Compare(lhs,rhs,k) => List((Comparable,lhs),(Comparable,rhs))
+          case Mult(lhs,rhs,k) => Dual(DList((Multiplicative,lhs),(Multiplicative,rhs)))
+          case Plus(lhs,rhs,k) => Dual(DList(((Additive),lhs),(Additive,rhs)))
+          case Equals(lhs,rhs,k) => Dual(DList((Equality,lhs),(Equality,rhs)))
+          case Compare(lhs,rhs,k) => Dual(DList((Comparable,lhs),(Comparable,rhs)))
 
-        case Sub(lhs,rhs,k) => List()
-        case Div(lhs,rhs,k) => List()
-        case IsEven(v,k) => List()
-        case IsOdd(v,k) => List()
-        case Encrypt(s,v,k) => List()
-        case Embed(p,k) => List()
-      }
-    }).reverse
+          case Sub(lhs,rhs,k) => Dual(DList())
+          case Div(lhs,rhs,k) => Dual(DList())
+          case IsEven(v,k) => Dual(DList())
+          case IsOdd(v,k) => Dual(DList())
+          case Encrypt(s,v,k) => Dual(DList())
+          case Embed(p,k) => sys.error("impossible")
+        }
+      })).toList
   }
 
-    // TODO hoist + retract better?
+  // TODO hoist + retract better?
   type StateCrypto[α] = State[List[Enc],Crypto[α]]
   def replaceConversions[A](p: Crypto[A]): StateCrypto[A] = {
     implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
@@ -176,33 +178,35 @@ object Analysis {
         case IsEven(v,k) => State.state(FreeAp.lift(fa))
         case IsOdd(v,k) => State.state(FreeAp.lift(fa))
         case Encrypt(s,v,k) => State.state(FreeAp.lift(fa))
-        case Embed(p,k) => State.state(FreeAp.lift(fa))
+        case Embed(p,k) => sys.error("impossible")
       }
     })(ev)
   }
 
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],Enc)] = {
-    p.analyze(new (CryptoF ~> λ[α => List[(Option[Scheme],Enc)]]) {
-      def apply[B](a: CryptoF[B]) = a match {
-        case ToPaillier(v,k) => List((Some(Additive),v))
-        case ToGamal(v,k) => List((Some(Multiplicative),v))
-        case ToAes(v,k) => List((Some(Equality),v))
-        case ToOpe(v,k) => List((Some(Comparable),v))
+    Tag.unwrap(
+      p.analyze(new (CryptoF ~> λ[α => DList[(Option[Scheme],Enc)] @@ Tags.Dual]) {
+        def apply[B](a: CryptoF[B]) = a match {
+          case ToPaillier(v,k) => Dual(DList((Some(Additive),v)))
+          case ToGamal(v,k) => Dual(DList((Some(Multiplicative),v)))
+          case ToAes(v,k) => Dual(DList((Some(Equality),v)))
+          case ToOpe(v,k) => Dual(DList((Some(Comparable),v)))
 
-        case Mult(lhs,rhs,k) => List((Some(Multiplicative),lhs),(Some(Multiplicative),rhs))
-        case Plus(lhs,rhs,k) => List((Some(Additive),lhs),(Some(Additive),rhs))
-        case Equals(lhs,rhs,k) => List((Some(Equality),lhs),(Some(Equality),rhs))
-        case Compare(lhs,rhs,k) => List((Some(Comparable),lhs),(Some(Comparable),rhs))
+          case Mult(lhs,rhs,k) =>
+            Dual(DList((Some(Multiplicative),lhs),(Some(Multiplicative),rhs)))
+          case Plus(lhs,rhs,k) => Dual(DList((Some(Additive),lhs),(Some(Additive),rhs)))
+          case Equals(lhs,rhs,k) => Dual(DList((Some(Equality),lhs),(Some(Equality),rhs)))
+          case Compare(lhs,rhs,k) => Dual(DList((Some(Comparable),lhs),(Some(Comparable),rhs)))
 
-        case Sub(lhs,rhs,k) => List((None,lhs),(None,rhs))
-        case Div(lhs,rhs,k) => List((None,lhs),(None,rhs))
-        case IsEven(v,k) => List((None,v))
-        case IsOdd(v,k) => List((None,v))
+          case Sub(lhs,rhs,k) => Dual(DList((None,lhs),(None,rhs)))
+          case Div(lhs,rhs,k) => Dual(DList((None,lhs),(None,rhs)))
+          case IsEven(v,k) => Dual(DList((None,v)))
+          case IsOdd(v,k) => Dual(DList((None,v)))
 
-        case Encrypt(s,v,k) => List()
-        case Embed(p,k) => extractNumbers(p)
-      }
-    }).reverse
+          case Encrypt(s,v,k) => Dual(DList())
+          case Embed(p,k) => sys.error("impossible")
+        }
+      })).toList
   }
 
   // TODO hoist + retract better?
@@ -261,7 +265,7 @@ object Analysis {
           x <- takeHead()
         } yield FreeAp.lift(IsOdd(x,k))
         case Encrypt(s,v,k) => State.state(FreeAp.lift(Encrypt(s,v,k)))
-        case Embed(p,k) => State.state(FreeAp.lift(Embed(p,k)))
+        case Embed(p,k) => sys.error("impossible")
       }
     })(ev)
   }
