@@ -21,7 +21,7 @@ trait InterpreterBench[F[_]] {
   this: PerformanceTest =>
 
   val keyRing = KeyRing.create
-  @transient val generators = EncryptedGens(keyRing)
+  def generators = EncryptedGens(keyRing)
 
   val zero = Common.zero(keyRing)
   val one = Common.one(keyRing)
@@ -59,7 +59,7 @@ trait InterpreterBench[F[_]] {
   }
 }
 
-object RemoteInterpreterOptAnalyzeBench
+class RemoteInterpreterOptAnalyzeBench
     extends CustomPerformanceTest
     with InterpreterBench[Future] {
 
@@ -76,7 +76,7 @@ object RemoteInterpreterOptAnalyzeBench
   override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
 }
 
-object RemoteInterpreterOptBench
+class RemoteInterpreterOptBench
     extends CustomPerformanceTest
     with InterpreterBench[Future] {
 
@@ -92,7 +92,7 @@ object RemoteInterpreterOptBench
   override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
 }
 
-object RemoteInterpreterBench
+class RemoteInterpreterBench
     extends CustomPerformanceTest
     with InterpreterBench[Future] {
 
@@ -108,7 +108,7 @@ object RemoteInterpreterBench
   override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
 }
 
-object LocalInterpreterBench
+class LocalInterpreterBench
     extends CustomPerformanceTest
     with InterpreterBench[λ[α=>α]] {
 
@@ -117,4 +117,16 @@ object LocalInterpreterBench
 
   override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
   override def finalize[A] = (x: A) => x
+}
+
+class InterpreterBenchSuite extends CustomPerformanceTest {
+  include[LocalInterpreterBench]
+  include[RemoteInterpreterBench]
+  include[RemoteInterpreterOptBench]
+  include[RemoteInterpreterOptAnalyzeBench]
+}
+
+object InterpreterBenchSuiteRunner extends App {
+  val bench = new InterpreterBenchSuite
+  bench.main(args)
 }
