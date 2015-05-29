@@ -3,6 +3,8 @@ package crypto.dsl
 import scalaz.std.list._
 
 import org.scalatest._
+import org.scalacheck.{Gen => SCGen}
+import org.scalameter.api._
 
 import crypto._
 import crypto.cipher._
@@ -60,6 +62,22 @@ class AnalysisSpec extends WordSpec with Matchers {
       val ns: List[(Option[Scheme],Enc)] = extractNumbers(program2)
 
       ns.map(_._2) should equal(data.reverse)
+    }
+  }
+}
+
+object AnalysisBench extends CustomPerformanceTest {
+  val keyRing = KeyRing.create
+  @transient val generators = EncryptedGens(keyRing)
+
+  val sizes = Gen.enumeration("size")(50,100,150,200,250)
+  val programs =
+    for (size <- sizes)
+    yield sumOpt(SCGen.listOfN(size, generators.encryptedNumber).sample.get)
+
+  performance of "Analysis" in {
+    measure method "requiredConversions" in {
+      using(programs) in { p => Analysis.requiredConversions(p) }
     }
   }
 }
