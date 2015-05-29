@@ -59,11 +59,44 @@ trait InterpreterBench[F[_]] {
   }
 }
 
+object RemoteInterpreterOptAnalyzeBench
+    extends CustomPerformanceTest
+    with InterpreterBench[Future] {
+
+  def name = "Remote interpreter with opt + analysis"
+  @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
+
+  val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+
+  @transient val interpreter =
+    new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, FixedBatch(20), _ >= 10)(
+      ExecutionContext.Implicits.global)
+
+  override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
+  override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
+}
+
+object RemoteInterpreterOptBench
+    extends CustomPerformanceTest
+    with InterpreterBench[Future] {
+
+  def name = "Remote interpreter with opt"
+  @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
+
+  val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+
+  @transient val interpreter =
+    new RemoteInterpreterOpt(cryptoService, pubKeys)(ExecutionContext.Implicits.global)
+
+  override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
+  override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
+}
+
 object RemoteInterpreterBench
     extends CustomPerformanceTest
     with InterpreterBench[Future] {
 
-  def name = "Remote interpreter (locally)"
+  def name = "Remote interpreter"
   @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
 
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
