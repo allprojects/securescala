@@ -9,6 +9,8 @@ import scala.language.higherKinds
   */
 
 trait CryptoInterpreter[F[_]] {
+  def apply[A](p: CryptoM[A]): F[A] = interpret(p)
+
   /**
     * Interpret a program written in the monadic DSL and return the result
     */
