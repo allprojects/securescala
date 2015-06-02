@@ -50,6 +50,8 @@ libraryDependencies += "com.typesafe.akka" % "akka-actor_2.11" % "2.3.10"
 
 libraryDependencies += "com.typesafe.akka" % "akka-remote_2.11" % "2.3.10"
 
+libraryDependencies += "com.espertech" % "esper" % "5.2.0"
+
 libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6" % "test"
 
 testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
