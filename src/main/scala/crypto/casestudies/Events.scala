@@ -34,8 +34,11 @@ trait EsperImplicits {
   }
 }
 
-object Esper extends App with EsperImplicits {
-  val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider
+object EsperFilters extends App with EsperImplicits {
+  val config: Configuration = new Configuration
+  config.addImport("crypto.casestudies.*")
+  config.addEventType(classOf[CryptoEvent])
+  val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
 
   val evenNumbers: String = """
 SELECT * 
