@@ -70,7 +70,6 @@ WHERE TheInterpreter.smaller100(cevt.encValue)
 object TheInterpreter {
   val keyRing = KeyRing.create
   val interp = LocalInterpreter(keyRing)
-
   def encrypt(i: BigInt) = Common.encryptPub(Additive, keyRing)(i).valueOr(sys.error)
 
   def isEven(e: Enc): Boolean = interp(dsl.isEven(e))
