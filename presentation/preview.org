@@ -130,6 +130,8 @@ object TheInterpreter {
 - Uses Free Monads and Free Applicative Functors
 - Can exploit implicit parallelism automatically
 - Requires translation into monadic style
+* Details
+** Implementations
 *** Enc
 #+BEGIN_SRC scala
 sealed trait Enc
@@ -227,6 +229,35 @@ def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] = for {
 
 def sorted(xs: List[Enc]): Crypto[List[OpeEnc]] =
   xs.traverse(toOpe).map(_.sorted)
+#+END_SRC
+** Free Monads
+- Given any Functor, Free gives rise to a Monad over that Functor
+  #+BEGIN_SRC scala
+  sealed trait CryptoF[+K] //
+  case class Plus[K](lhs:Enc,rhs:Enc,k:PaillierEnc => K) extends CryptoF[K]
+  def plus(lhs:Enc,rhs:Enc):Crypto[Enc]
+  // multiplication, equality, comparisons
+  #+END_SRC
+- We can use the power of the Monad to combine computations
+  #+BEGIN_SRC scala
+  def sum(xs: List[Enc]): Crypto[Enc] = xs match {
+    case List() => enc(0)
+    case (x::xs) => for (xs_ <- sum(xs)) yield (plus(x,xs_))
+  }
+  #+END_SRC
+- Very lightweight DSL
+*** Interpretation
+- When using the DSL, we build up a data structure of our Functor
+- Programs are first-class without semantics
+- Interpretation = Step through and give semantics
+#+BEGIN_SRC scala
+def toAdditive(e: Enc): PaillierEnc = ???
+
+def interpret[A](p: CryptoM[A]): A = p.resume match {
+  case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
+  case -\/(Plus(lhs,rhs,k)) => interpret(k(toAdditive(lhs) + toAdditive(rhs)))
+  // all the other cases...
+}
 #+END_SRC
 *** Monadic interpretation
 Two example programs to compute the sum, monadic vs applicative
@@ -501,36 +532,7 @@ sumA(E(0))(List(E(1),E(2),E(3)))
 |   cGRE     |       |   cGRE     |       |   cGRE     |       |   cGRE    |
 +------------+       +------------+       +------------+       +-----------+
 #+END_SRC
-* Details
-** Free Monads
-- Given any Functor, Free gives rise to a Monad over that Functor
-  #+BEGIN_SRC scala
-  sealed trait CryptoF[+K] //
-  case class Plus[K](lhs:Enc,rhs:Enc,k:PaillierEnc => K) extends CryptoF[K]
-  def plus(lhs:Enc,rhs:Enc):Crypto[Enc]
-  // multiplication, equality, comparisons
-  #+END_SRC
-- We can use the power of the Monad to combine computations
-  #+BEGIN_SRC scala
-  def sum(xs: List[Enc]): Crypto[Enc] = xs match {
-    case List() => enc(0)
-    case (x::xs) => for (xs_ <- sum(xs)) yield (plus(x,xs_))
-  }
-  #+END_SRC
-- Very lightweight DSL
-** Interpretation
-- When using the DSL, we build up a data structure of our Functor
-- Programs are first-class without semantics
-- Interpretation = Step through and give semantics
-#+BEGIN_SRC scala
-def toAdditive(e: Enc): PaillierEnc = ???
 
-def interpret[A](p: CryptoM[A]): A = p.resume match {
-  case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
-  case -\/(Plus(lhs,rhs,k)) => interpret(k(toAdditive(lhs) + toAdditive(rhs)))
-  // all the other cases...
-}
-#+END_SRC
 ** Free Monads - Pro and Cons
 - The good:
   - programs are first-class
@@ -541,12 +543,12 @@ def interpret[A](p: CryptoM[A]): A = p.resume match {
   - power of Monads allows depending on previous effectful
     computations
   - no private key, no execution, no analysis
-** Free Applicative Functors
+*** Free Applicative Functors
 - Monads are too powerful
 - We need something less powerful
 - ∀m. Monad m ⇒ Applicative m
 - Free Applicative Functors [[[http://dx.doi.org/10.4204/eptcs.153.2][CK14]]]
-** Analysis
+*** Analysis
 - size of the program
 - number of required conversions
 - eliminate trivial conversions
@@ -557,7 +559,7 @@ def interpret[A](p: CryptoM[A]): A = p.resume match {
 - perform all conversions before execution (private key)
 - execute complete program in parallel
 - extract list of schemes and numbers, do batch conversions
-** Applicative + Monad benefits
+*** Applicative + Monad benefits
 - many common operations are easily defined for applicative functors /
   monads
 - already done in [[https://github.com/scalaz/scalaz][scalaz]]:
