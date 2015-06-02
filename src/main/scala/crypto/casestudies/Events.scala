@@ -41,22 +41,22 @@ object EsperFilters extends App with EsperImplicits {
   val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
 
   val evenNumbers: String = """
-SELECT * 
-FROM crypto.casestudies.CryptoEvent as cevt
-WHERE crypto.casestudies.TheInterpreter.isEven(cevt.encValue)
+SELECT *
+FROM CryptoEvent as cevt
+WHERE TheInterpreter.isEven(cevt.encValue)
+"""
+
+  val smaller100: String = """
+SELECT *
+FROM CryptoEvent as cevt
+WHERE TheInterpreter.smaller100(cevt.encValue)
 """
 
   epService.getEPAdministrator.createEPL(evenNumbers) += (es =>
-      println(s"Even number: ${es.head.get("plainValue")}"))
-
-  val smaller100: String = """
-SELECT * 
-FROM crypto.casestudies.CryptoEvent as cevt
-WHERE crypto.casestudies.TheInterpreter.smaller100(cevt.encValue)
-"""
+    println(s"even: ${es.head.get("plainValue")}"))
 
   epService.getEPAdministrator.createEPL(smaller100) += (es =>
-    println(s"< 100: ${es.head.get("plainValue")}"))
+    println(s"<100: ${es.head.get("plainValue")}"))
 
   val rand = new Random
   (1 to 100) foreach { n =>
