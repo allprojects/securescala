@@ -25,3 +25,14 @@ trait CryptoInterpreter[F[_]] {
     */
   def interpretA[A](p: Crypto[A]): F[A] = interpret(p.monadic)
 }
+
+/**
+  * A CryptoInterpreter that does not make use of the higher kinded
+  * type parameter
+  *
+  * Why λ[α=>α]?
+  *   - This is equivalent to `type Identity[A] = A` enabling the
+  *     interpreter to return a type that is not higher kinded
+  * (If you ask yourself what is going on here: https://github.com/non/kind-projector)
+  */
+trait PureCryptoInterpreter extends CryptoInterpreter[λ[α=>α]]
