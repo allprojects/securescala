@@ -1,6 +1,8 @@
 package crypto.casestudies
 
 import com.espertech.esper.client.Configuration
+import com.espertech.esper.client.Configuration
+import com.espertech.esper.client.ConfigurationPlugInAggregationFunction
 import com.espertech.esper.client.EPAdministrator
 import com.espertech.esper.client.EPRuntime
 import com.espertech.esper.client.EPServiceProvider
@@ -8,7 +10,10 @@ import com.espertech.esper.client.EPServiceProviderManager
 import com.espertech.esper.client.EPStatement
 import com.espertech.esper.client.EventBean
 import com.espertech.esper.client.UpdateListener
+import com.espertech.esper.client.hook.AggregationFunctionFactory
 import com.espertech.esper.client.time.CurrentTimeEvent
+import com.espertech.esper.epl.agg.aggregator.AggregationMethod
+import com.espertech.esper.epl.agg.service.AggregationValidationContext
 
 import scalaz.std.function._
 import scalaz.syntax.profunctor._
@@ -44,6 +49,8 @@ object EsperFilters extends App with EsperImplicits {
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
   config.addEventType(classOf[CryptoEvent])
+  val functionName = "encSum"
+  config.addPlugInAggregationFunctionFactory(functionName, classOf[TheInterpreter.EncryptedSumFactory].getName)
   val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
 
   val evenNumbers: String = """
@@ -58,11 +65,21 @@ FROM CryptoEvent as cevt
 WHERE TheInterpreter.smaller100(cevt.encValue)
 """
 
+  val encryptedSum: String = """
+SELECT encSum(cevt.encValue) as encValue
+FROM CryptoEvent as cevt
+"""
+
   epService.getEPAdministrator.createEPL(evenNumbers) += ((e: EventBean) =>
     println(f"${e.get("plainValue")}%3s is EVEN")).mapfst(x => x.head)
 
   epService.getEPAdministrator.createEPL(smaller100) += ((e: EventBean) =>
     println(f"${e.get("plainValue")}%3s is <100")).mapfst(x => x.head)
+
+  epService.getEPAdministrator.createEPL(encryptedSum) += { (e: EventBean) =>
+    val encrypted = e.get("encValue").asInstanceOf[Enc]
+    val decrypted = Common.decrypt(TheInterpreter.keyRing.priv)(encrypted)
+    println(s"--- Current Sum: ${decrypted}")}.mapfst(x => x.head)
 
   val rand = new Random
   (1 to 100) foreach { n =>
@@ -76,6 +93,38 @@ WHERE TheInterpreter.smaller100(cevt.encValue)
 object TheInterpreter {
   val keyRing = KeyRing.create
   val interp = LocalInterpreter(keyRing)
+  //----------
+  class EncryptedSumFactory extends AggregationFunctionFactory {
+    def setFunctionName(functionName: String): Unit = ()
+    def validate(validationContext: AggregationValidationContext): Unit =
+      if ( (validationContext.getParameterTypes.length != 1) ||
+        (validationContext.getParameterTypes.head != classOf[Enc])) {
+        throw new IllegalArgumentException("Aggregation requires a single parameter of type Enc")
+      }
+    def getValueType(): Class[_] = classOf[Enc]
+    def newAggregator(): AggregationMethod =
+      new EncryptedSumAggregationFunction
+  }
+
+  class EncryptedSumAggregationFunction extends AggregationMethod {
+    val zero = Common.zero(keyRing)
+    private var sumValue: Enc = zero
+
+    def clear(): Unit = sumValue = zero
+    def getValueType(): Class[_] = classOf[Enc]
+    def enter(x_ : Any): Unit = {
+      val x = x_.asInstanceOf[Enc]
+      sumValue = interp(sumValue + x)
+    }
+    def leave(x_ : Any): Unit = {
+      val x = x_.asInstanceOf[Enc]
+      sumValue = interp(sumValue - x)
+    }
+    def getValue(): Object = sumValue
+  }
+
+  //----------
+  
   def encrypt(i: BigInt) = Common.encryptPub(Additive, keyRing)(i).valueOr(sys.error)
 
   def isEven(e: Enc): Boolean = interp(dsl.isEven(e))
@@ -83,3 +132,10 @@ object TheInterpreter {
   val onehundred = Common.encrypt(Comparable, keyRing)(100)
   def smaller100(e: Enc): Boolean =interp(e < onehundred)
 }
+
+object EncryptedSumAggregationFunction {
+  def register(keyRing: KeyRing, interp: CryptoInterpreter[λ[α=>α]])(cfg: Configuration) = {
+
+  }
+}
+
