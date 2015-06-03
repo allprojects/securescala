@@ -102,17 +102,21 @@ def factorial(n: Enc): CryptoM[Enc] = for {
 #+END_SRC
 
 ** Example - Events
+- Integration with Esper:
 #+BEGIN_SRC scala
   val evenNumbers: String = """
-SELECT *
-FROM CryptoEvent as cevt
+SELECT * FROM CryptoEvent as cevt
 WHERE TheInterpreter.isEven(cevt.encValue)
 """
 
   val smaller100: String = """
-SELECT *
-FROM CryptoEvent as cevt
+SELECT * FROM CryptoEvent as cevt
 WHERE TheInterpreter.smaller100(cevt.encValue)
+"""
+
+  // Register custom aggregation function 'encSum'
+  val encryptedSum: String = """
+SELECT encSum(cevt.encValue) as encValue FROM CryptoEvent as cevt
 """
 
 object TheInterpreter {
