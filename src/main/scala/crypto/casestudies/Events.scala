@@ -10,6 +10,9 @@ import com.espertech.esper.client.EventBean
 import com.espertech.esper.client.UpdateListener
 import com.espertech.esper.client.time.CurrentTimeEvent
 
+import scalaz.std.function._
+import scalaz.syntax.profunctor._
+
 import scala.beans.BeanProperty
 import scala.util._
 
@@ -20,9 +23,12 @@ import crypto.dsl._
 
 case class CryptoEvent(
   @BeanProperty name: String,
-  @BeanProperty encValue: Enc,
-  @BeanProperty plainValue: Int
-)
+  @BeanProperty plainValue: Int,
+  @BeanProperty encValue: Enc
+) {
+  // needs 'get' prefix due to bean style used by esper
+  def getPretty: String = s"""CryptoEvent("${name}",${plainValue},<encrypted>)"""
+}
 
 trait EsperImplicits {
   implicit class RichEPStatement(s: EPStatement) {
@@ -52,17 +58,17 @@ FROM CryptoEvent as cevt
 WHERE TheInterpreter.smaller100(cevt.encValue)
 """
 
-  epService.getEPAdministrator.createEPL(evenNumbers) += (es =>
-    println(s"even: ${es.head.get("plainValue")}"))
+  epService.getEPAdministrator.createEPL(evenNumbers) += ((e: EventBean) =>
+    println(f"${e.get("plainValue")}%3s is EVEN")).mapfst(x => x.head)
 
-  epService.getEPAdministrator.createEPL(smaller100) += (es =>
-    println(s"<100: ${es.head.get("plainValue")}"))
+  epService.getEPAdministrator.createEPL(smaller100) += ((e: EventBean) =>
+    println(f"${e.get("plainValue")}%3s is <100")).mapfst(x => x.head)
 
   val rand = new Random
   (1 to 100) foreach { n =>
     val randomInt = rand.nextInt(500)
     epService.getEPRuntime.sendEvent(
-      CryptoEvent("foo", TheInterpreter.encrypt(randomInt), randomInt))
+      CryptoEvent(s"Event($n)", randomInt, TheInterpreter.encrypt(randomInt)))
     Thread.sleep(100)
   }
 }
