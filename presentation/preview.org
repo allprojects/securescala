@@ -5,6 +5,7 @@
 
 #+OPTIONS: reveal_center:nil reveal_progress:t reveal_history:nil reveal_control:nil
 #+OPTIONS: reveal_mathjax:t reveal_rolling_links:t reveal_keyboard:t reveal_overview:t num:t
+# +OPTIONS: reveal_width:1024 reveal_height:768
 #+OPTIONS: reveal_width:1200 reveal_height:800
 #+OPTIONS: toc:nil
 
