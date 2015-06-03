@@ -126,7 +126,7 @@ object TheInterpreter {
 #+END_SRC
 * The End
 - Lightweight DSL to express secure computations
-- Interpreters can be defined for many purposes: local, remote, analysis
+- Interpreters can be defined for many purposes
 - Uses Free Monads and Free Applicative Functors
 - Can exploit implicit parallelism automatically
 - Requires translation into monadic style
