@@ -7,10 +7,7 @@ import scalaz.syntax.order._
 import crypto._
 import crypto.cipher._
 
-// Why λ[α=>α]?
-// - This is equivalent to `type Identity[A] = A` enabling the
-//   interpreter to return a type that is not higher kinded
-case class LocalInterpreter(keyRing: KeyRing) extends CryptoInterpreter[λ[α=>α]] {
+case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
   private def doConvert(s: Scheme, in: Enc) = Common.depConvert(keyRing)(s,in)
   private def additive(x: Enc): PaillierEnc = doConvert(Additive, x)
   private def multiplicative(x: Enc): ElGamalEnc = doConvert(Multiplicative, x)

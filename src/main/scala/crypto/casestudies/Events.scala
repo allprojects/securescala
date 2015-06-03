@@ -134,7 +134,7 @@ object TheInterpreter {
 }
 
 object EncryptedSumAggregationFunction {
-  def register(keyRing: KeyRing, interp: CryptoInterpreter[λ[α=>α]])(cfg: Configuration) = {
+  def register(keyRing: KeyRing, interp: PureCryptoInterpreter)(cfg: Configuration) = {
 
   }
 }
