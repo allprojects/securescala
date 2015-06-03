@@ -574,6 +574,6 @@ def foldLeftM[A,B,F[_]:Monad](z: B)(f: (B,A) => F[B]): F[B]
 #+END_SRC
 * Benchmarks
 ** Sequential, Parallel, Analyzing
-[[file:delayed-bench-2.png]]
-** Parallel, Analyzing
 [[file:delayed-bench-3.png]]
+** Parallel, Analyzing
+[[file:delayed-bench-2.png]]
