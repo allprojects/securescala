@@ -5,11 +5,7 @@ import org.scalacheck.Gen
 
 import crypto.cipher._
 
-trait ScalaCheckGen {
-  val posInt = arbitrary[BigInt] retryUntil (_.signum == 1)
-}
-
-case class EncryptedGens(keys: KeyRing) extends ScalaCheckGen {
+case class EncryptedGens(keys: KeyRing) {
   val allowedNumber = arbitrary[BigInt] retryUntil (keys.priv.opePriv.domain.contains(_))
 
   def encryptedNumber: Gen[Enc] = for {
@@ -28,7 +24,7 @@ case class EncryptedGens(keys: KeyRing) extends ScalaCheckGen {
   } yield n :: ns
 }
 
-trait CryptoCheck extends ScalaCheckGen {
+trait CryptoCheck {
   val keyRing = KeyRing.create
   val generators = EncryptedGens(keyRing)
 }
