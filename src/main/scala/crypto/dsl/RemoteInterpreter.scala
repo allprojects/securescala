@@ -73,7 +73,7 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
     }
 
     case -\/(Encrypt(s,v,k)) => {
-      val res: Future[Enc] = s match {
+      val res: Future[EncInt] = s match {
         // For public key encryption, we do not even have to send anything
         case Additive =>
           Future.successful(Common.depEncryptPub(Additive, pubKeys)(v))
@@ -125,7 +125,7 @@ class RemoteInterpreterOptAnalyze(
   override def interpretA[A](p: Crypto[A]): Future[A] = {
     val conversions = Analysis.extractConversions(p)
     if (doBatch(conversions.size)) {
-      val converted: Future[List[Enc]] = batchMode match {
+      val converted: Future[List[EncInt]] = batchMode match {
         case FixedBatch(batchSize) =>
           Future.traverse(conversions.grouped(batchSize))(service.batchConvert).
             map(_.flatten.toList)

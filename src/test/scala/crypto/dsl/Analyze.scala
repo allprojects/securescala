@@ -31,7 +31,7 @@ class AnalysisSpec extends WordSpec with Matchers {
 
       val data = List.fill(300)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
 
-      val ns: List[(Option[Scheme],Enc)] = extractNumbers(sumOpt(data))
+      val ns: List[(Option[Scheme],EncInt)] = extractNumbers(sumOpt(data))
 
       ns.map(_._2) should equal(data)
     }
@@ -59,7 +59,7 @@ class AnalysisSpec extends WordSpec with Matchers {
 
       val program2 = withNumbers(program)(_.map(_._2).reverse)
 
-      val ns: List[(Option[Scheme],Enc)] = extractNumbers(program2)
+      val ns: List[(Option[Scheme],EncInt)] = extractNumbers(program2)
 
       ns.map(_._2) should equal(data.reverse)
     }

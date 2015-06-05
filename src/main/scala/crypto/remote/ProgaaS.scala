@@ -20,7 +20,7 @@ import crypto.cipher._
 trait ProgaaS {
   implicit def ec: ExecutionContext
   def name: String
-  def program(in: Enc): CryptoM[Enc]
+  def program(in: EncInt): CryptoM[EncInt]
 
   def run(): Unit = {
     print("Trying to connect to crypto service...")
@@ -75,7 +75,7 @@ trait ProgaaS {
 object FactaaS extends ProgaaS with App {
   def ec = scala.concurrent.ExecutionContext.Implicits.global
   def name = "factorial"
-  def program(in: Enc) = ExamplePrograms.factorial(in)
+  def program(in: EncInt) = ExamplePrograms.factorial(in)
 
   run
 }
@@ -83,7 +83,7 @@ object FactaaS extends ProgaaS with App {
 object FibaaS extends ProgaaS with App {
   def ec = scala.concurrent.ExecutionContext.Implicits.global
   def name = "fibonacci"
-  def program(in: Enc) = ExamplePrograms.fib(in)
+  def program(in: EncInt) = ExamplePrograms.fib(in)
 
   run
 }
@@ -91,7 +91,7 @@ object FibaaS extends ProgaaS with App {
 object CollatzaaS extends ProgaaS with App {
   def ec = scala.concurrent.ExecutionContext.Implicits.global
   def name = "collatz conjecture"
-  def program(in: Enc) = ExamplePrograms.collatzConjecture(in)
+  def program(in: EncInt) = ExamplePrograms.collatzConjecture(in)
 
   run
 }

@@ -29,7 +29,7 @@ import crypto.dsl._
 case class CryptoEvent(
   @BeanProperty name: String,
   @BeanProperty plainValue: Int,
-  @BeanProperty encValue: Enc
+  @BeanProperty encValue: EncInt
 ) {
   // needs 'get' prefix due to bean style used by esper
   def getPretty: String = s"""CryptoEvent("${name}",${plainValue},<encrypted>)"""
@@ -77,7 +77,7 @@ FROM CryptoEvent as cevt
     println(f"${e.get("plainValue")}%3s is <100")).mapfst(x => x.head)
 
   epService.getEPAdministrator.createEPL(encryptedSum) += { (e: EventBean) =>
-    val encrypted = e.get("encValue").asInstanceOf[Enc]
+    val encrypted = e.get("encValue").asInstanceOf[EncInt]
     val decrypted = Common.decrypt(TheInterpreter.keyRing.priv)(encrypted)
     println(s"--- Current Sum: ${decrypted}")}.mapfst(x => x.head)
 
@@ -98,26 +98,26 @@ object TheInterpreter {
     def setFunctionName(functionName: String): Unit = ()
     def validate(validationContext: AggregationValidationContext): Unit =
       if ( (validationContext.getParameterTypes.length != 1) ||
-        (validationContext.getParameterTypes.head != classOf[Enc])) {
-        throw new IllegalArgumentException("Aggregation requires a single parameter of type Enc")
+        (validationContext.getParameterTypes.head != classOf[EncInt])) {
+        throw new IllegalArgumentException("Aggregation requires a single parameter of type EncInt")
       }
-    def getValueType(): Class[_] = classOf[Enc]
+    def getValueType(): Class[_] = classOf[EncInt]
     def newAggregator(): AggregationMethod =
       new EncryptedSumAggregationFunction
   }
 
   class EncryptedSumAggregationFunction extends AggregationMethod {
     val zero = Common.zero(keyRing)
-    private var sumValue: Enc = zero
+    private var sumValue: EncInt = zero
 
     def clear(): Unit = sumValue = zero
-    def getValueType(): Class[_] = classOf[Enc]
+    def getValueType(): Class[_] = classOf[EncInt]
     def enter(x_ : Any): Unit = {
-      val x = x_.asInstanceOf[Enc]
+      val x = x_.asInstanceOf[EncInt]
       sumValue = interp(sumValue + x)
     }
     def leave(x_ : Any): Unit = {
-      val x = x_.asInstanceOf[Enc]
+      val x = x_.asInstanceOf[EncInt]
       sumValue = interp(sumValue - x)
     }
     def getValue(): Object = sumValue
@@ -127,10 +127,10 @@ object TheInterpreter {
   
   def encrypt(i: BigInt) = Common.encryptPub(Additive, keyRing)(i).valueOr(sys.error)
 
-  def isEven(e: Enc): Boolean = interp(dsl.isEven(e))
+  def isEven(e: EncInt): Boolean = interp(dsl.isEven(e))
 
   val onehundred = Common.encrypt(Comparable, keyRing)(100)
-  def smaller100(e: Enc): Boolean =interp(e < onehundred)
+  def smaller100(e: EncInt): Boolean =interp(e < onehundred)
 }
 
 object EncryptedSumAggregationFunction {

@@ -14,7 +14,7 @@ case object Equality extends Scheme { type Out = AesEnc }
 case object Comparable extends Scheme { type Out = OpeEnc }
 
 object Common {
-  def decrypt(keys: PrivKeys): Enc => BigInt = _ match {
+  def decrypt(keys: PrivKeys): EncInt => BigInt = _ match {
     case PaillierEnc(x) => keys.paillier(x)
     case ElGamalEnc(x,y) => keys.elgamal(x,y)
     case AesEnc(x) => BigInt(keys.aesDec(x))
@@ -24,7 +24,7 @@ object Common {
   def depEncryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => s.Out =
     input => encryptPub(s,keys)(input).map(_.asInstanceOf[s.Out]).valueOr(sys.error)
 
-  def encryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => String \/ Enc =
+  def encryptPub(s: AsymmetricScheme, keys: PubKeys): BigInt => String \/ EncInt =
     input => s match {
       case Additive => Paillier.encrypt(keys.paillier)(input).map { x =>
         PaillierEnc(keys.paillier)(x)
@@ -38,17 +38,17 @@ object Common {
   def depEncrypt(s: Scheme, keys: KeyRing): BigInt => s.Out =
     input => encryptChecked(s,keys)(input).valueOr(sys.error).asInstanceOf[s.Out]
 
-  def encrypt(s: Scheme, keys: KeyRing): BigInt => Enc =
+  def encrypt(s: Scheme, keys: KeyRing): BigInt => EncInt =
     input => encryptChecked(s,keys)(input).valueOr(sys.error)
 
-  def encryptChecked(s: Scheme, keys: KeyRing): BigInt => String \/ Enc = input => s match {
+  def encryptChecked(s: Scheme, keys: KeyRing): BigInt => String \/ EncInt = input => s match {
     case Additive => encryptPub(Additive, keys.pub)(input)
     case Multiplicative => encryptPub(Multiplicative, keys.pub)(input)
     case Equality => \/-(AesEnc(keys.priv.aesEnc(input)))
     case Comparable => keys.priv.opeIntEnc(input).map(OpeEnc(_))
   }
 
-  def safeConvert(keys: KeyRing): (Scheme, Enc) => String \/ Enc = {
+  def safeConvert(keys: KeyRing): (Scheme, EncInt) => String \/ EncInt = {
     // Nothing to do
     case (Additive,in@PaillierEnc(_)) => \/-(in)
     case (Multiplicative,in@ElGamalEnc(_,_)) => \/-(in)
@@ -62,10 +62,10 @@ object Common {
     case (Comparable,in) => keys.priv.opeIntEnc(decrypt(keys.priv)(in)).map(OpeEnc(_))
   }
 
-  def convert(keys: KeyRing): (Scheme, Enc) => Enc =
+  def convert(keys: KeyRing): (Scheme, EncInt) => EncInt =
     (scheme,enc) => safeConvert(keys)(scheme,enc).valueOr(sys.error)
 
-  def depConvert(keys: KeyRing)(s: Scheme, in: Enc): s.Out =
+  def depConvert(keys: KeyRing)(s: Scheme, in: EncInt): s.Out =
     convert(keys)(s,in).asInstanceOf[s.Out]
 
   def zero(keys: PubKeys): PaillierEnc = depEncryptPub(Additive, keys)(0)

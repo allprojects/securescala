@@ -17,14 +17,14 @@ import crypto.dsl.Implicits._
 
 object ExamplePrograms {
   // https://en.wikipedia.org/wiki/Collatz_conjecture
-  def collatzConjecture(n: Enc): CryptoM[Enc] = for {
+  def collatzConjecture(n: EncInt): CryptoM[EncInt] = for {
     zero <- encrypt(Comparable)(0)
     xs <- List(1,2,3).traverse(encrypt(Multiplicative))
     r <- collatzConjectureHelper(zero,xs(0),xs(1),xs(2))(n)
   } yield r
 
-  def collatzConjectureHelper(zero: Enc, one: Enc, two: Enc, three: Enc)(
-    n: Enc): CryptoM[Enc] = for {
+  def collatzConjectureHelper(zero: EncInt, one: EncInt, two: EncInt, three: EncInt)(
+    n: EncInt): CryptoM[EncInt] = for {
       greaterOne <- n > one
       r <- if (!greaterOne) n.lifted else for {
         cond <- isEven(n)
@@ -36,12 +36,12 @@ object ExamplePrograms {
       } yield r
   } yield r
 
-  def fib(n: Enc): CryptoM[Enc] = for {
+  def fib(n: EncInt): CryptoM[EncInt] = for {
     (one,two) <- encrypt(Additive)(1) tuple encrypt(Additive)(2)
     r <- fibHelper(one,two)(n)
   } yield r
 
-  def fibHelper(one: Enc, two: Enc)(n: Enc): CryptoM[Enc] = for {
+  def fibHelper(one: EncInt, two: EncInt)(n: EncInt): CryptoM[EncInt] = for {
     cmp <- n <= one
     r <- if (cmp) {
       one.lifted
@@ -52,12 +52,12 @@ object ExamplePrograms {
     } yield s
   } yield r
 
-  def factorial(n: Enc): CryptoM[Enc] = for {
+  def factorial(n: EncInt): CryptoM[EncInt] = for {
     (zero,one) <- encrypt(Multiplicative)(0) tuple (encrypt(Multiplicative)(1))
     r <- factorialHelper(zero, one)(n)
   } yield r
 
-  def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
+  def factorialHelper(zero: EncInt, one: EncInt)(n: EncInt): CryptoM[EncInt] = for {
     cond <- n =:= zero
     r <- if (cond) {
       one.lifted
@@ -68,32 +68,32 @@ object ExamplePrograms {
     } yield s
   } yield r
 
-  def sumAndLength[F[_]:Traverse](z: PaillierEnc)(xs: F[Enc]): Crypto[(PaillierEnc,Enc)] =
+  def sumAndLength[F[_]:Traverse](z: PaillierEnc)(xs: F[EncInt]): Crypto[(PaillierEnc,EncInt)] =
     sumA(z)(xs) tuple encrypt(Additive)(xs.length)
 
   // Requires zero to be passed in but uses applicative style and more specific
   // return type PaillierEnc
   def exampleMapSumValuesApplicative[A](zero: PaillierEnc)(
-    input: Map[A,List[Enc]]): Crypto[Map[A,PaillierEnc]] = {
+    input: Map[A,List[EncInt]]): Crypto[Map[A,PaillierEnc]] = {
 
     input.traverse(xs => xs.sumOpt).map(_.mapValues(_.getOrElse(zero)))
   }
 
   // Does not require zero to be passed in but uses monadic style
-  def exampleMapSumValuesMonad[A](input: Map[A,List[Enc]]): CryptoM[Map[A,Enc]] = for {
+  def exampleMapSumValuesMonad[A](input: Map[A,List[EncInt]]): CryptoM[Map[A,EncInt]] = for {
     maybeSums <- input.traverse(_.sumOpt)
     zero <- encrypt(Additive)(0)
   } yield maybeSums.mapValues(_.getOrElse(zero))
 
   // Parition the input list into even and odd (predefined in scalaz)
-  def evenAndOdd(input: List[Enc]): Crypto[(List[Enc],List[Enc])] =
+  def evenAndOdd(input: List[EncInt]): Crypto[(List[EncInt],List[EncInt])] =
     input.partitionM(isEven)
 
   // Group if the two are smaller than delta apart
-  def groupWithDelta(delta: Enc)(input: List[Enc]): CryptoM[List[NonEmptyList[Enc]]] =
+  def groupWithDelta(delta: EncInt)(input: List[EncInt]): CryptoM[List[NonEmptyList[EncInt]]] =
     input.groupWhenM[CryptoM]( (x,y) => (x - y) >>= (_ < delta))
 
-  def firstEven(input: List[Enc]): CryptoM[Option[Enc]] = input.findM(isEven)
+  def firstEven(input: List[EncInt]): CryptoM[Option[EncInt]] = input.findM(isEven)
 }
 
 object Repl {
@@ -114,7 +114,7 @@ object SumExample extends App {
   val randomNumbers = List.fill(20)(Random.nextInt.abs).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
-  val encryptedList: List[Enc] =
+  val encryptedList: List[EncInt] =
     randomNumbers.map(Common.encrypt(Additive, keyRing))
 
   val sumResult = Repl.runProgram(sumA(zero)(encryptedList))
@@ -129,10 +129,10 @@ object MultExample extends App {
   val randomNumbers = List.fill(5)(Random.nextInt.abs+1).map(BigInt(_))
   println(s"Sequence of random numbers: ${randomNumbers}")
 
-  val encryptedList: List[Enc] =
+  val encryptedList: List[EncInt] =
     randomNumbers.map(Common.encrypt(Multiplicative, keyRing))
 
-  val productResult: Enc = Repl.runProgram(productA(one)(encryptedList))
+  val productResult: EncInt = Repl.runProgram(productA(one)(encryptedList))
 
   println(s"Result of product without encryption: ${randomNumbers.product mod keyRing.pub.elgamal.p}")
   println(s"Result of product with    encryption: ${decryption(productResult)}")
@@ -168,7 +168,7 @@ object AverageExample extends App {
   val randomNumbers = List.fill(5)(Random.nextInt.abs)
   println(randomNumbers)
 
-  val encNums: List[Enc] =
+  val encNums: List[EncInt] =
     randomNumbers.map(Common.encrypt(Additive, keyRing) compose BigInt.apply)
 
   val (sum,len) = Repl.runProgram(sumAndLength(zero)(encNums))

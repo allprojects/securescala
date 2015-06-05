@@ -6,27 +6,27 @@ import scalaz._
 import scalaz.std.math.bigInt._
 import scalaz.syntax.order._
 
-sealed trait Enc
-class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends Enc with Serializable {
+sealed trait EncInt
+class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends EncInt with Serializable {
   def +(that: PaillierEnc): PaillierEnc = (this,that) match {
     case (PaillierEnc(lhs),PaillierEnc(rhs)) =>
       new PaillierEnc((lhs * rhs).mod(nSquare), nSquare)
   }
   override def toString = s"PaillierEnc($underlying)"
 }
-class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends Enc with Serializable {
+class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends EncInt with Serializable {
   def *(that: ElGamalEnc): ElGamalEnc = (this,that) match {
     case (ElGamalEnc(ca1,ca2),ElGamalEnc(cb1,cb2)) =>
       new ElGamalEnc((ca1 * cb1).mod(p), (ca2 * cb2).mod(p), p)
   }
   override def toString = s"GamalEnc($ca,$cb)"
 }
-case class AesEnc(underlying: Array[Byte]) extends Enc {
+case class AesEnc(underlying: Array[Byte]) extends EncInt {
   def =:=(that: AesEnc): Boolean = (this,that) match {
     case (AesEnc(x),AesEnc(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
   }
 }
-case class OpeEnc(underlying: BigInt) extends Enc
+case class OpeEnc(underlying: BigInt) extends EncInt
 
 object PaillierEnc {
   implicit val paillierSemigroup = new Semigroup[PaillierEnc] {

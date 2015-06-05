@@ -92,7 +92,7 @@ object Analysis {
   }
 
   def withNumbers[A](p: Crypto[A])(
-    f: List[(Option[Scheme],Enc)] => List[Enc]): Crypto[A] = {
+    f: List[(Option[Scheme],EncInt)] => List[EncInt]): Crypto[A] = {
 
     val nums = extractNumbers(p)
     val newNums = f(nums)
@@ -104,12 +104,12 @@ object Analysis {
     replaceNumbers(p).eval(newNums)
   }
 
-  def mapNumbers[A](p: Crypto[A])(f: (Option[Scheme],Enc) => Enc): Crypto[A] =
+  def mapNumbers[A](p: Crypto[A])(f: (Option[Scheme],EncInt) => EncInt): Crypto[A] =
     withNumbers(p)(_.map { case (optScheme,enc) => f(optScheme,enc) })
 
-  def extractConversions(p: Crypto[_]): List[(Scheme,Enc)] = {
+  def extractConversions(p: Crypto[_]): List[(Scheme,EncInt)] = {
     Tag.unwrap(
-      p.analyze(new (CryptoF ~> λ[α => DList[(Scheme,Enc)] @@ Tags.Dual]) {
+      p.analyze(new (CryptoF ~> λ[α => DList[(Scheme,EncInt)] @@ Tags.Dual]) {
         def apply[B](a: CryptoF[B]) = a match {
           case ToPaillier(v,k) => Dual(DList((Additive,v)))
           case ToGamal(v,k) => Dual(DList((Multiplicative,v)))
@@ -132,15 +132,15 @@ object Analysis {
   }
 
   // TODO hoist + retract better?
-  type StateCrypto[α] = State[List[Enc],Crypto[α]]
+  type StateCrypto[α] = State[List[EncInt],Crypto[α]]
   def replaceConversions[A](p: Crypto[A]): StateCrypto[A] = {
-    implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
+    implicit val ev = Applicative[λ[α => State[List[EncInt],α]]].compose[Crypto]
 
-    def takeHead(): State[List[Enc],Enc] = for {
-      head <- State.gets{ (s:List[Enc]) =>
+    def takeHead(): State[List[EncInt],EncInt] = for {
+      head <- State.gets{ (s:List[EncInt]) =>
         s.headOption.getOrElse(sys.error("Not enough numbers for replacement"))
       }
-      _ <- State.modify((s:List[Enc]) => s.tail)
+      _ <- State.modify((s:List[EncInt]) => s.tail)
     } yield head
 
     p.foldMap[StateCrypto](new (CryptoF ~> StateCrypto) {
@@ -183,9 +183,9 @@ object Analysis {
     })(ev)
   }
 
-  def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],Enc)] = {
+  def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],EncInt)] = {
     Tag.unwrap(
-      p.analyze(new (CryptoF ~> λ[α => DList[(Option[Scheme],Enc)] @@ Tags.Dual]) {
+      p.analyze(new (CryptoF ~> λ[α => DList[(Option[Scheme],EncInt)] @@ Tags.Dual]) {
         def apply[B](a: CryptoF[B]) = a match {
           case ToPaillier(v,k) => Dual(DList((Some(Additive),v)))
           case ToGamal(v,k) => Dual(DList((Some(Multiplicative),v)))
@@ -211,13 +211,13 @@ object Analysis {
 
   // TODO hoist + retract better?
   def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
-    implicit val ev = Applicative[λ[α => State[List[Enc],α]]].compose[Crypto]
+    implicit val ev = Applicative[λ[α => State[List[EncInt],α]]].compose[Crypto]
 
-    def takeHead(): State[List[Enc],Enc] = for {
-      head <- State.gets{ (s:List[Enc]) =>
+    def takeHead(): State[List[EncInt],EncInt] = for {
+      head <- State.gets{ (s:List[EncInt]) =>
         s.headOption.getOrElse(sys.error("Not enough numbers for replacement"))
       }
-      _ <- State.modify((s:List[Enc]) => s.tail)
+      _ <- State.modify((s:List[EncInt]) => s.tail)
     } yield head
 
     p.foldMap[StateCrypto](new (CryptoF ~> StateCrypto) {

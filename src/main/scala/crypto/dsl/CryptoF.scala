@@ -6,21 +6,21 @@ import crypto._
 import crypto.cipher._
 
 sealed trait CryptoF[+K]
-case class Mult[K](lhs: Enc, rhs: Enc, k: ElGamalEnc => K) extends CryptoF[K]
-case class Plus[K](lhs: Enc, rhs: Enc, k: PaillierEnc => K) extends CryptoF[K]
-case class Equals[K](lhs: Enc, rhs: Enc, k: Boolean => K)  extends CryptoF[K]
-case class Compare[K](lhs: Enc, rhs: Enc, k: Ordering => K) extends CryptoF[K]
+case class Mult[K](lhs: EncInt, rhs: EncInt, k: ElGamalEnc => K) extends CryptoF[K]
+case class Plus[K](lhs: EncInt, rhs: EncInt, k: PaillierEnc => K) extends CryptoF[K]
+case class Equals[K](lhs: EncInt, rhs: EncInt, k: Boolean => K)  extends CryptoF[K]
+case class Compare[K](lhs: EncInt, rhs: EncInt, k: Ordering => K) extends CryptoF[K]
 
-case class Encrypt[K](s:Scheme, v: Int, k: Enc => K) extends CryptoF[K]
-case class ToPaillier[K](v: Enc, k: PaillierEnc => K) extends CryptoF[K]
-case class ToGamal[K](v: Enc, k: ElGamalEnc => K) extends CryptoF[K]
-case class ToAes[K](v: Enc, k: AesEnc => K) extends CryptoF[K]
-case class ToOpe[K](v: Enc, k: OpeEnc => K) extends CryptoF[K]
+case class Encrypt[K](s:Scheme, v: Int, k: EncInt => K) extends CryptoF[K]
+case class ToPaillier[K](v: EncInt, k: PaillierEnc => K) extends CryptoF[K]
+case class ToGamal[K](v: EncInt, k: ElGamalEnc => K) extends CryptoF[K]
+case class ToAes[K](v: EncInt, k: AesEnc => K) extends CryptoF[K]
+case class ToOpe[K](v: EncInt, k: OpeEnc => K) extends CryptoF[K]
 
-case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
-case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
-case class IsEven[K](v: Enc, k: Boolean => K) extends CryptoF[K]
-case class IsOdd[K](v: Enc, k: Boolean => K) extends CryptoF[K]
+case class Sub[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoF[K]
+case class Div[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoF[K]
+case class IsEven[K](v: EncInt, k: Boolean => K) extends CryptoF[K]
+case class IsOdd[K](v: EncInt, k: Boolean => K) extends CryptoF[K]
 
 // Embed the applicative part into monadic language
 case class Embed[A,K](v: Crypto[A], k: CryptoM[A] => CryptoM[K]) extends CryptoF[K]

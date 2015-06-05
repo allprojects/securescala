@@ -28,16 +28,16 @@
 * The general idea
 - addition of encrypted numbers
   #+BEGIN_SRC scala
-  (+) : Enc => Enc => Enc
-  Enc(21) + Enc(21) = Enc(42)
+  (+) : EncInt => EncInt => EncInt
+  EncInt(21) + EncInt(21) = EncInt(42)
   #+END_SRC
 - if the current scheme is wrong, we need to do a *conversion*
 - locally with *private* key: no problem
 - remote on untrusted third party: *communication*
 - conversion over network = *Effect*
   #+BEGIN_SRC scala
-  (+) : Enc => Enc => ???[Enc]
-  Enc(21) + Enc(21) = ???(Enc(42))
+  (+) : EncInt => EncInt => ???[EncInt]
+  EncInt(21) + EncInt(21) = ???(EncInt(42))
   #+END_SRC
 - handle effects in functional programming = *Monads*
 - create DSL based on monads = *Free Monads*
@@ -55,7 +55,7 @@ def fib(n: Int): Int =
 #+END_SRC
 Using the DSL:
 #+BEGIN_SRC scala
-def fibHelper(one: Enc, two: Enc)(n: Enc): CryptoM[Enc] = for {
+def fibHelper(one: EncInt, two: EncInt)(n: EncInt): CryptoM[EncInt] = for {
   cmp <- n <= one
   r <- if (cmp) {
     one.lifted
@@ -66,7 +66,7 @@ def fibHelper(one: Enc, two: Enc)(n: Enc): CryptoM[Enc] = for {
   } yield s
 } yield r
 
-def fib(n: Enc): CryptoM[Enc] = for {
+def fib(n: EncInt): CryptoM[EncInt] = for {
   (one,two) <- encrypt(Additive)(1) tuple encrypt(Additive)(2)
   r <- fibHelper(one,two)(n)
 } yield r
@@ -84,7 +84,7 @@ def factorial(n: Int): Int =
 
 Using the DSL:
 #+BEGIN_SRC scala
-def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
+def factorialHelper(zero: EncInt, one: EncInt)(n: EncInt): CryptoM[EncInt] = for {
   cond <- n =:= zero
   r <- if (cond) {
     one.lifted
@@ -95,7 +95,7 @@ def factorialHelper(zero: Enc, one: Enc)(n: Enc): CryptoM[Enc] = for {
   } yield s
 } yield r
 
-def factorial(n: Enc): CryptoM[Enc] = for {
+def factorial(n: EncInt): CryptoM[EncInt] = for {
   (zero,one) <- encrypt(Multiplicative)(0) tuple (encrypt(Multiplicative)(1))
   r <- factorialHelper(zero, one)(n)
 } yield r
@@ -123,10 +123,10 @@ object TheInterpreter {
   val keyRing = KeyRing.create
   val interp = LocalInterpreter(keyRing)
 
-  def isEven(e: Enc): Boolean = interp(dsl.isEven(e))
+  def isEven(e: EncInt): Boolean = interp(dsl.isEven(e))
 
   val onehundred = Common.encrypt(Comparable, keyRing)(100)
-  def smaller100(e: Enc): Boolean =interp(e < onehundred)
+  def smaller100(e: EncInt): Boolean =interp(e < onehundred)
 }
 #+END_SRC
 * The End
@@ -137,32 +137,32 @@ object TheInterpreter {
 - Requires translation into monadic style
 * Details
 ** Implementations
-*** Enc
+*** EncInt
 #+BEGIN_SRC scala
-sealed trait Enc
-case class PaillierEnc(...) extends Enc { def +(that: PaillierEnc): PaillierEnc }
-case class ElGamalEnc(...)  extends Enc { def *(that: ElGamalEnc): ElGamalEnc }
-case class AesEnc(...)      extends Enc { def =:=(that: AesEnc): Boolean }
-case class OpeEnc(...)      extends Enc; implicit val opeOrder = new Order[OpeEnc] {...}
+sealed trait EncInt
+case class PaillierEnc(...) extends EncInt { def +(that: PaillierEnc): PaillierEnc }
+case class ElGamalEnc(...)  extends EncInt { def *(that: ElGamalEnc): ElGamalEnc }
+case class AesEnc(...)      extends EncInt { def =:=(that: AesEnc): Boolean }
+case class OpeEnc(...)      extends EncInt; implicit val opeOrder = new Order[OpeEnc] {...}
 #+END_SRC
 *** Complete Functor definition
 #+BEGIN_SRC scala
 sealed trait CryptoF[+K]
-case class Mult[K](lhs: Enc, rhs: Enc, k: ElGamalEnc => K) extends CryptoF[K]
-case class Plus[K](lhs: Enc, rhs: Enc, k: PaillierEnc => K) extends CryptoF[K]
-case class Equals[K](lhs: Enc, rhs: Enc, k: Boolean => K)  extends CryptoF[K]
-case class Compare[K](lhs: Enc, rhs: Enc, k: Ordering => K) extends CryptoF[K]
+case class Mult[K](lhs: EncInt, rhs: EncInt, k: ElGamalEnc => K) extends CryptoF[K]
+case class Plus[K](lhs: EncInt, rhs: EncInt, k: PaillierEnc => K) extends CryptoF[K]
+case class Equals[K](lhs: EncInt, rhs: EncInt, k: Boolean => K)  extends CryptoF[K]
+case class Compare[K](lhs: EncInt, rhs: EncInt, k: Ordering => K) extends CryptoF[K]
 
-case class Encrypt[K](s:Scheme, v: Int, k: Enc => K) extends CryptoF[K]
-case class ToPaillier[K](v: Enc, k: PaillierEnc => K) extends CryptoF[K]
-case class ToGamal[K](v: Enc, k: ElGamalEnc => K) extends CryptoF[K]
-case class ToAes[K](v: Enc, k: AesEnc => K) extends CryptoF[K]
-case class ToOpe[K](v: Enc, k: OpeEnc => K) extends CryptoF[K]
+case class Encrypt[K](s:Scheme, v: Int, k: EncInt => K) extends CryptoF[K]
+case class ToPaillier[K](v: EncInt, k: PaillierEnc => K) extends CryptoF[K]
+case class ToGamal[K](v: EncInt, k: ElGamalEnc => K) extends CryptoF[K]
+case class ToAes[K](v: EncInt, k: AesEnc => K) extends CryptoF[K]
+case class ToOpe[K](v: EncInt, k: OpeEnc => K) extends CryptoF[K]
 
-case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
-case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
-case class IsEven[K](v: Enc, k: Boolean => K) extends CryptoF[K]
-case class IsOdd[K](v: Enc, k: Boolean => K) extends CryptoF[K]
+case class Sub[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoF[K]
+case class Div[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoF[K]
+case class IsEven[K](v: EncInt, k: Boolean => K) extends CryptoF[K]
+case class IsOdd[K](v: EncInt, k: Boolean => K) extends CryptoF[K]
 case class Embed[A,K](v: Crypto[A], k: CryptoM[A] => CryptoM[K]) extends CryptoF[K]
 #+END_SRC
 
@@ -171,81 +171,81 @@ case class Embed[A,K](v: Crypto[A], k: CryptoM[A] => CryptoM[K]) extends CryptoF
 type Crypto[A] = FreeAp[CryptoF, A]
 type CryptoM[A] = Free[CryptoF, A]
 
-def multiply(lhs: Enc, rhs: Enc): Crypto[Enc]
-def add(lhs: Enc, rhs: Enc): Crypto[Enc]
-def equal(lhs: Enc, rhs: Enc): Crypto[Boolean]
-def compare(lhs: Enc, rhs: Enc): Crypto[Ordering]
+def multiply(lhs: EncInt, rhs: EncInt): Crypto[EncInt]
+def add(lhs: EncInt, rhs: EncInt): Crypto[EncInt]
+def equal(lhs: EncInt, rhs: EncInt): Crypto[Boolean]
+def compare(lhs: EncInt, rhs: EncInt): Crypto[Ordering]
 
-def encrypt(s: Scheme)(v: Int): Crypto[Enc]
-def toPaillier(v: Enc): Crypto[PaillierEnc]
-def toGamal(v: Enc): Crypto[ElGamalEnc]
-def toAes(v: Enc): Crypto[AesEnc]
-def toOpe(v: Enc): Crypto[OpeEnc]
+def encrypt(s: Scheme)(v: Int): Crypto[EncInt]
+def toPaillier(v: EncInt): Crypto[PaillierEnc]
+def toGamal(v: EncInt): Crypto[ElGamalEnc]
+def toAes(v: EncInt): Crypto[AesEnc]
+def toOpe(v: EncInt): Crypto[OpeEnc]
 
-def subtract(lhs: Enc, rhs: Enc): Crypto[Enc]
-def divide(lhs: Enc, rhs: Enc): Crypto[Enc]
+def subtract(lhs: EncInt, rhs: EncInt): Crypto[EncInt]
+def divide(lhs: EncInt, rhs: EncInt): Crypto[EncInt]
 
-def isEven(v: Enc): Crypto[Boolean]
-def isOdd(v: Enc): Crypto[Boolean]
+def isEven(v: EncInt): Crypto[Boolean]
+def isOdd(v: EncInt): Crypto[Boolean]
 
 def embed[A](v: Crypto[A]): CryptoM[A]
 #+END_SRC
 
 *** Infix operations
 #+BEGIN_SRC scala
-implicit class EncInfixOps(self: Enc) {
-  def *(that: Enc)
-  def +(that: Enc)
-  def -(that: Enc)
-  def /(that: Enc)
-  def =:=(that: Enc)
-  def ?|?(that: Enc)
-  def <(that: Enc)
-  def <=(that: Enc)
-  def >(that: Enc)
-  def >=(that: Enc)
+implicit class EncInfixOps(self: EncInt) {
+  def *(that: EncInt)
+  def +(that: EncInt)
+  def -(that: EncInt)
+  def /(that: EncInt)
+  def =:=(that: EncInt)
+  def ?|?(that: EncInt)
+  def <(that: EncInt)
+  def <=(that: EncInt)
+  def >(that: EncInt)
+  def >=(that: EncInt)
 }
 #+END_SRC
 *** Derived operations
 #+BEGIN_SRC scala
-def sumM[F[_]:Foldable](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] =
-  xs.foldLeftM[CryptoM,Enc](zero)(add(_,_))
+def sumM[F[_]:Foldable](zero: PaillierEnc)(xs: F[EncInt]): CryptoM[EncInt] =
+  xs.foldLeftM[CryptoM,EncInt](zero)(add(_,_))
 
-def sumA[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): Crypto[PaillierEnc] =
+def sumA[F[_]:Traverse](zero: PaillierEnc)(xs: F[EncInt]): Crypto[PaillierEnc] =
   sumOpt(xs).map(_.getOrElse(zero))
 
-def sumOpt[F[_]:Traverse](xs: F[Enc]): Crypto[Option[PaillierEnc]] =
+def sumOpt[F[_]:Traverse](xs: F[EncInt]): Crypto[Option[PaillierEnc]] =
   xs.traverse(toPaillier).map(_.foldLeft(None: Option[PaillierEnc])(_ ⊹ Some(_)))
 
-def productM[F[_]:Foldable](one: ElGamalEnc)(xs: F[Enc]): CryptoM[Enc] =
-  xs.foldLeftM[CryptoM,Enc](one)(multiply(_,_))
+def productM[F[_]:Foldable](one: ElGamalEnc)(xs: F[EncInt]): CryptoM[EncInt] =
+  xs.foldLeftM[CryptoM,EncInt](one)(multiply(_,_))
 
-def productA[F[_]:Traverse](one: ElGamalEnc)(xs: F[Enc]): Crypto[ElGamalEnc] =
+def productA[F[_]:Traverse](one: ElGamalEnc)(xs: F[EncInt]): Crypto[ElGamalEnc] =
   productOpt(xs).map(_.getOrElse(one))
 
-def productOpt[F[_]:Traverse](xs: F[Enc]): Crypto[Option[ElGamalEnc]] =
+def productOpt[F[_]:Traverse](xs: F[EncInt]): Crypto[Option[ElGamalEnc]] =
   xs.traverse(toGamal).map(_.foldLeft(None: Option[ElGamalEnc])(_ ⊹ Some(_)))
 
-def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[Enc]): CryptoM[Enc] = for {
+def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[EncInt]): CryptoM[EncInt] = for {
   sum <- sumA(zero)(xs)
   n <- encrypt(Additive) { xs.length }
   r <- sum / n
 } yield r
 
-def sorted(xs: List[Enc]): Crypto[List[OpeEnc]] =
+def sorted(xs: List[EncInt]): Crypto[List[OpeEnc]] =
   xs.traverse(toOpe).map(_.sorted)
 #+END_SRC
 ** Free Monads
 - Given any Functor, Free gives rise to a Monad over that Functor
   #+BEGIN_SRC scala
   sealed trait CryptoF[+K] //
-  case class Plus[K](lhs:Enc,rhs:Enc,k:PaillierEnc => K) extends CryptoF[K]
-  def plus(lhs:Enc,rhs:Enc):Crypto[Enc]
+  case class Plus[K](lhs:EncInt,rhs:EncInt,k:PaillierEnc => K) extends CryptoF[K]
+  def plus(lhs:EncInt,rhs:EncInt):Crypto[EncInt]
   // multiplication, equality, comparisons
   #+END_SRC
 - We can use the power of the Monad to combine computations
   #+BEGIN_SRC scala
-  def sum(xs: List[Enc]): Crypto[Enc] = xs match {
+  def sum(xs: List[EncInt]): Crypto[EncInt] = xs match {
     case List() => enc(0)
     case (x::xs) => for (xs_ <- sum(xs)) yield (plus(x,xs_))
   }
@@ -256,7 +256,7 @@ def sorted(xs: List[Enc]): Crypto[List[OpeEnc]] =
 - Programs are first-class without semantics
 - Interpretation = Step through and give semantics
 #+BEGIN_SRC scala
-def toAdditive(e: Enc): PaillierEnc = ???
+def toAdditive(e: EncInt): PaillierEnc = ???
 
 def interpret[A](p: CryptoM[A]): A = p.resume match {
   case -\/(Plus(lhs@PaillierEnc(_),rhs@PaillierEnc(_),k)) => interpret(k(lhs+rhs))
@@ -267,10 +267,10 @@ def interpret[A](p: CryptoM[A]): A = p.resume match {
 *** Monadic interpretation
 Two example programs to compute the sum, monadic vs applicative
 #+BEGIN_SRC scala
-def sumM(zero: PaillierEnc)(xs: List[Enc]): CryptoM[Enc] =
+def sumM(zero: PaillierEnc)(xs: List[EncInt]): CryptoM[EncInt] =
   xs.foldLeftM(zero)(add(_,_))
 
-def sumA(zero: PaillierEnc)(xs: List[Enc]): Crypto[Enc] =
+def sumA(zero: PaillierEnc)(xs: List[EncInt]): Crypto[EncInt] =
   xs.traverse(toPaillier).map(_.foldLeft(zero)(_+_))
 
 val monadic     = sumM(E(0))(List(E(1),E(2),E(3)))

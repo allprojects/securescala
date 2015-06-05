@@ -29,7 +29,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   val one = Common.one(keyRing)
 
   property("sum of a list") =
-    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[EncInt]) =>
       val decryptThenSum = xs.map(Common.decrypt(keyRing.priv)).sum
 
       val sumThenDecrypt = Common.decrypt(keyRing.priv) {
@@ -42,7 +42,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
     }
 
   property("product of a list") =
-    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[EncInt]) =>
       val decryptThenProd = xs.map(Common.decrypt(keyRing.priv)).product
 
       val prodThenDecrypt = Common.decrypt(keyRing.priv) {
@@ -53,7 +53,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
     }
 
   property("monadic sum == applicative sum") =
-    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[EncInt]) =>
 
       val monadicSum = interpret { sumM(zero)(xs) }
 
@@ -63,7 +63,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
     }
 
   property("monadic product == applicative product") =
-    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[EncInt]) =>
       val monadicProduct = interpret {productM(one)(xs) }
 
       val applicativeProduct = interpret { productA(one)(xs) }
@@ -78,7 +78,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
       xs <- Gen.listOfN(n, generators.encryptedNumber)
     } yield xs
 
-    forAll(list) { (xs: List[Enc]) =>
+    forAll(list) { (xs: List[EncInt]) =>
       val decrypt = Common.decrypt(keyRing.priv)
       val encSort = interpret { sorted(xs) }.map(decrypt)
       val decSort = xs.map(decrypt).sorted
@@ -87,8 +87,8 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   }
 
   property("filterM vs filter") = {
-    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[Enc]) =>
-      def predM(n: Enc): Crypto[Boolean] = isEven(n)
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[EncInt]) =>
+      def predM(n: EncInt): Crypto[Boolean] = isEven(n)
       def pred(n: BigInt): Boolean = n.mod(2) == 0
 
       val filterThenDecrypt = interpret(xs.filterM(predM)).map(Common.decrypt(keyRing.priv))

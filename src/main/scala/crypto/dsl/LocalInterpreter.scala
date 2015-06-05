@@ -8,11 +8,11 @@ import crypto._
 import crypto.cipher._
 
 case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
-  private def doConvert(s: Scheme, in: Enc) = Common.depConvert(keyRing)(s,in)
-  private def additive(x: Enc): PaillierEnc = doConvert(Additive, x)
-  private def multiplicative(x: Enc): ElGamalEnc = doConvert(Multiplicative, x)
-  private def equality(x: Enc): AesEnc = doConvert(Equality, x)
-  private def comparable(x: Enc): OpeEnc = doConvert(Comparable, x)
+  private def doConvert(s: Scheme, in: EncInt) = Common.depConvert(keyRing)(s,in)
+  private def additive(x: EncInt): PaillierEnc = doConvert(Additive, x)
+  private def multiplicative(x: EncInt): ElGamalEnc = doConvert(Multiplicative, x)
+  private def equality(x: EncInt): AesEnc = doConvert(Equality, x)
+  private def comparable(x: EncInt): OpeEnc = doConvert(Comparable, x)
 
   override def interpret[A](p: CryptoM[A]): A = p.resume match {
 
