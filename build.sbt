@@ -7,13 +7,7 @@ scalaVersion := "2.11.6"
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
 scalacOptions ++= Seq(
-  "-deprecation",
-  "-encoding", "UTF-8",
-  "-feature",
-  "-language:existentials",
-  "-language:higherKinds",
-  "-language:implicitConversions",
-  "-unchecked",
+  "-Xfatal-warnings",
   "-Xfuture",
   "-Xlint",
   "-Yinline-warnings",
@@ -27,12 +21,19 @@ scalacOptions ++= Seq(
   "-Ywarn-numeric-widen",
   "-Ywarn-unused",
   "-Ywarn-unused-import",
-  "-Ywarn-value-discard"
+  "-Ywarn-value-discard",
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-feature",
+  "-language:existentials",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-unchecked"
 )
 
-scalacOptions in Compile += "-Xfatal-warnings"
+scalacOptions in (Compile, console) ~= (_ filterNot (Set("-Ywarn-unused-import","-Xfatal-warnings")))
 
-scalacOptions in Test += "-Xfatal-warnings"
+scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
 addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
 
