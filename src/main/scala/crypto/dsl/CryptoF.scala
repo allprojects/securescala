@@ -17,12 +17,8 @@ case class ToGamal[K](v: Enc, k: ElGamalEnc => K) extends CryptoF[K]
 case class ToAes[K](v: Enc, k: AesEnc => K) extends CryptoF[K]
 case class ToOpe[K](v: Enc, k: OpeEnc => K) extends CryptoF[K]
 
-// TODO offline or encode into encryption?
 case class Sub[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
-
-// Has to be offline because no phe scheme available
 case class Div[K](lhs: Enc, rhs: Enc, k: Enc => K) extends CryptoF[K]
-
 case class IsEven[K](v: Enc, k: Boolean => K) extends CryptoF[K]
 case class IsOdd[K](v: Enc, k: Boolean => K) extends CryptoF[K]
 
