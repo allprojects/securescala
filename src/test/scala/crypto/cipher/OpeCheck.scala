@@ -22,7 +22,7 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
     (keyRing.priv.opeIntEnc,keyRing.priv.opeIntDec,keyRing.priv.opePriv)
 
   property("decrypt · encrypt = id (Int)") =
-    forAll(arbitrary[Int].retryUntil(_ >= 0) ){ (input: Int) =>
+    forAll { (input: Int) =>
       encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
@@ -39,9 +39,8 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
     }
 
   property("generator produces valid numbers") =
-    forAll(generators.encryptedNumber) { (x: Enc) =>
-      val decrypted = Common.decrypt(keyRing.priv)(x)
-      encrypt(decrypted).isRight
+    forAll(generators.allowedNumber) { (x: BigInt) =>
+      encrypt(x).isRight
     }
 }
 

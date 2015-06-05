@@ -15,7 +15,7 @@ object ElGamal {
     def apply(xy: (BigInt,BigInt)) = f(xy._1, xy._2)
   }
 
-  case class PubKey(bits: Int, p: BigInt, g: BigInt, h: BigInt)
+  case class PubKey(bits: Int, p: BigInt, g: BigInt, h: BigInt, threshold: BigInt)
   case class PrivKey(x: BigInt)
 
   def create(bits: Int): (Encryptor, Decryptor, PubKey) = {
@@ -42,7 +42,7 @@ object ElGamal {
       pk <- privateKeyOpt
       h <- hOpt
     } yield {
-      (PubKey(bits,p,g,h), PrivKey(pk))
+      (PubKey(bits,p,g,h,BigInt(2).pow(bits/2)), PrivKey(pk))
     }
   }
 
@@ -61,6 +61,7 @@ object ElGamal {
 
   private def decrypt(pub: PubKey, priv: PrivKey)(c1: BigInt, c2: BigInt): BigInt = {
     val inverse = c1.modPow(priv.x, pub.p).modInverse(pub.p)
-    (c2 * inverse).mod(pub.p)
+    val plain = (c2 * inverse).mod(pub.p)
+    if (plain < pub.threshold) plain else plain - pub.p
   }
 }

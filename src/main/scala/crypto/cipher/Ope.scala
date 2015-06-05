@@ -2,6 +2,7 @@ package crypto.cipher
 
 import java.security.SecureRandom
 import scala.util.Try
+import scala.collection.immutable.NumericRange
 
 import scalaz._
 
@@ -31,33 +32,41 @@ object Ope {
     def apply(x: BigInt) = f(x)
   }
 
-  case class PrivKey(key: String, bits: Int, plainBits: Int, cipherBits: Int)
+  case class PrivKey(
+    key: String,
+    bits: Int,
+    plainBits: Int,
+    cipherBits: Int,
+    domain: CipherDomain[BigInt]
+  )
 
   def createNum(bits: Int): (Encryptor, Decryptor, PrivKey) = {
     val key = generateKey(bits, numPlainTextBits, numCipherTextBits)
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)), key)
   }
 
-  private def generateKey(bits: Int, plainBits: Int, cipherBits: Int): PrivKey =
-    PrivKey(BigInt(bits, new SecureRandom).toString(32), bits, plainBits, cipherBits)
+  private def generateKey(bits: Int, plainBits: Int, cipherBits: Int): PrivKey = {
+    val limit = BigInt(2).pow(plainBits) / 2
+    val dom = CipherDomain(-limit,limit-1)
+    PrivKey(BigInt(bits, new SecureRandom).toString(32), bits, plainBits, cipherBits, dom)
+  }
 
   def encrypt(priv: PrivKey)(input: BigInt): String \/ BigInt = input match {
-    case x if x < -(BigInt(2).pow(priv.plainBits-1)) => -\/("OPE: Input is too small")
-    case x if x > BigInt(2).pow(priv.plainBits-1) - 1 => -\/("OPE: Input is too big")
-    case x =>
-      val encrypted = Try {
-        this.synchronized {
-          instance.nativeEncrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
-        }
-      } match {
-        case scala.util.Success(enc) => \/-(enc)
-        case scala.util.Failure(e) => -\/(e)
-      }
-      encrypted.leftMap(e => "OPE: " + e.getMessage).map(BigInt(_))
+    case x if !priv.domain.contains(x) => -\/("OPE: Input out of range")
+    case x => \/.fromTryCatchNonFatal { this.synchronized(
+      instance.nativeEncrypt(
+        priv.key,
+        (input+priv.domain.max+1).toString,
+        priv.plainBits,
+        priv.cipherBits))
+    }.leftMap(e => "OPE: " + e.getMessage).map(BigInt(_))
   }
 
   def decrypt(priv: PrivKey)(input: BigInt): BigInt = this.synchronized {
-    BigInt(instance.nativeDecrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
+    val plain = BigInt(
+      instance.nativeDecrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
+
+    plain - (priv.domain.max+1)
   }
 
 }
