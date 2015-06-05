@@ -26,6 +26,11 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
       encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
+  property("decrypt · encrypt = id (Long)") =
+    forAll { (input: Long) =>
+      encrypt(input).map(decrypt.apply) == \/-(input)
+    }
+
   property("decrypt · encrypt = id (limited BigInt)") =
     forAll(generators.allowedNumber) { (input: BigInt) =>
       encrypt(input).map(decrypt.apply) == \/-(input)
