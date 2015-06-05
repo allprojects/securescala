@@ -10,8 +10,7 @@ trait ScalaCheckGen {
 }
 
 case class EncryptedGens(keys: KeyRing) extends ScalaCheckGen {
-  val allowedNumber =
-    posInt retryUntil (_ < BigInt(2).pow(keys.priv.opePriv.plainBits-1))
+  val allowedNumber = arbitrary[BigInt] retryUntil (keys.priv.opePriv.domain.contains(_))
 
   def encryptedNumber: Gen[Enc] = for {
     scheme <- Gen.oneOf(Additive, Multiplicative, Equality, Comparable)

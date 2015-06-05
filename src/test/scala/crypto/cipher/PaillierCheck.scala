@@ -26,5 +26,4 @@ object PaillierCheck extends Properties("Paillier") with ScalaCheckGen {
     val \/-(eb) = encrypt(b)
     decrypt((ea * eb) mod pub.nSquare) == (a + b).mod(pub.n)
   }
-
 }
