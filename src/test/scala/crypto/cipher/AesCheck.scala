@@ -14,9 +14,17 @@ object AesCheck extends Properties("AES") {
       BigInt(decrypt(encrypt(input.toByteArray))) == input
     }
 
-  property("deterministic") = forAll { (a: BigInt) =>
+  property("deterministic (BigInt)") = forAll { (a: BigInt) =>
     val c1 = encrypt(a.toByteArray)
     val c2 = encrypt(a.toByteArray)
+
+    (c1.size == c2.size) :| "same number of bytes" &&
+    ((c1,c2).zipped.forall(_==_)) :| "all bytes equal"
+  }
+
+  property("deterministic (String)") = forAll { (s: String) =>
+    val c1 = encrypt(s.toCharArray.map(_.toByte))
+    val c2 = encrypt(s.toCharArray.map(_.toByte))
 
     (c1.size == c2.size) :| "same number of bytes" &&
     ((c1,c2).zipped.forall(_==_)) :| "all bytes equal"
