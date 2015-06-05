@@ -8,7 +8,8 @@ import crypto.cipher._
 sealed trait CryptoF[+K]
 case class Mult[K](lhs: EncInt, rhs: EncInt, k: ElGamalEnc => K) extends CryptoF[K]
 case class Plus[K](lhs: EncInt, rhs: EncInt, k: PaillierEnc => K) extends CryptoF[K]
-case class Equals[K](lhs: EncInt, rhs: EncInt, k: Boolean => K)  extends CryptoF[K]
+case class Equals[K](lhs: EncInt, rhs: EncInt, k: Boolean => K) extends CryptoF[K]
+case class EqualsStr[K](lhs: EncString, rhs: EncString, k: Boolean => K) extends CryptoF[K]
 case class Compare[K](lhs: EncInt, rhs: EncInt, k: Ordering => K) extends CryptoF[K]
 
 case class Encrypt[K](s:Scheme, v: Int, k: EncInt => K) extends CryptoF[K]
@@ -32,6 +33,7 @@ object CryptoF {
       case Mult(lhs,rhs,k) => Mult(lhs,rhs,f compose k)
       case Plus(lhs,rhs,k) => Plus(lhs,rhs,f compose k)
       case Equals(lhs,rhs,k) => Equals(lhs,rhs,f compose k)
+      case EqualsStr(lhs,rhs,k) => EqualsStr(lhs,rhs,f compose k)
       case Compare(lhs,rhs,k) => Compare(lhs,rhs,f compose k)
       case Encrypt(s,v,k) => Encrypt(s,v,f compose k)
       case ToPaillier(v,k) => ToPaillier(v,f compose k)

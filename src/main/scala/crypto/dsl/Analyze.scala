@@ -119,6 +119,7 @@ object Analysis {
           case Mult(lhs,rhs,k) => Dual(DList((Multiplicative,lhs),(Multiplicative,rhs)))
           case Plus(lhs,rhs,k) => Dual(DList(((Additive),lhs),(Additive,rhs)))
           case Equals(lhs,rhs,k) => Dual(DList((Equality,lhs),(Equality,rhs)))
+          case EqualsStr(_,_,k) => Dual(DList())
           case Compare(lhs,rhs,k) => Dual(DList((Comparable,lhs),(Comparable,rhs)))
 
           case Sub(lhs,rhs,k) => Dual(DList())
@@ -178,6 +179,7 @@ object Analysis {
         case IsEven(v,k) => State.state(FreeAp.lift(fa))
         case IsOdd(v,k) => State.state(FreeAp.lift(fa))
         case Encrypt(s,v,k) => State.state(FreeAp.lift(fa))
+        case EqualsStr(_,_,_) => State.state(FreeAp.lift(fa))
         case Embed(p,k) => sys.error("impossible")
       }
     })(ev)
@@ -205,6 +207,7 @@ object Analysis {
 
           case Encrypt(s,v,k) => Dual(DList())
           case Embed(p,k) => sys.error("impossible")
+          case EqualsStr(_,_,k) => Dual(DList())
         }
       })).toList
   }
@@ -264,7 +267,8 @@ object Analysis {
         case IsOdd(v,k) => for {
           x <- takeHead()
         } yield FreeAp.lift(IsOdd(x,k))
-        case Encrypt(s,v,k) => State.state(FreeAp.lift(Encrypt(s,v,k)))
+        case Encrypt(_,_,_) => State.state(FreeAp.lift(fa))
+        case EqualsStr(_,_,_) => State.state(FreeAp.lift(fa))
         case Embed(p,k) => sys.error("impossible")
       }
     })(ev)

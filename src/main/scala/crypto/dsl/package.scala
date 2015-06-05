@@ -31,6 +31,10 @@ package object dsl extends BaseDsl with DeriveDsl {
       def >(that: EncInt) = compare(self,that).map(_ == GT)
       def >=(that: EncInt) = compare(self,that).map(x => x == GT || x == EQ)
     }
+
+    implicit class EncStringInfixOps(self: EncString) {
+      def =:=(that: EncString) = equalStr(self,that)
+    }
   }
 }
 
@@ -43,6 +47,7 @@ trait BaseDsl {
   def multiply(lhs: EncInt, rhs: EncInt): Crypto[EncInt] = FreeAp.lift(Mult(lhs,rhs,identity))
   def add(lhs: EncInt, rhs: EncInt): Crypto[EncInt] = FreeAp.lift(Plus(lhs,rhs,identity))
   def equal(lhs: EncInt, rhs: EncInt): Crypto[Boolean] = FreeAp.lift(Equals(lhs,rhs,identity))
+  def equalStr(lhs: EncString, rhs: EncString): Crypto[Boolean] = FreeAp.lift(EqualsStr(lhs,rhs,identity))
   def compare(lhs: EncInt, rhs: EncInt): Crypto[Ordering] = FreeAp.lift(Compare(lhs,rhs,identity))
 
   def encrypt(s: Scheme)(v: Int): Crypto[EncInt] = FreeAp.lift(Encrypt(s,v,identity))
