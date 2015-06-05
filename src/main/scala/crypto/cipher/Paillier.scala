@@ -14,8 +14,14 @@ object Paillier {
     def apply(x: BigInt) = f(x)
   }
 
+  case class PubKey(
+    bits: Int,
+    n: BigInt,
+    g: BigInt,
+    nSquare: BigInt,
+    threshold: BigInt
+  )
 
-  case class PubKey(bits: Int, n: BigInt, g: BigInt, nSquare: BigInt)
   case class PrivKey(lambda: BigInt, mu: BigInt)
 
   def create(bits: Int): (Encryptor,Decryptor,PubKey) = {
@@ -43,7 +49,7 @@ object Paillier {
     Try {
       // Implicit check if multiplicative inverse exists, because then modInverse fails
       val mu = ((g.modPow(lambda, nSquare) - 1) / n).modInverse(n)
-      (PubKey(bits,n,g,nSquare),PrivKey(lambda, mu))
+      (PubKey(bits,n,g,nSquare,BigInt(2).pow(bits/2)),PrivKey(lambda, mu))
     }.toOption
   }
 
@@ -57,7 +63,9 @@ object Paillier {
   }
 
   private def decrypt(pub: PubKey, priv: PrivKey)(input: BigInt): BigInt = {
-    (functionL(pub.n)(input.modPow(priv.lambda, pub.nSquare)) * priv.mu) mod pub.n
+    val plain =
+      (functionL(pub.n)(input.modPow(priv.lambda, pub.nSquare)) * priv.mu) mod pub.n
+    if (plain < pub.threshold) plain else plain - pub.n
   }
 
   private def functionL(n: BigInt)(u: BigInt): BigInt = (u - 1) / n

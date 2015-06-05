@@ -9,21 +9,23 @@ import scalaz._
 
 import crypto._
 
-object PaillierCheck extends Properties("Paillier") with ScalaCheckGen {
+object PaillierCheck extends Properties("Paillier") with CryptoCheck {
   val (encrypt,decrypt,pub) = Paillier.create(1024)
 
-  property("decrypt · encrypt = id for positive ints") =
-    forAll(posInt) { (input: BigInt) =>
-      encrypt(input).map(decrypt.apply) == \/-(input)
+  property("decrypt · encrypt = id (Int)") =
+    forAll { (input: Int) =>
+      encrypt(input).map(decrypt(_)) == \/-(input)
     }
 
-  property("decrypt · encrypt = id (with modulus)") = forAll { (input: BigInt) =>
-    encrypt(input).map(decrypt.apply) == \/-(input.mod(pub.n))
+  property("decrypt · encrypt = id (limited BigInt)") =
+    forAll(generators.allowedNumber) { (input: BigInt) =>
+      encrypt(input).map(decrypt(_)) == \/-(input)
   }
 
-  property("additive homomorphic") = forAll { (a: BigInt, b: BigInt) =>
-    val \/-(ea) = encrypt(a)
-    val \/-(eb) = encrypt(b)
-    decrypt((ea * eb) mod pub.nSquare) == (a + b).mod(pub.n)
+  property("additive homomorphic") =
+    forAll(generators.allowedNumber,generators.allowedNumber) { (a: BigInt, b: BigInt) =>
+      val \/-(ea) = encrypt(a)
+      val \/-(eb) = encrypt(b)
+      decrypt(ea * eb) == (a + b)
   }
 }
