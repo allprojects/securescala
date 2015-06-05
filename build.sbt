@@ -30,11 +30,9 @@ scalacOptions ++= Seq(
   "-Ywarn-value-discard"
 )
 
-scalacOptions in compile += "-Xfatal-warnings"
+scalacOptions in Compile += "-Xfatal-warnings"
 
-scalacOptions in test += "-Xfatal-warnings"
-
-scalacOptions in run += "-Xfatal-warnings"
+scalacOptions in Test += "-Xfatal-warnings"
 
 addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
 
