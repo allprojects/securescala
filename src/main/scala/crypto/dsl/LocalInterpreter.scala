@@ -25,8 +25,8 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
     case -\/(Compare(lhs,rhs,k)) => interpret(k(comparable(lhs) ?|? comparable(rhs)))
 
-    case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs =:= rhs))
-    case -\/(Equals(lhs,rhs,k)) => interpret(k(equality(lhs) =:= equality(rhs)))
+    case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs === rhs))
+    case -\/(Equals(lhs,rhs,k)) => interpret(k(equality(lhs) === equality(rhs)))
 
     case -\/(Encrypt(s,v,k)) => interpret(k(Common.encrypt(s, keyRing)(v)))
 

@@ -21,11 +21,7 @@ class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends EncInt with 
   }
   override def toString = s"GamalEnc($ca,$cb)"
 }
-case class AesEnc(underlying: Array[Byte]) extends EncInt {
-  def =:=(that: AesEnc): Boolean = (this,that) match {
-    case (AesEnc(x),AesEnc(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
-  }
-}
+case class AesEnc(underlying: Array[Byte]) extends EncInt
 case class OpeEnc(underlying: BigInt) extends EncInt
 
 object PaillierEnc {
@@ -44,6 +40,14 @@ object ElGamalEnc {
 
   def unapply(eg: ElGamalEnc): Option[(BigInt,BigInt)] = Some((eg.ca, eg.cb))
   def apply(k: ElGamal.PubKey)(ca: BigInt, cb: BigInt) = new ElGamalEnc(ca, cb, k.p)
+}
+
+object AesEnc {
+  implicit val aesEncEqual = new Equal[AesEnc] {
+    override def equal(a1: AesEnc, a2: AesEnc) = (a1,a2) match {
+      case (AesEnc(x),AesEnc(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
+    }
+  }
 }
 
 object OpeEnc {
