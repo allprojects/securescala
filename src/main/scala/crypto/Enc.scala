@@ -58,3 +58,13 @@ object OpeEnc {
   }
   implicit val opeOrderScala = opeOrder.toScalaOrdering
 }
+
+case class EncString(underlying: Array[Byte])
+
+object EncString {
+  implicit val encStringEqual = new Equal[EncString] {
+    override def equal(a1: EncString, a2: EncString) = (a1,a2) match {
+      case (EncString(x),EncString(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
+    }
+  }
+}
