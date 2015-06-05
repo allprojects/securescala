@@ -19,7 +19,7 @@ package object dsl extends BaseDsl with DeriveDsl {
   object base extends BaseDsl
   object Implicits {
     implicit def liftCryptoToMonadic[A](p: Crypto[A]): CryptoM[A] = embed(p)
-    implicit class EncInfixOps(self: EncInt) {
+    implicit class EncIntInfixOps(self: EncInt) {
       def *(that: EncInt) = multiply(self,that)
       def +(that: EncInt) = add(self,that)
       def -(that: EncInt) = subtract(self,that)
