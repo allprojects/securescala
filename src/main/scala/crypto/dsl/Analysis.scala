@@ -4,6 +4,7 @@ import scalaz._
 import scalaz.Dual._
 import scalaz.std.anyVal._
 import scalaz.std.list._
+import scalaz.syntax.monad._
 
 import crypto._
 import crypto.cipher._
@@ -144,36 +145,20 @@ object Analysis {
       _ <- State.modify((s:List[EncInt]) => s.tail)
     } yield head
 
+    def take2Head(): State[List[EncInt],(EncInt,EncInt)] = takeHead() tuple takeHead()
+
     p.foldMap[StateCrypto](new (CryptoF ~> StateCrypto) {
       def apply[B](fa: CryptoF[B]): StateCrypto[B] = fa match {
-        case ToPaillier(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToPaillier(head,k))
-        case ToGamal(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToGamal(head,k))
-        case ToAes(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToAes(head,k))
-        case ToOpe(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToOpe(head,k))
-        case Mult(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Mult(l,r,k))
-        case Plus(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Plus(l,r,k))
-        case Equals(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Equals(l,r,k))
-        case Compare(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Compare(l,r,k))
+        case ToPaillier(v,k) => takeHead().map(head => FreeAp.lift(ToPaillier(head,k)))
+        case ToGamal(v,k) => takeHead().map(head => FreeAp.lift(ToGamal(head,k)))
+        case ToAes(v,k) => takeHead().map(head => FreeAp.lift(ToAes(head,k)))
+        case ToOpe(v,k) => takeHead().map(head => FreeAp.lift(ToOpe(head,k)))
+        case Mult(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Mult(l,r,k)) } 
+        case Plus(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Plus(l,r,k)) } 
+        case Equals(lhs,rhs,k) =>
+          take2Head().map { case(l,r) => FreeAp.lift(Equals(l,r,k)) }
+        case Compare(lhs,rhs,k) =>
+          take2Head().map { case(l,r) => FreeAp.lift(Compare(l,r,k)) }
         case Sub(lhs,rhs,k) => State.state(FreeAp.lift(fa))
         case Div(lhs,rhs,k) => State.state(FreeAp.lift(fa))
         case IsEven(v,k) => State.state(FreeAp.lift(fa))
@@ -213,8 +198,9 @@ object Analysis {
   }
 
   // TODO hoist + retract better?
+
   def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
-    implicit val ev = Applicative[λ[α => State[List[EncInt],α]]].compose[Crypto]
+    val evidence = Applicative[λ[α => State[List[EncInt],α]]].compose[Crypto]
 
     def takeHead(): State[List[EncInt],EncInt] = for {
       head <- State.gets{ (s:List[EncInt]) =>
@@ -223,55 +209,29 @@ object Analysis {
       _ <- State.modify((s:List[EncInt]) => s.tail)
     } yield head
 
-    p.foldMap[StateCrypto](new (CryptoF ~> StateCrypto) {
-      def apply[B](fa: CryptoF[B]): StateCrypto[B] = fa match {
-        case ToPaillier(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToPaillier(head,k))
-        case ToGamal(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToGamal(head,k))
-        case ToAes(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToAes(head,k))
-        case ToOpe(v,k) => for {
-          head <- takeHead()
-        } yield FreeAp.lift(ToOpe(head,k))
-        case Mult(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Mult(l,r,k))
-        case Plus(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Plus(l,r,k))
-        case Equals(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Equals(l,r,k))
-        case Compare(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Compare(l,r,k))
-        case Sub(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Sub(l,r,k))
-        case Div(lhs,rhs,k) => for {
-          l <- takeHead()
-          r <- takeHead()
-        } yield FreeAp.lift(Div(l,r,k))
-        case IsEven(v,k) => for {
-          x <- takeHead()
-        } yield FreeAp.lift(IsEven(x,k))
-        case IsOdd(v,k) => for {
-          x <- takeHead()
-        } yield FreeAp.lift(IsOdd(x,k))
+    def take2Head(): State[List[EncInt],(EncInt,EncInt)] = takeHead() tuple takeHead()
+
+    p.foldMap(new (CryptoF ~> StateCrypto) {
+      def apply[B](fa: CryptoF[B]) = fa match {
+        case ToPaillier(v,k) => takeHead().map(h => FreeAp.lift(ToPaillier(h,k)))
+        case ToGamal(v,k) => takeHead().map(h => FreeAp.lift(ToGamal(h,k)))
+        case ToAes(v,k) => takeHead().map(h => FreeAp.lift(ToAes(h,k)))
+        case ToOpe(v,k) => takeHead().map(h => FreeAp.lift(ToOpe(h,k)))
+        case Mult(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Mult(l,r,k)) }
+        case Plus(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Plus(l,r,k)) }
+        case Equals(lhs,rhs,k) =>
+          take2Head().map { case (l,r) => FreeAp.lift(Equals(l,r,k)) }
+        case Compare(lhs,rhs,k) =>
+          take2Head().map { case (l,r) => FreeAp.lift(Compare(l,r,k)) }
+        case Sub(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Sub(l,r,k)) }
+        case Div(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Div(l,r,k)) }
+        case IsEven(v,k) => takeHead().map(h => FreeAp.lift(IsEven(h,k)))
+        case IsOdd(v,k) => takeHead().map(h => FreeAp.lift(IsOdd(h,k)))
         case Encrypt(_,_,_) => State.state(FreeAp.lift(fa))
         case EqualsStr(_,_,_) => State.state(FreeAp.lift(fa))
         case Embed(p,k) => sys.error("impossible")
       }
-    })(ev)
+    })(evidence)
   }
 }
 
