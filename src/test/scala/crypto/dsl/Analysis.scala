@@ -11,6 +11,7 @@ import crypto.cipher._
 
 class AnalysisSpec extends WordSpec with Matchers {
   val keys = KeyRing.create
+  val N = 300
 
   "Program Analysis" can {
     "count the number of required conversions" in {
@@ -29,7 +30,7 @@ class AnalysisSpec extends WordSpec with Matchers {
       import Analysis._
       val rand = new util.Random
 
-      val data = List.fill(300)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
+      val data = List.fill(N)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
 
       val ns: List[(Option[Scheme],EncInt)] = extractNumbers(sumOpt(data))
 
@@ -40,8 +41,8 @@ class AnalysisSpec extends WordSpec with Matchers {
       import Analysis._
       val rand = new util.Random
 
-      val data1 = List.fill(300)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
-      val data2 = List.fill(300)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
+      val data1 = List.fill(N)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
+      val data2 = List.fill(N)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
 
       val program: Crypto[Option[PaillierEnc]] = sumOpt(data1)
       val program2: Crypto[Option[PaillierEnc]] = replaceNumbers(program).eval(data2)
@@ -53,7 +54,7 @@ class AnalysisSpec extends WordSpec with Matchers {
       import Analysis._
       val rand = new util.Random
 
-      val data = List.fill(300)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
+      val data = List.fill(N)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
 
       val program = sumOpt(data)
 
