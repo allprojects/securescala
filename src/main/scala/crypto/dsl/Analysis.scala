@@ -2,6 +2,7 @@ package crypto.dsl
 
 import scalaz._
 import scalaz.Dual._
+import scalaz.Free._
 import scalaz.std.anyVal._
 import scalaz.std.list._
 import scalaz.syntax.monad._
@@ -102,7 +103,7 @@ object Analysis {
         s"expected size ${nums.length} but was ${newNums.length}")
     }
 
-    replaceNumbers(p).eval(newNums)
+    replaceNumbers(p).eval(newNums).run
   }
 
   def mapNumbers[A](p: Crypto[A])(f: (Option[Scheme],EncInt) => EncInt): Crypto[A] =
@@ -134,18 +135,11 @@ object Analysis {
   }
 
   // TODO hoist + retract better?
-  type StateCrypto[α] = State[List[EncInt],Crypto[α]]
+  type StateCrypto[α] = StateT[Trampoline,List[EncInt],Crypto[α]]
+  def cryptoState = StateT.stateTMonadState[List[EncInt],Trampoline]
+
   def replaceConversions[A](p: Crypto[A]): StateCrypto[A] = {
-    implicit val ev = Applicative[λ[α => State[List[EncInt],α]]].compose[Crypto]
-
-    def takeHead(): State[List[EncInt],EncInt] = for {
-      head <- State.gets{ (s:List[EncInt]) =>
-        s.headOption.getOrElse(sys.error("Not enough numbers for replacement"))
-      }
-      _ <- State.modify((s:List[EncInt]) => s.tail)
-    } yield head
-
-    def take2Head(): State[List[EncInt],(EncInt,EncInt)] = takeHead() tuple takeHead()
+    implicit val ev = cryptoState.compose[Crypto]
 
     p.foldMap[StateCrypto](new (CryptoF ~> StateCrypto) {
       def apply[B](fa: CryptoF[B]): StateCrypto[B] = fa match {
@@ -153,18 +147,18 @@ object Analysis {
         case ToGamal(v,k) => takeHead().map(head => FreeAp.lift(ToGamal(head,k)))
         case ToAes(v,k) => takeHead().map(head => FreeAp.lift(ToAes(head,k)))
         case ToOpe(v,k) => takeHead().map(head => FreeAp.lift(ToOpe(head,k)))
-        case Mult(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Mult(l,r,k)) } 
-        case Plus(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Plus(l,r,k)) } 
+        case Mult(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Mult(l,r,k)) }
+        case Plus(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Plus(l,r,k)) }
         case Equals(lhs,rhs,k) =>
           take2Head().map { case(l,r) => FreeAp.lift(Equals(l,r,k)) }
         case Compare(lhs,rhs,k) =>
           take2Head().map { case(l,r) => FreeAp.lift(Compare(l,r,k)) }
-        case Sub(lhs,rhs,k) => State.state(FreeAp.lift(fa))
-        case Div(lhs,rhs,k) => State.state(FreeAp.lift(fa))
-        case IsEven(v,k) => State.state(FreeAp.lift(fa))
-        case IsOdd(v,k) => State.state(FreeAp.lift(fa))
-        case Encrypt(s,v,k) => State.state(FreeAp.lift(fa))
-        case EqualsStr(_,_,_) => State.state(FreeAp.lift(fa))
+        case Sub(lhs,rhs,k) => cryptoState.state(FreeAp.lift(fa))
+        case Div(lhs,rhs,k) => cryptoState.state(FreeAp.lift(fa))
+        case IsEven(v,k) => cryptoState.state(FreeAp.lift(fa))
+        case IsOdd(v,k) => cryptoState.state(FreeAp.lift(fa))
+        case Encrypt(s,v,k) => cryptoState.state(FreeAp.lift(fa))
+        case EqualsStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case Embed(p,k) => sys.error("impossible")
       }
     })(ev)
@@ -198,18 +192,8 @@ object Analysis {
   }
 
   // TODO hoist + retract better?
-
   def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
-    val evidence = Applicative[λ[α => State[List[EncInt],α]]].compose[Crypto]
-
-    def takeHead(): State[List[EncInt],EncInt] = for {
-      head <- State.gets{ (s:List[EncInt]) =>
-        s.headOption.getOrElse(sys.error("Not enough numbers for replacement"))
-      }
-      _ <- State.modify((s:List[EncInt]) => s.tail)
-    } yield head
-
-    def take2Head(): State[List[EncInt],(EncInt,EncInt)] = takeHead() tuple takeHead()
+    implicit val ev = cryptoState.compose[Crypto]
 
     p.foldMap(new (CryptoF ~> StateCrypto) {
       def apply[B](fa: CryptoF[B]) = fa match {
@@ -227,12 +211,38 @@ object Analysis {
         case Div(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Div(l,r,k)) }
         case IsEven(v,k) => takeHead().map(h => FreeAp.lift(IsEven(h,k)))
         case IsOdd(v,k) => takeHead().map(h => FreeAp.lift(IsOdd(h,k)))
-        case Encrypt(_,_,_) => State.state(FreeAp.lift(fa))
-        case EqualsStr(_,_,_) => State.state(FreeAp.lift(fa))
+        case Encrypt(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+        case EqualsStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case Embed(p,k) => sys.error("impossible")
       }
-    })(evidence)
+    })(ev)
   }
+
+  private def takeHead(): StateT[Trampoline,List[EncInt],EncInt] = for {
+    head <- cryptoState.gets{ (s:List[EncInt]) =>
+      s.headOption.getOrElse(sys.error("Not enough numbers for replacement"))
+    }
+    _ <- cryptoState.modify((s:List[EncInt]) => s.tail)
+  } yield head
+
+  private def take2Head(): StateT[Trampoline,List[EncInt],(EncInt,EncInt)] =
+    takeHead() tuple takeHead()
+
+  import scalaz.syntax.traverse._
+  import scalaz.Free._
+
+  def zipIndex[A](as: List[A]): List[(Int,A)] =
+    as.traverseU(x => for {
+      n <- State.get[Int]
+      _ <- State.modify((n:Int)=>n+1)
+    } yield (n,x)).eval(0)
+
+
+  def zipIndex2[A](as: List[A]): List[(Int,A)] =
+    as.traverseU(x => for {
+      n <- StateT.stateTMonadState[Int,Trampoline].get
+      _ <- StateT.stateTMonadState[Int,Trampoline].modify((n:Int)=>n+1)
+    } yield (n,x)).eval(0).run
 }
 
 object AnalysisMain extends App {
@@ -255,7 +265,7 @@ object AnalysisMain extends App {
   }
 
   println("Replacing...")
-  val newProg = Analysis.replaceNumbers(prog).eval(newXs)
+  val newProg = Analysis.replaceNumbers(prog).eval(newXs).run
   println("Done replacing")
   val nums2 = Analysis.extractNumbers(newProg)
   println(s"Num extracted: ${nums2.length}")

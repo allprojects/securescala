@@ -133,7 +133,7 @@ class RemoteInterpreterOptAnalyze(
           service.batchConvert(conversions)
       }
 
-      converted.map(Analysis.replaceConversions(p).eval) >>= parallel
+      converted.map(Analysis.replaceConversions(p).eval(_).run) >>= parallel
 
     } else {
       parallel(p)
