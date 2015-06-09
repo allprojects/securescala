@@ -134,7 +134,6 @@ object Analysis {
       })).toList
   }
 
-  // TODO hoist + retract better?
   type StateCrypto[α] = StateT[Trampoline,List[EncInt],Crypto[α]]
   def cryptoState = StateT.stateTMonadState[List[EncInt],Trampoline]
 
@@ -164,34 +163,32 @@ object Analysis {
     })(ev)
   }
 
-  def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],EncInt)] = {
-    Tag.unwrap(
-      p.analyze(new (CryptoF ~> λ[α => DList[(Option[Scheme],EncInt)] @@ Tags.Dual]) {
-        def apply[B](a: CryptoF[B]) = a match {
-          case ToPaillier(v,k) => Dual(DList((Some(Additive),v)))
-          case ToGamal(v,k) => Dual(DList((Some(Multiplicative),v)))
-          case ToAes(v,k) => Dual(DList((Some(Equality),v)))
-          case ToOpe(v,k) => Dual(DList((Some(Comparable),v)))
-
-          case Mult(lhs,rhs,k) =>
-            Dual(DList((Some(Multiplicative),lhs),(Some(Multiplicative),rhs)))
-          case Plus(lhs,rhs,k) => Dual(DList((Some(Additive),lhs),(Some(Additive),rhs)))
-          case Equals(lhs,rhs,k) => Dual(DList((Some(Equality),lhs),(Some(Equality),rhs)))
-          case Compare(lhs,rhs,k) => Dual(DList((Some(Comparable),lhs),(Some(Comparable),rhs)))
-
-          case Sub(lhs,rhs,k) => Dual(DList((None,lhs),(None,rhs)))
-          case Div(lhs,rhs,k) => Dual(DList((None,lhs),(None,rhs)))
-          case IsEven(v,k) => Dual(DList((None,v)))
-          case IsOdd(v,k) => Dual(DList((None,v)))
-
-          case Encrypt(s,v,k) => Dual(DList())
-          case Embed(p,k) => sys.error("impossible")
-          case EqualsStr(_,_,k) => Dual(DList())
-        }
-      })).toList
+  def extractNumbersF(fa: CryptoF[_]): DList[(Option[Scheme],EncInt)] = fa match {
+    case ToPaillier(v,k) => DList((Some(Additive),v))
+    case ToGamal(v,k) => DList((Some(Multiplicative),v))
+    case ToAes(v,k) => DList((Some(Equality),v))
+    case ToOpe(v,k) => DList((Some(Comparable),v))
+    case Mult(lhs,rhs,k) => DList((Some(Multiplicative),lhs),(Some(Multiplicative),rhs))
+    case Plus(lhs,rhs,k) => DList((Some(Additive),lhs),(Some(Additive),rhs))
+    case Equals(lhs,rhs,k) => DList((Some(Equality),lhs),(Some(Equality),rhs))
+    case Compare(lhs,rhs,k) => DList((Some(Comparable),lhs),(Some(Comparable),rhs))
+    case Sub(lhs,rhs,k) => DList((None,lhs),(None,rhs))
+    case Div(lhs,rhs,k) => DList((None,lhs),(None,rhs))
+    case IsEven(v,k) => DList((None,v))
+    case IsOdd(v,k) => DList((None,v))
+    case Encrypt(s,v,k) => DList()
+    case Embed(p,k) => sys.error("impossible")
+    case EqualsStr(_,_,k) => DList()
   }
 
-  // TODO hoist + retract better?
+  def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],EncInt)] = {
+    Tag.unwrap {
+      p.analyze(new (CryptoF ~> λ[α => DList[(Option[Scheme],EncInt)] @@ Tags.Dual]) {
+        def apply[B](a: CryptoF[B]) = Dual(extractNumbersF(a))
+      })
+    }.toList
+  }
+
   def replaceNumbers[A](p: Crypto[A]): StateCrypto[A] = {
     implicit val ev = cryptoState.compose[Crypto]
 
