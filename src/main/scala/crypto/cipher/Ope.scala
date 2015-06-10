@@ -17,7 +17,17 @@ class OpeNative { // `class` required for javah/native interface
 object OpeNative {
   val home = System.getProperty("user.home")
   System.load(home + "/libope.so")
-  val instance = new OpeNative
+  private val instance = new OpeNative
+
+  def encrypt(
+    password: String, plaintext: String, plainTextBits: Int, cipherTextBits: Int): String =
+    this.synchronized(
+      instance.nativeEncrypt(password,plaintext,plainTextBits,cipherTextBits))
+
+  def decrypt(
+    password: String,ciphertext: String,plainTextBits: Int, cipherTextBits: Int): String =
+    this.synchronized(
+      instance.nativeDecrypt(password,ciphertext,plainTextBits,cipherTextBits))
 }
 
 object OpeInt {
@@ -54,6 +64,23 @@ object OpeInt {
 
   def encrypt(priv: PrivKey)(input: BigInt): String \/ BigInt = input match {
     case x if !priv.domain.contains(x) => -\/("OPE: Input out of range")
+    case x => \/.fromTryCatchNonFatal {
+      OpeNative.encrypt(
+        priv.key,
+        (input+priv.domain.max+1).toString,
+        priv.plainBits,
+        priv.cipherBits)
+    }.leftMap(e => "OPE: " + e.getMessage).map(BigInt(_))
+  }
+
+  def decrypt(priv: PrivKey)(input: BigInt): BigInt = {
+    val plain = BigInt(
+      OpeNative.decrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
+
+    plain - (priv.domain.max+1)
+  }
+}
+
     case x => \/.fromTryCatchNonFatal { this.synchronized(
       OpeNative.instance.nativeEncrypt(
         priv.key,
