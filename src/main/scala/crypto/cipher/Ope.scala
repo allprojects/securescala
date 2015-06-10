@@ -14,14 +14,15 @@ class OpeNative { // `class` required for javah/native interface
     password: String, ciphertext: String, plainTextBits: Int, cipherTextBits: Int): String
 }
 
-object Ope {
+object OpeNative {
   val home = System.getProperty("user.home")
   System.load(home + "/libope.so")
+  val instance = new OpeNative
+}
 
+object Ope {
   private val numPlainTextBits = 64
   private val numCipherTextBits = 96
-
-  private val instance = new OpeNative
 
   case class Encryptor(f: BigInt => (String \/ BigInt))
       extends (BigInt => String \/ BigInt) {
@@ -54,7 +55,7 @@ object Ope {
   def encrypt(priv: PrivKey)(input: BigInt): String \/ BigInt = input match {
     case x if !priv.domain.contains(x) => -\/("OPE: Input out of range")
     case x => \/.fromTryCatchNonFatal { this.synchronized(
-      instance.nativeEncrypt(
+      OpeNative.instance.nativeEncrypt(
         priv.key,
         (input+priv.domain.max+1).toString,
         priv.plainBits,
@@ -64,9 +65,12 @@ object Ope {
 
   def decrypt(priv: PrivKey)(input: BigInt): BigInt = this.synchronized {
     val plain = BigInt(
-      instance.nativeDecrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits))
+      OpeNative.instance.nativeDecrypt(
+        priv.key, input.toString, priv.plainBits, priv.cipherBits))
 
     plain - (priv.domain.max+1)
   }
+}
 
+object OpeStr {
 }
