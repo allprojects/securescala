@@ -61,6 +61,7 @@ object OpeEnc {
 
 sealed trait EncString
 case class AesString(underlying: Array[Byte]) extends EncString
+case class OpeString(underlying: BigInt) extends EncString
 
 object AesString {
   implicit val aesStringEqual = new Equal[AesString] {
@@ -68,4 +69,13 @@ object AesString {
       case (AesString(x),AesString(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
     }
   }
+}
+
+object OpeString {
+  implicit val opeStringOrder = new Order[OpeString] {
+    override def order(a: OpeString, b: OpeString): Ordering = (a,b) match {
+      case (OpeString(x),OpeString(y)) => x ?|? y
+    }
+  }
+  implicit val opeStringOrderScala = opeStringOrder.toScalaOrdering
 }
