@@ -117,6 +117,8 @@ object Analysis {
           case ToGamal(v,k) => Dual(DList((Multiplicative,v)))
           case ToAes(v,k) => Dual(DList((Equality,v)))
           case ToOpe(v,k) => Dual(DList((Comparable,v)))
+          case ToAesStr(_,_) => Dual(DList())
+          case ToOpeStr(_,_) => Dual(DList())
 
           case Mult(lhs,rhs,k) => Dual(DList((Multiplicative,lhs),(Multiplicative,rhs)))
           case Plus(lhs,rhs,k) => Dual(DList(((Additive),lhs),(Additive,rhs)))
@@ -147,6 +149,8 @@ object Analysis {
         case ToGamal(v,k) => takeHead().map(head => FreeAp.lift(ToGamal(head,k)))
         case ToAes(v,k) => takeHead().map(head => FreeAp.lift(ToAes(head,k)))
         case ToOpe(v,k) => takeHead().map(head => FreeAp.lift(ToOpe(head,k)))
+        case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case Mult(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Mult(l,r,k)) }
         case Plus(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Plus(l,r,k)) }
         case Equals(lhs,rhs,k) =>
@@ -170,6 +174,8 @@ object Analysis {
     case ToGamal(v,k) => DList((Some(Multiplicative),v))
     case ToAes(v,k) => DList((Some(Equality),v))
     case ToOpe(v,k) => DList((Some(Comparable),v))
+    case ToAesStr(_,_) => DList()
+    case ToOpeStr(_,_) => DList()
     case Mult(lhs,rhs,k) => DList((Some(Multiplicative),lhs),(Some(Multiplicative),rhs))
     case Plus(lhs,rhs,k) => DList((Some(Additive),lhs),(Some(Additive),rhs))
     case Equals(lhs,rhs,k) => DList((Some(Equality),lhs),(Some(Equality),rhs))
@@ -201,6 +207,8 @@ object Analysis {
         case ToGamal(v,k) => takeHead().map(h => FreeAp.lift(ToGamal(h,k)))
         case ToAes(v,k) => takeHead().map(h => FreeAp.lift(ToAes(h,k)))
         case ToOpe(v,k) => takeHead().map(h => FreeAp.lift(ToOpe(h,k)))
+        case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case Mult(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Mult(l,r,k)) }
         case Plus(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Plus(l,r,k)) }
         case Equals(lhs,rhs,k) =>

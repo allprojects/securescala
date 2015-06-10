@@ -62,6 +62,8 @@ trait BaseDsl {
   def toGamal(v: EncInt): Crypto[ElGamalEnc] = FreeAp.lift(ToGamal(v,identity))
   def toAes(v: EncInt): Crypto[AesEnc] = FreeAp.lift(ToAes(v,identity))
   def toOpe(v: EncInt): Crypto[OpeEnc] = FreeAp.lift(ToOpe(v,identity))
+  def toAesStr(v: EncString): Crypto[AesString] = FreeAp.lift(ToAesStr(v,identity))
+  def toOpeStr(v: EncString): Crypto[OpeString] = FreeAp.lift(ToOpeStr(v,identity))
 
   def subtract(lhs: EncInt, rhs: EncInt): Crypto[EncInt] =
     FreeAp.lift(Sub(lhs,rhs,identity))

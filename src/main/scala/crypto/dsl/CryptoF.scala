@@ -18,6 +18,8 @@ case class ToPaillier[K](v: EncInt, k: PaillierEnc => K) extends CryptoF[K]
 case class ToGamal[K](v: EncInt, k: ElGamalEnc => K) extends CryptoF[K]
 case class ToAes[K](v: EncInt, k: AesEnc => K) extends CryptoF[K]
 case class ToOpe[K](v: EncInt, k: OpeEnc => K) extends CryptoF[K]
+case class ToAesStr[K](v: EncString, k: AesString => K) extends CryptoF[K]
+case class ToOpeStr[K](v: EncString, k: OpeString => K) extends CryptoF[K]
 
 case class Sub[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoF[K]
 case class Div[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoF[K]
@@ -42,6 +44,8 @@ object CryptoF {
       case ToGamal(v,k) => ToGamal(v,f compose k)
       case ToAes(v,k) => ToAes(v,f compose k)
       case ToOpe(v,k) => ToOpe(v,f compose k)
+      case ToAesStr(v,k) => ToAesStr(v,f compose k)
+      case ToOpeStr(v,k) => ToOpeStr(v,f compose k)
       case Sub(lhs,rhs,k) => Sub(lhs,rhs,f compose k)
       case Div(lhs,rhs,k) => Div(lhs,rhs,f compose k)
       case IsEven(v,k) => IsEven(v,f compose k)
