@@ -20,6 +20,8 @@ import crypto._
 object OpeCheck extends Properties("OPE") with CryptoCheck {
   val (encrypt,decrypt,key) =
     (keyRing.priv.opeIntEnc,keyRing.priv.opeIntDec,keyRing.priv.opeIntPriv)
+  val (strEncrypt,strDecrypt,strKey) =
+    (keyRing.priv.opeStrEnc,keyRing.priv.opeStrDec,keyRing.priv.opeStrPriv)
 
   property("decrypt · encrypt = id (Int)") =
     forAll { (input: Int) =>
@@ -46,6 +48,11 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
   property("generator produces valid numbers") =
     forAll(generators.allowedNumber) { (x: BigInt) =>
       encrypt(x).isRight
+    }
+
+  property("numericToPlain · plainToNumeric = id") =
+    forAll(generators.allowedString) { (s: String) =>
+      OpeStr.plainToNumeric(strKey)(s).flatMap(OpeStr.numericToPlain(strKey)(_)) == \/-(s)
     }
 }
 
