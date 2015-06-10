@@ -15,7 +15,7 @@ case object Comparable extends Scheme { type Out = OpeEnc }
 
 object Common {
   def decryptStr(keys: PrivKeys): EncString => String = _ match {
-    case EncString(x) => new String(keys.aesDec(x).map(_.toChar))
+    case AesString(x) => new String(keys.aesDec(x).map(_.toChar))
   }
   def decrypt(keys: PrivKeys): EncInt => BigInt = _ match {
     case PaillierEnc(x) => keys.paillier(x)
@@ -42,7 +42,7 @@ object Common {
     input => encryptChecked(s,keys)(input).valueOr(sys.error).asInstanceOf[s.Out]
 
   def encrypt(keys: KeyRing): String => EncString =
-    x => EncString(keys.priv.aesEnc(x.toCharArray.map(_.toByte)))
+    x => AesString(keys.priv.aesEnc(x.toCharArray.map(_.toByte)))
   def encrypt(s: Scheme, keys: KeyRing): BigInt => EncInt =
     input => encryptChecked(s,keys)(input).valueOr(sys.error)
 
