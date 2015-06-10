@@ -19,7 +19,7 @@ import crypto._
 
 object OpeCheck extends Properties("OPE") with CryptoCheck {
   val (encrypt,decrypt,key) =
-    (keyRing.priv.opeIntEnc,keyRing.priv.opeIntDec,keyRing.priv.opePriv)
+    (keyRing.priv.opeIntEnc,keyRing.priv.opeIntDec,keyRing.priv.opeIntPriv)
 
   property("decrypt · encrypt = id (Int)") =
     forAll { (input: Int) =>

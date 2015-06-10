@@ -9,9 +9,9 @@ case class PrivKeys(
   elgamal: ElGamal.Decryptor,
   aesEnc: Aes.Encryptor,
   aesDec: Aes.Decryptor,
-  opeIntEnc: Ope.Encryptor,
-  opeIntDec: Ope.Decryptor,
-  opePriv: Ope.PrivKey)
+  opeIntEnc: OpeInt.Encryptor,
+  opeIntDec: OpeInt.Decryptor,
+  opeIntPriv: OpeInt.PrivKey)
 
 object KeyRing {
   implicit def narrowToPublicKeys: KeyRing => PubKeys = _.pub
@@ -19,10 +19,10 @@ object KeyRing {
     val (_, paillierDec, paillierPub) = Paillier.create(1024)
     val (_, elgamalDec, elgamalPub) = ElGamal.create(1024)
     val (aesEnc, aesDec) = Aes.create(Aes.B256)
-    val (opeIntEnc, opeIntDec,opePriv) = Ope.createNum(128)
+    val (opeIntEnc, opeIntDec,opeIntPriv) = OpeInt.create(128)
 
     val encKeys = PubKeys(paillierPub, elgamalPub)
-    val decKeys = PrivKeys(paillierDec, elgamalDec, aesEnc, aesDec, opeIntEnc, opeIntDec, opePriv)
+    val decKeys = PrivKeys(paillierDec, elgamalDec, aesEnc, aesDec, opeIntEnc, opeIntDec, opeIntPriv)
     KeyRing(encKeys,decKeys)
   }
 }

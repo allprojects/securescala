@@ -6,7 +6,7 @@ import org.scalacheck.Gen
 import crypto.cipher._
 
 case class EncryptedGens(keys: KeyRing) {
-  val allowedNumber = arbitrary[BigInt] retryUntil (keys.priv.opePriv.domain.contains(_))
+  val allowedNumber = arbitrary[BigInt] retryUntil (keys.priv.opeIntPriv.domain.contains(_))
 
   def encryptedNumber: Gen[EncInt] = for {
     scheme <- Gen.oneOf(Additive, Multiplicative, Equality, Comparable)

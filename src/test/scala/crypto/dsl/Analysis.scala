@@ -45,7 +45,7 @@ class AnalysisSpec extends WordSpec with Matchers {
       val data2 = List.fill(N)(Common.encrypt(Additive, keys)(BigInt(rand.nextInt.abs)))
 
       val program: Crypto[Option[PaillierEnc]] = sumOpt(data1)
-      val program2: Crypto[Option[PaillierEnc]] = replaceNumbers(program).eval(data2)
+      val program2: Crypto[Option[PaillierEnc]] = replaceNumbers(program).eval(data2).run
 
       extractNumbers(program2).map(_._2) should equal(data2)
     }

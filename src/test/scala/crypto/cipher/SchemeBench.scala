@@ -40,7 +40,7 @@ object OpeBench extends CustomPerformanceTest with SchemeBench[BigInt] {
   def name = "OPE"
   def sizes = Gen.enumeration("sizes")(1, 5, 10, 15)
 
-  val (opeEnc,opeDec,_) = Ope.createNum(128)
+  val (opeEnc,opeDec,_) = OpeInt.create(128)
 
   val encrypt = (x: BigInt) => opeEnc(x).valueOr(sys.error)
   val decrypt = (x: BigInt) => opeDec(x)

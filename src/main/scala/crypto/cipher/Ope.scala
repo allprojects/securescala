@@ -20,7 +20,7 @@ object OpeNative {
   val instance = new OpeNative
 }
 
-object Ope {
+object OpeInt {
   private val numPlainTextBits = 64
   private val numCipherTextBits = 96
 
@@ -41,7 +41,7 @@ object Ope {
     domain: CipherDomain[BigInt]
   )
 
-  def createNum(bits: Int): (Encryptor, Decryptor, PrivKey) = {
+  def create(bits: Int): (Encryptor, Decryptor, PrivKey) = {
     val key = generateKey(bits, numPlainTextBits, numCipherTextBits)
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)), key)
   }
@@ -73,4 +73,5 @@ object Ope {
 }
 
 object OpeStr {
+
 }
