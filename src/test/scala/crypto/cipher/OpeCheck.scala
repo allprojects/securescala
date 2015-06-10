@@ -54,6 +54,11 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
     forAll(generators.allowedString) { (s: String) =>
       OpeStr.plainToNumeric(strKey)(s).flatMap(OpeStr.numericToPlain(strKey)(_)) == \/-(s)
     }
+
+  property("decrypt · encrypt = id (String)") =
+    forAll(generators.allowedString) { (input: String) =>
+      strEncrypt(input).flatMap(strDecrypt.apply) == \/-(input)
+    }
 }
 
 class OpeSpec extends WordSpec with Matchers {
