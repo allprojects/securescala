@@ -93,14 +93,14 @@ object OpeStr {
     math.ceil(math.log((CHARSET_BASE+1).toDouble)/math.log(2)).toInt
   private val ADDITIONAL_CIPHERTEXT_BITS = 16
 
-    case class Encryptor(f: String => (String \/ String))
-      extends (String => String \/ String) {
+  case class Encryptor(f: String => (String \/ BigInt))
+      extends (String => String \/ BigInt) {
     def apply(x: String) = f(x)
   }
 
-  case class Decryptor(f: String => String \/ String)
-      extends (String => String \/ String) {
-    def apply(x: String) = f(x)
+  case class Decryptor(f: BigInt => String \/ String)
+      extends (BigInt => String \/ String) {
+    def apply(x: BigInt) = f(x)
   }
 
   case class PrivKey(
@@ -134,14 +134,15 @@ object OpeStr {
     )
   }
 
-  def encrypt(priv: PrivKey)(input: String): String \/ String = {
+  def encrypt(priv: PrivKey)(input: String): String \/ BigInt = {
     plainToNumeric(priv)(input).map { numInput =>
-      OpeNative.encrypt(priv.key,numInput,priv.plainBits,priv.cipherBits)
+      BigInt(OpeNative.encrypt(priv.key,numInput,priv.plainBits,priv.cipherBits))
     }
   }
 
-  def decrypt(priv: PrivKey)(input: String): String \/ String = {
-    val numeric = OpeNative.decrypt(priv.key, input, priv.plainBits, priv.cipherBits)
+  def decrypt(priv: PrivKey)(input: BigInt): String \/ String = {
+    val numeric =
+      OpeNative.decrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
 
     numericToPlain(priv)(numeric)
   }

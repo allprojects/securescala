@@ -14,6 +14,7 @@ import org.scalacheck.Prop.BooleanOperators
 import scalaz._
 import scalaz.syntax.order._
 import scalaz.std.math.bigInt._
+import scalaz.std.string._
 
 import crypto._
 
@@ -38,10 +39,17 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
       encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
-  property("preserves ordering") =
+  property("preserves ordering (numbers)") =
     forAll(generators.allowedNumber, generators.allowedNumber) { (a: BigInt, b: BigInt) =>
       val \/-(ea) = encrypt(a)
       val \/-(eb) = encrypt(b)
+      a ?|? b == ea ?|? eb
+    }
+
+  property("preserves ordering (strings)") =
+    forAll(generators.allowedString, generators.allowedString) { (a: String, b: String) =>
+      val \/-(ea) = strEncrypt(a)
+      val \/-(eb) = strEncrypt(b)
       a ?|? b == ea ?|? eb
     }
 
