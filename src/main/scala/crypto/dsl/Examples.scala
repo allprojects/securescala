@@ -11,6 +11,8 @@ import scalaz.syntax.applicative._
 
 import scala.util.Random
 
+import effectful._
+
 import crypto._
 import crypto.cipher._
 import crypto.dsl.Implicits._
@@ -52,6 +54,11 @@ object ExamplePrograms {
     } yield s
   } yield r
 
+  def fibHelperE(one: EncInt, two: EncInt)(n: EncInt): CryptoM[EncInt] = effectfully {
+    if (e(n <= one).!) one
+    else e(fibHelper(one,two)(e(n-one).!).! + fibHelper(one,two)(e(n-two).!).!).!
+  }
+
   def factorial(n: EncInt): CryptoM[EncInt] = for {
     (zero,one) <- encrypt(Multiplicative)(0) tuple (encrypt(Multiplicative)(1))
     r <- factorialHelper(zero, one)(n)
@@ -67,6 +74,12 @@ object ExamplePrograms {
       s <- n * fact
     } yield s
   } yield r
+
+  def factorialHelperE(zero: EncInt, one: EncInt)(n: EncInt): CryptoM[EncInt] =
+    effectfully {
+      if (e(n =:= zero).!) one
+      else e(n * factorialHelper(zero,one)(e(n-one).!).!).!
+    }
 
   def sumAndLength[F[_]:Traverse](z: PaillierEnc)(xs: F[EncInt]): Crypto[(PaillierEnc,EncInt)] =
     sumA(z)(xs) tuple encrypt(Additive)(xs.length)
