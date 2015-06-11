@@ -94,6 +94,10 @@ object ExamplePrograms {
     input.groupWhenM[CryptoM]( (x,y) => (x - y) >>= (_ < delta))
 
   def firstEven(input: List[EncInt]): CryptoM[Option[EncInt]] = input.findM(isEven)
+
+  def sortWords(input: List[EncString]): Crypto[List[EncString]] = {
+    input.traverse(toOpeStr(_)).map(_.sorted)
+  }
 }
 
 object Repl {
@@ -177,6 +181,24 @@ object AverageExample extends App {
   val normalAverage = randomNumbers.map(BigInt(_)).reduce(_+_) / randomNumbers.length
   println(s"Result for normal    program: ${normalAverage}")
   println(s"Result for encrypted program: ${resultEnc}")
+}
+
+object WordSorting extends App {
+  import ExamplePrograms._
+  import Repl._
+
+  val words = List(
+    "PORK",
+    "SAVANNAH",
+    "FAMILIARS",
+    "VECTOR",
+    "AMMO",
+    "ANGINA",
+    "VALKYRIE"
+  ).map(Common.encryptStrOpe(keyRing)(_))
+
+  val sorted: List[EncString] = Repl.runProgram(sortWords(words))
+  println(sorted.map(Common.decryptStr(keyRing)))
 }
 
 object SampleData {

@@ -22,6 +22,8 @@ trait CryptoService {
   def toElGamal(in: EncInt): Future[ElGamalEnc]
   def toAes(in: EncInt): Future[AesEnc]
   def toOpe(in: EncInt): Future[OpeEnc]
+  def toAesStr(in: EncString): Future[AesString]
+  def toOpeStr(in: EncString): Future[OpeString]
 
   /** Convert the encoded value for the given scheme */
   def convert(s: Scheme)(in: EncInt): Future[EncInt]
@@ -65,6 +67,10 @@ class CryptoServiceImpl(keyRing: KeyRing)(implicit ec: ExecutionContext)
   private def multiplicative(x: EncInt): ElGamalEnc = doConvert(Multiplicative, x)
   private def equality(x: EncInt): AesEnc = doConvert(Equality, x)
   private def comparable(x: EncInt): OpeEnc = doConvert(Comparable, x)
+  private def equalityStr(x: EncString): AesString =
+    Common.encryptStrAes(keyRing)(Common.decryptStr(keyRing)(x))
+  private def comparableStr(x: EncString): OpeString =
+    Common.encryptStrOpe(keyRing)(Common.decryptStr(keyRing)(x))
 
   def wrap[A](x: => A): Future[A] = Future(x)
 
@@ -75,6 +81,8 @@ class CryptoServiceImpl(keyRing: KeyRing)(implicit ec: ExecutionContext)
     wrap(multiplicative(in))
   override def toAes(in: EncInt): Future[AesEnc] = wrap(equality(in))
   override def toOpe(in: EncInt): Future[OpeEnc] = wrap(comparable(in))
+  override def toAesStr(in: EncString): Future[AesString] = wrap(equalityStr(in))
+  override def toOpeStr(in: EncString): Future[OpeString] = wrap(comparableStr(in))
 
   override def convert(s: Scheme)(in: EncInt): Future[EncInt] =
     wrap(Common.convert(keyRing)(s,in))

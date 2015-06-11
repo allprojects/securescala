@@ -14,12 +14,25 @@ import org.scalacheck.Prop.BooleanOperators
 import scalaz._
 import scalaz.syntax.order._
 import scalaz.std.math.bigInt._
+import scalaz.std.string._
 
 import crypto._
 
 object OpeCheck extends Properties("OPE") with CryptoCheck {
   val (encrypt,decrypt,key) =
     (keyRing.priv.opeIntEnc,keyRing.priv.opeIntDec,keyRing.priv.opeIntPriv)
+  val (strEncrypt,strDecrypt,strKey) =
+    (keyRing.priv.opeStrEnc,keyRing.priv.opeStrDec,keyRing.priv.opeStrPriv)
+
+  property("generator produces valid numbers") =
+    forAll(generators.allowedNumber) { (x: BigInt) =>
+      encrypt(x).isRight
+    }
+
+  property("numericToPlain · plainToNumeric = id") =
+    forAll(generators.allowedString) { (s: String) =>
+      OpeStr.plainToNumeric(strKey)(s).flatMap(OpeStr.numericToPlain(strKey)(_)) == \/-(s)
+    }
 
   property("decrypt · encrypt = id (Int)") =
     forAll { (input: Int) =>
@@ -36,16 +49,23 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
       encrypt(input).map(decrypt.apply) == \/-(input)
     }
 
-  property("preserves ordering") =
+  property("decrypt · encrypt = id (String)") =
+    forAll(generators.allowedString) { (input: String) =>
+      strEncrypt(input).flatMap(strDecrypt.apply) == \/-(input)
+    }
+
+  property("preserves ordering (numbers)") =
     forAll(generators.allowedNumber, generators.allowedNumber) { (a: BigInt, b: BigInt) =>
       val \/-(ea) = encrypt(a)
       val \/-(eb) = encrypt(b)
       a ?|? b == ea ?|? eb
     }
 
-  property("generator produces valid numbers") =
-    forAll(generators.allowedNumber) { (x: BigInt) =>
-      encrypt(x).isRight
+  property("preserves ordering (strings)") =
+    forAll(generators.allowedString, generators.allowedString) { (a: String, b: String) =>
+      val \/-(ea) = strEncrypt(a)
+      val \/-(eb) = strEncrypt(b)
+      a ?|? b == ea ?|? eb
     }
 }
 

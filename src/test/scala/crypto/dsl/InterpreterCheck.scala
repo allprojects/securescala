@@ -71,7 +71,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
       Common.decrypt(keyRing.priv)(monadicProduct) == Common.decrypt(keyRing.priv)(applicativeProduct)
     }
 
-  property("encrypted sorting") = {
+  property("encrypted sorting of numbers") = {
     // Integers can not be larger than bit size of ope key
     val list = for {
       n <- Gen.choose(1,6)
@@ -95,6 +95,17 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
       val decryptThenFilter = xs.map(Common.decrypt(keyRing.priv)).filter(pred)
 
       filterThenDecrypt == decryptThenFilter
+    }
+  }
+
+  property("encrypted sorting of strings") = {
+    def sortWords(input: List[EncString]) = input.traverse(toOpeStr(_)).map(_.sorted)
+
+    forAll(Gen.listOf(generators.encryptedString)) { (xs: List[EncString]) =>
+      val sortThenDecrypt = interpret(sortWords(xs)).map(Common.decryptStr(keyRing))
+      val decryptThenSort = xs.map(Common.decryptStr(keyRing)).sorted
+
+      sortThenDecrypt == decryptThenSort
     }
   }
 }
