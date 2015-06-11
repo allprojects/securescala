@@ -53,6 +53,8 @@ libraryDependencies += "com.espertech" % "esper" % "5.2.0"
 
 libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6" % "test"
 
+libraryDependencies += "org.pelotom" %% "effectful" % "1.1-SNAPSHOT"
+
 testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
 // To avoid classloader problems with sbt console and native ope library
