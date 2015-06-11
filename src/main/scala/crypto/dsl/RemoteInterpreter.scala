@@ -45,10 +45,24 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
       r <- interpret(k(lhs_ ?|? rhs_))
     } yield r
 
+    case -\/(CompareStr(lhs@OpeString(_),rhs@OpeString(_),k)) => interpret(k(lhs ?|? rhs))
+    case -\/(CompareStr(lhs,rhs,k)) => for {
+      lhs_ <- service.toOpeStr(lhs)
+      rhs_ <- service.toOpeStr(rhs)
+      r <- interpret(k(lhs_ ?|? rhs_))
+    } yield r
+
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs === rhs))
     case -\/(Equals(lhs,rhs,k)) => for {
       lhs_ <- service.toAes(lhs)
       rhs_ <- service.toAes(rhs)
+      r <- interpret(k(lhs_ === rhs_))
+    } yield r
+
+    case -\/(EqualsStr(lhs@AesString(_),rhs@AesString(_),k)) => interpret(k(lhs === rhs))
+    case -\/(EqualsStr(lhs,rhs,k)) => for {
+      lhs_ <- service.toAesStr(lhs)
+      rhs_ <- service.toAesStr(rhs)
       r <- interpret(k(lhs_ === rhs_))
     } yield r
 

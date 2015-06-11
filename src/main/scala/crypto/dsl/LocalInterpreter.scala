@@ -29,8 +29,15 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
     case -\/(Compare(lhs@OpeEnc(_),rhs@OpeEnc(_),k)) => interpret(k(lhs ?|? rhs))
     case -\/(Compare(lhs,rhs,k)) => interpret(k(comparable(lhs) ?|? comparable(rhs)))
 
+    case -\/(CompareStr(lhs@OpeString(_),rhs@OpeString(_),k)) => interpret(k(lhs ?|? rhs))
+    case -\/(CompareStr(lhs,rhs,k)) =>
+      interpret(k(comparableStr(lhs) ?|? comparableStr(rhs)))
+
     case -\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)) => interpret(k(lhs === rhs))
     case -\/(Equals(lhs,rhs,k)) => interpret(k(equality(lhs) === equality(rhs)))
+
+    case -\/(EqualsStr(lhs@AesString(_),rhs@AesString(_),k)) => interpret(k(lhs === rhs))
+    case -\/(EqualsStr(lhs,rhs,k)) => interpret(k(equalityStr(lhs) === equalityStr(rhs)))
 
     case -\/(Encrypt(s,v,k)) => interpret(k(Common.encrypt(s, keyRing)(v)))
 
@@ -40,7 +47,6 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
     case -\/(ToOpe(v,k)) => interpret(k(comparable(v)))
     case -\/(ToAesStr(v,k)) => interpret(k(equalityStr(v)))
     case -\/(ToOpeStr(v,k)) => interpret(k(comparableStr(v)))
-
 
     // Offline operations
 
