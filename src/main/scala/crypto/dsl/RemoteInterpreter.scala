@@ -72,6 +72,16 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
       case _ => service.toOpe(v).flatMap(x => interpret(k(x)))
     }
 
+    case -\/(ToOpeStr(v,k)) => v match {
+      case v2@OpeString(_) => interpret(k(v2))
+      case _ => service.toOpeStr(v).flatMap(x => interpret(k(x)))
+    }
+
+    case -\/(ToAesStr(v,k)) => v match {
+      case v2@AesString(_) => interpret(k(v2))
+      case _ => service.toAesStr(v).flatMap(x => interpret(k(x)))
+    }
+
     case -\/(Encrypt(s,v,k)) => {
       val res: Future[EncInt] = s match {
         // For public key encryption, we do not even have to send anything
