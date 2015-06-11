@@ -73,6 +73,7 @@ trait BaseDsl {
   def isOdd(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsOdd(v,identity))
 
   def embed[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
+  def e[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
 }
 
 trait DeriveDsl {
