@@ -11,6 +11,9 @@ install:
   - curl -s "https://raw.githubusercontent.com/paulp/sbt-extras/master/sbt" > "$HOME/bin/sbt"
   - chmod +x "$HOME/bin/sbt"
 
+  - mkdir -p "$HOME/repos"
+  - (cd "$HOME/repos" && git clone "https://github.com/pelotom/effectful" && cd effectful && sbt 'publish-local')
+
   - sudo apt-get -y install libntl-dev libssl-dev
   - (cd cryptdb; make)
   - cp cryptdb/libope.so ~/
