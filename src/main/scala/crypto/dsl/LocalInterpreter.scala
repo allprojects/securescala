@@ -72,8 +72,8 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
 
     // Embedding
 
-    case -\/(Embed(p,k)) =>
-      val r: CryptoM[A] = k(Free.point(interpretA(p))).join
+    case -\/(e@Embed()) =>
+      val r: CryptoM[A] = e.k(Free.point(interpretA(e.v))).join
       interpret(r)
 
     case \/-(x) => x

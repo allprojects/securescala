@@ -112,9 +112,9 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
     case -\/(IsEven(v,k)) => service.isEven(v).flatMap(x => interpret(k(x)))
     case -\/(IsOdd(v,k)) => service.isOdd(v).flatMap(x => interpret(k(x)))
 
-    case -\/(Embed(p,k)) => for {
-      v <- interpretA(p)
-      r <- interpret(k(Free.point(v)).join)
+    case -\/(e@Embed()) => for {
+      v <- interpretA(e.v)
+      r <- interpret(e.k(Free.point(v)).join)
     } yield r
 
     case \/-(x) => Future.successful(x)

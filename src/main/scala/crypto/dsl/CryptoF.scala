@@ -27,7 +27,11 @@ case class IsEven[K](v: EncInt, k: Boolean => K) extends CryptoF[K]
 case class IsOdd[K](v: EncInt, k: Boolean => K) extends CryptoF[K]
 
 // Embed the applicative part into monadic language
-case class Embed[A,K](v: Crypto[A], k: CryptoM[A] => CryptoM[K]) extends CryptoF[K]
+abstract case class Embed[K]() extends CryptoF[K] { self =>
+  type I
+  val v: Crypto[I]
+  val k: CryptoM[I] => CryptoM[K]
+}
 
 object CryptoF {
   // deriving Functor
@@ -50,7 +54,11 @@ object CryptoF {
       case Div(lhs,rhs,k) => Div(lhs,rhs,f compose k)
       case IsEven(v,k) => IsEven(v,f compose k)
       case IsOdd(v,k) => IsOdd(v,f compose k)
-      case e: Embed[a,k] => Embed(e.v,(x: CryptoM[a]) => e.k(x).map(f))
+      case e@Embed() => new Embed[B] {
+        type I = e.I
+        val v: Crypto[I] = e.v.map(x => x)
+        val k = (x: CryptoM[I]) => e.k(x).map(f)
+      }
     }
   }
 }

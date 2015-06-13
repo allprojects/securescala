@@ -72,8 +72,13 @@ trait BaseDsl {
   def isEven(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsEven(v,identity))
   def isOdd(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsOdd(v,identity))
 
-  def embed[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
-  def e[A](v: Crypto[A]): CryptoM[A] = Free.liftF(Embed(v,(x: CryptoM[A]) => x))
+  def embed[A](p: Crypto[A]): CryptoM[A] = Free.liftF(new Embed[A]() {
+    type I = A
+    val v: Crypto[I] = p
+    val k: CryptoM[I] => CryptoM[A]= (x: CryptoM[I]) => x
+  })
+
+  def e[A](v: Crypto[A]): CryptoM[A] = embed(v)
 }
 
 trait DeriveDsl {

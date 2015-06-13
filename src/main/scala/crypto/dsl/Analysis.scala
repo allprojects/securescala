@@ -132,7 +132,7 @@ object Analysis {
           case IsEven(v,k) => Dual(DList())
           case IsOdd(v,k) => Dual(DList())
           case Encrypt(s,v,k) => Dual(DList())
-          case Embed(p,k) => sys.error("impossible")
+          case Embed() => sys.error("impossible")
         }
       })).toList
   }
@@ -164,7 +164,7 @@ object Analysis {
         case Encrypt(s,v,k) => cryptoState.state(FreeAp.lift(fa))
         case EqualsStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case CompareStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
-        case Embed(p,k) => sys.error("impossible")
+        case Embed() => sys.error("impossible")
       }
     })(ev)
   }
@@ -185,9 +185,9 @@ object Analysis {
     case IsEven(v,k) => DList((None,v))
     case IsOdd(v,k) => DList((None,v))
     case Encrypt(s,v,k) => DList()
-    case Embed(p,k) => sys.error("impossible")
     case EqualsStr(_,_,_) => DList()
     case CompareStr(_,_,_) => DList()
+    case Embed() => sys.error("impossible")
   }
 
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],EncInt)] = {
@@ -222,7 +222,7 @@ object Analysis {
         case Encrypt(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case EqualsStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case CompareStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
-        case Embed(p,k) => sys.error("impossible")
+        case Embed() => sys.error("impossible")
       }
     })(ev)
   }
