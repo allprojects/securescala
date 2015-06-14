@@ -6,13 +6,13 @@ import org.scalacheck.Gen
 import crypto.cipher._
 
 case class EncryptedGens(keys: KeyRing) {
-  val allowedChar = Gen.oneOf(OpeStr.ALLOWED_CHARS)
+  val allowedChar: Gen[Char] = Gen.oneOf(OpeStr.ALLOWED_CHARS)
 
-  val allowedString =
+  val allowedString: Gen[String] =
     Gen.listOf(allowedChar).map(_.mkString).retryUntil(
       _.length <= keys.priv.opeStrPriv.maxLength)
 
-  val encryptedString = for {
+  val encryptedString: Gen[EncString] = for {
     scheme <- Gen.oneOf("OPE","AES")
     s <- allowedString
   } yield (scheme match {
@@ -20,7 +20,8 @@ case class EncryptedGens(keys: KeyRing) {
     case "AES" => Common.encryptStrAes(keys)(s)
   })
 
-  val allowedNumber = arbitrary[BigInt] retryUntil (keys.priv.opeIntPriv.domain.contains(_))
+  val allowedNumber: Gen[BigInt] =
+    arbitrary[BigInt] retryUntil (keys.priv.opeIntPriv.domain.contains(_))
 
   def encryptedNumber: Gen[EncInt] = for {
     scheme <- Gen.oneOf(Additive, Multiplicative, Equality, Comparable)
