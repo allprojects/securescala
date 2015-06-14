@@ -42,8 +42,29 @@ package object dsl extends BaseDsl with DeriveDsl {
 trait BaseDsl {
   import crypto.dsl._
 
+  // Applicative Funtor version of the dsl, can be inspected statically
   type Crypto[A] = FreeAp[CryptoF, A]
-  type CryptoM[A] = Free[CryptoF, A]
+
+  // The monadic version of Crypto, CryptoM also allows embedding via Embed
+  // therefore we use the Coproduct of CryptoF and Embed
+  type CryptoMF[A] = Coproduct[CryptoF,Embed,A]
+  type CryptoM[A] = Free[Coproduct[CryptoF,Embed,?], A]
+
+  // Hoist the functor of a Free[CryptoF,_] into the Coproduct to get CryptoM
+  def empower[A](p: Free[CryptoF,A]): CryptoM[A] =
+    p.mapSuspension(new (CryptoF ~> CryptoMF) {
+      def apply[B](fa: CryptoF[B]): CryptoMF[B] = Coproduct(-\/(fa))
+    })
+
+  implicit val cryptomInstance =
+    new Functor[CryptoM]
+        with Applicative[CryptoM]
+        with Monad[CryptoM] {
+
+      def point[A](a: => A) = Free.point[CryptoMF,A](a)
+      def bind[A,B](fa: CryptoM[A])(f: A => CryptoM[B]): CryptoM[B] =
+        Free.freeMonad[CryptoMF].bind(fa)(f)
+  }
 
   def multiply(lhs: EncInt, rhs: EncInt): Crypto[EncInt] =
     FreeAp.lift(Mult(lhs,rhs,identity))
@@ -72,11 +93,11 @@ trait BaseDsl {
   def isEven(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsEven(v,identity))
   def isOdd(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsOdd(v,identity))
 
-  def embed[A](p: Crypto[A]): CryptoM[A] = Free.liftF(new Embed[A]() {
+  def embed[A](p: Crypto[A]): CryptoM[A] = Free.liftF[CryptoMF,A](Coproduct(\/-(new Embed[A]() {
     type I = A
     val v: Crypto[I] = p
     val k: CryptoM[I] => CryptoM[A]= (x: CryptoM[I]) => x
-  })
+  })))
 
   def e[A](v: Crypto[A]): CryptoM[A] = embed(v)
 }

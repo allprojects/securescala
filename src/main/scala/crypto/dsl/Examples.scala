@@ -112,21 +112,21 @@ object ExamplePrograms {
     input.traverse(toOpeStr(_)).map(_.sorted)
   }
 
-  // Be a little more explicit about intermediate steps
-  def wordCount(input: IList[EncString]): Crypto[List[(OpeString,Int)]] = for {
-    converted <- input.traverse(toOpeStr)
-    grouped = converted.groupBy(x => x).map(_.length)
-    r = grouped.toList
-  } yield r
+  // Just do it as concisely as possible
+  def wordCount_(input: IList[EncString]): Crypto[List[(OpeString,Int)]] =
+    input.traverse(toOpeStr).map(_.groupBy(x => x).map(_.length).toList)
 
   // Effectfully does not allow applicative...
   def wordCountE(input: IList[EncString]): CryptoM[List[(OpeString,Int)]] = effectfully {
     (e(input.traverse(toOpeStr)).!).groupBy(x => x).map(_.length).toList
   }
 
-  // Just do it as concisely as possible
-  def wordCount_(input: IList[EncString]): Crypto[List[(OpeString,Int)]] =
-    input.traverse(toOpeStr).map(_.groupBy(x => x).map(_.length).toList)
+  // Be a little more explicit about intermediate steps
+  def wordCount(input: IList[EncString]): Crypto[List[(OpeString,Int)]] = for {
+    converted <- input.traverse(toOpeStr)
+    grouped = converted.groupBy(x => x).map(_.length)
+    r = grouped.toList
+  } yield r
 }
 
 object Repl {

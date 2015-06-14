@@ -23,7 +23,7 @@ trait CryptoInterpreter[F[_]] {
     * By default this performs no optimizations, you need to override
     * it and take advantage of the applicative structure
     */
-  def interpretA[A](p: Crypto[A]): F[A] = interpret(p.monadic)
+  def interpretA[A](p: Crypto[A]): F[A] = interpret(empower(p.monadic))
 }
 
 /**
