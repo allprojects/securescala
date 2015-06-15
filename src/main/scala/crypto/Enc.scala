@@ -35,7 +35,12 @@ class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends EncInt with 
   }
   override def hashCode = ca.hashCode + cb.hashCode * 41
 }
-case class AesEnc(underlying: Array[Byte]) extends EncInt
+case class AesEnc(underlying: Array[Byte]) extends EncInt {
+  override def equals(that: Any) = that match {
+    case e@AesEnc(_) => Equal[AesEnc].equal(this,e)
+    case _ => false
+  }
+}
 case class OpeEnc(underlying: BigInt) extends EncInt
 
 object PaillierEnc {
@@ -61,13 +66,31 @@ object ElGamalEnc {
 
   def unapply(eg: ElGamalEnc): Option[(BigInt,BigInt)] = Some((eg.ca, eg.cb))
   def apply(k: ElGamal.PubKey)(ca: BigInt, cb: BigInt) = new ElGamalEnc(ca, cb, k.p)
+
+  implicit val encode: EncodeJson[ElGamalEnc] =
+    EncodeJson((e: ElGamalEnc) =>
+      ("elgamal_cb" := e.cb) ->: ("elgamal_ca" := e.ca) ->: jEmptyObject)
+
+  def decode(key: ElGamal.PubKey): DecodeJson[ElGamalEnc] =
+    DecodeJson(c => for {
+      ca <- (c --\ "elgamal_ca").as[BigInt]
+      cb <- (c --\ "elgamal_cb").as[BigInt]
+    } yield ElGamalEnc(key)(ca,cb))
 }
 
 object AesEnc {
-  implicit val aesEncEqual = new Equal[AesEnc] {
+  implicit val aesEncEqual: Equal[AesEnc] = new Equal[AesEnc] {
     override def equal(a1: AesEnc, a2: AesEnc) = (a1,a2) match {
       case (AesEnc(x),AesEnc(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
     }
+  }
+
+  implicit def aesCodec: CodecJson[AesEnc] = {
+    CodecJson(
+      (aes: AesEnc) =>
+      ("aes_int" := aes.underlying.toList.map(_.toInt)) ->:
+        jEmptyObject,
+      c => (c --\ "aes_int").as[List[Int]].map(x=>AesEnc(x.toArray.map(_.toByte))))
   }
 }
 
