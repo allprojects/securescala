@@ -46,11 +46,12 @@ object PaillierEnc {
   def unapply(p: PaillierEnc): Option[BigInt] = Some(p.underlying)
   def apply(k: Paillier.PubKey)(n: BigInt) = new PaillierEnc(n, k.nSquare)
 
-  implicit def PaillierEncJson(key: Paillier.PubKey): CodecJson[PaillierEnc] =
-    CodecJson(
-      (p: PaillierEnc) =>
-      ("paillier" := p.underlying) ->: jEmptyObject,
-    c => (c --\ "paillier").as[BigInt].map(PaillierEnc(key)(_)))
+  implicit val encode: EncodeJson[PaillierEnc] =
+    EncodeJson((p: PaillierEnc) =>
+      ("paillier" := p.underlying) ->: jEmptyObject)
+
+  def decode(key: Paillier.PubKey): DecodeJson[PaillierEnc] =
+    DecodeJson(c => (c --\ "paillier").as[BigInt].map(PaillierEnc(key)(_)))
 }
 
 object ElGamalEnc {

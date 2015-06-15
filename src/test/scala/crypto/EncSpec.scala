@@ -10,8 +10,8 @@ import crypto.cipher._
 
 class EncSpec extends WordSpec with Matchers {
   val keys = KeyRing.create
-  implicit val paillierEncJson =
-    PaillierEnc.PaillierEncJson(keys.pub.paillier)
+  implicit val paillierDecode =
+    PaillierEnc.decode(keys.pub.paillier)
 
   "Paillier encoded values" can {
     "be printed as json" in {
