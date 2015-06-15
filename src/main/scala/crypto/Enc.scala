@@ -6,6 +6,9 @@ import scalaz._
 import scalaz.std.math.bigInt._
 import scalaz.syntax.order._
 
+import argonaut._
+import Argonaut._
+
 sealed trait EncInt
 class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends EncInt with Serializable {
   def +(that: PaillierEnc): PaillierEnc = (this,that) match {
@@ -42,6 +45,12 @@ object PaillierEnc {
 
   def unapply(p: PaillierEnc): Option[BigInt] = Some(p.underlying)
   def apply(k: Paillier.PubKey)(n: BigInt) = new PaillierEnc(n, k.nSquare)
+
+  implicit def PaillierEncJson(key: Paillier.PubKey): CodecJson[PaillierEnc] =
+    CodecJson(
+      (p: PaillierEnc) =>
+      ("paillier" := p.underlying) ->: jEmptyObject,
+    c => (c --\ "paillier").as[BigInt].map(PaillierEnc(key)(_)))
 }
 
 object ElGamalEnc {
