@@ -13,6 +13,12 @@ class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends EncInt with S
       new PaillierEnc((lhs * rhs).mod(nSquare), nSquare)
   }
   override def toString = s"PaillierEnc($underlying)"
+
+  override def equals(that: Any) = that match {
+    case PaillierEnc(underlying2) => underlying == underlying2
+    case _ => false
+  }
+  override def hashCode = underlying.hashCode
 }
 class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends EncInt with Serializable {
   def *(that: ElGamalEnc): ElGamalEnc = (this,that) match {
@@ -20,6 +26,11 @@ class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends EncInt with 
       new ElGamalEnc((ca1 * cb1).mod(p), (ca2 * cb2).mod(p), p)
   }
   override def toString = s"GamalEnc($ca,$cb)"
+  override def equals(that: Any) = that match {
+    case ElGamalEnc(ca2,cb2) => (ca,cb) == ((ca2,cb2))
+    case _ => false
+  }
+  override def hashCode = ca.hashCode + cb.hashCode * 41
 }
 case class AesEnc(underlying: Array[Byte]) extends EncInt
 case class OpeEnc(underlying: BigInt) extends EncInt
