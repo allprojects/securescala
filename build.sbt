@@ -55,6 +55,8 @@ libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6" % "test"
 
 libraryDependencies += "org.pelotom" %% "effectful" % "1.1-SNAPSHOT"
 
+libraryDependencies += "io.argonaut" %% "argonaut" % "6.1"
+
 testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
 // To avoid classloader problems with sbt console and native ope library
