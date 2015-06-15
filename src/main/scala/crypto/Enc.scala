@@ -101,6 +101,13 @@ object OpeEnc {
     }
   }
   implicit val opeOrderScala = opeOrder.toScalaOrdering
+
+  implicit def opeCodec: CodecJson[OpeEnc] =
+    CodecJson(
+      (ope: OpeEnc) =>
+      ("ope_int" := ope.underlying) ->:
+        jEmptyObject,
+      c => (c --\ "ope_int").as[BigInt].map(OpeEnc(_)))
 }
 
 sealed trait EncString

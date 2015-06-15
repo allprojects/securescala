@@ -57,4 +57,18 @@ class EncSpec extends WordSpec with Matchers {
       dec should equal(Some(oneThreeThreeSeven))
     }
   }
+
+  "Ope encoded numbers" can {
+    val ninetyNine: OpeEnc = Common.depEncrypt(Comparable, keys)(99)
+    val json = s"""{"ope_int":${ninetyNine.underlying}}"""
+
+    "be printed as json" in {
+      ninetyNine.asJson.nospaces should equal(json)
+    }
+
+    "be parsed from json" in {
+      val dec = Parse.decodeOption[OpeEnc](json)
+      dec should equal(Some(ninetyNine))
+    }
+  }
 }
