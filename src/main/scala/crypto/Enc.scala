@@ -111,14 +111,27 @@ object OpeEnc {
 }
 
 sealed trait EncString
-case class AesString(underlying: Array[Byte]) extends EncString
+case class AesString(underlying: Array[Byte]) extends EncString {
+  override def equals(that: Any) = that match {
+    case e@AesString(_) => Equal[AesString].equal(this,e)
+    case _ => false
+  }
+}
 case class OpeString(underlying: BigInt) extends EncString
 
 object AesString {
-  implicit val aesStringEqual = new Equal[AesString] {
+  implicit val aesStringEqual: Equal[AesString] = new Equal[AesString] {
     override def equal(a1: AesString, a2: AesString) = (a1,a2) match {
       case (AesString(x),AesString(y)) => x.size == y.size && (x,y).zipped.forall(_==_)
     }
+  }
+
+  implicit def aesStrCodec: CodecJson[AesString] = {
+    CodecJson(
+      (aes: AesString) =>
+      ("aes_str" := aes.underlying.toList.map(_.toInt)) ->:
+        jEmptyObject,
+      c => (c --\ "aes_str").as[List[Int]].map(x=>AesString(x.toArray.map(_.toByte))))
   }
 }
 
@@ -129,4 +142,11 @@ object OpeString {
     }
   }
   implicit val opeStringOrderScala = opeStringOrder.toScalaOrdering
+
+  implicit def opeCodec: CodecJson[OpeString] =
+    CodecJson(
+      (ope: OpeString) =>
+      ("ope_str" := ope.underlying) ->:
+        jEmptyObject,
+      c => (c --\ "ope_str").as[BigInt].map(OpeString(_)))
 }

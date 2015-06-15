@@ -71,4 +71,35 @@ class EncSpec extends WordSpec with Matchers {
       dec should equal(Some(ninetyNine))
     }
   }
+
+  "Aes encoded strings" can {
+    val helloWorld = Common.encryptStrAes(keys)("hello world")
+    val json = {
+      val expected = helloWorld.underlying.toList.map(_.toInt).asJson.nospaces
+      s"""{"aes_str":${expected}}"""
+    }
+
+    "be printed as json" in {
+      helloWorld.asJson.nospaces should equal(json)
+    }
+
+    "be parsed from json" in {
+      val dec = Parse.decodeOption[AesString](json)
+      dec should equal(Some(helloWorld))
+    }
+  }
+
+  "Ope encoded strings" can {
+    val scala: OpeString = Common.encryptStrOpe(keys)("scala")
+    val json = s"""{"ope_str":${scala.underlying}}"""
+
+    "be printed as json" in {
+      scala.asJson.nospaces should equal(json)
+    }
+
+    "be parsed from json" in {
+      val dec = Parse.decodeOption[OpeString](json)
+      dec should equal(Some(scala))
+    }
+  }
 }
