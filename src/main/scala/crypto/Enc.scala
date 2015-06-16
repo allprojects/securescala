@@ -110,6 +110,31 @@ object OpeEnc {
       c => (c --\ "ope_int").as[BigInt].map(OpeEnc(_)))
 }
 
+object EncInt {
+  implicit val encode: EncodeJson[EncInt] = EncodeJson{
+    case x@PaillierEnc(_) => PaillierEnc.encode(x)
+    case x@ElGamalEnc(_,_) => ElGamalEnc.encode(x)
+    case x@AesEnc(_) => AesEnc.aesCodec.Encoder(x)
+    case x@OpeEnc(_) => OpeEnc.opeCodec.Encoder(x)
+  }
+
+  def decode(key: PubKeys): DecodeJson[EncInt] = DecodeJson { c =>
+    PaillierEnc.decode(key.paillier)(c) match {
+      case DecodeResult(\/-(x)) => DecodeResult.ok(x)
+      case DecodeResult(-\/(_)) => ElGamalEnc.decode(key.elgamal)(c) match {
+        case DecodeResult(\/-(x)) => DecodeResult.ok(x)
+        case DecodeResult(-\/(_)) => AesEnc.aesCodec.Decoder(c) match {
+          case DecodeResult(\/-(x)) => DecodeResult.ok(x)
+          case DecodeResult(-\/(_)) => OpeEnc.opeCodec.Decoder(c) match {
+            case DecodeResult(\/-(x)) => DecodeResult.ok(x)
+            case DecodeResult(-\/(err)) => DecodeResult.fail(err._1,err._2)
+          }
+        }
+      }
+    }
+  }
+}
+
 sealed trait EncString
 case class AesString(underlying: Array[Byte]) extends EncString {
   override def equals(that: Any) = that match {
