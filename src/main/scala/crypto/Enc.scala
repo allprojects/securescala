@@ -175,3 +175,20 @@ object OpeString {
         jEmptyObject,
       c => (c --\ "ope_str").as[BigInt].map(OpeString(_)))
 }
+
+object EncString {
+  implicit val encode: EncodeJson[EncString] = EncodeJson {
+    case x@AesString(_) => AesString.aesStrCodec.Encoder(x)
+    case x@OpeString(_) => OpeString.opeCodec.Encoder(x)
+  }
+
+  implicit val decode: DecodeJson[EncString] = DecodeJson { c =>
+    OpeString.opeCodec.Decoder(c) match {
+      case DecodeResult(\/-(x)) => DecodeResult.ok(x)
+      case DecodeResult(-\/(_)) => AesString.aesStrCodec.Decoder(c) match {
+        case DecodeResult(\/-(x)) => DecodeResult.ok(x)
+        case DecodeResult(-\/(err)) => DecodeResult.fail(err._1,err._2)
+      }
+    }
+  }
+}
