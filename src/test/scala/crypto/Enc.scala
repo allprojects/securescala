@@ -1,11 +1,12 @@
-package crypto.dsl
+package crypto
 
 import argonaut._
 import Argonaut._
 
 import org.scalatest._
+import org.scalacheck.Properties
+import org.scalacheck.Prop.forAll
 
-import crypto._
 import crypto.cipher._
 
 class EncSpec extends WordSpec with Matchers {
@@ -102,4 +103,19 @@ class EncSpec extends WordSpec with Matchers {
       dec should equal(Some(scala))
     }
   }
+}
+
+object EncCheck extends Properties("Enc") with CryptoCheck {
+  import generators._
+  implicit val decoderInt = EncInt.decode(keyRing)
+
+  property("fromJSON . toJSON = id (numbers)") =
+    forAll(encryptedNumber) { (input: EncInt) =>
+      Parse.decodeOption[EncInt](input.asJson.nospaces) == Some(input)
+    }
+
+  property("fromJSON . toJSON = id (strings)") =
+    forAll(encryptedString) { (input: EncString) =>
+      Parse.decodeOption[EncString](input.asJson.nospaces) == Some(input)
+    }
 }
