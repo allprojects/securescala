@@ -2,7 +2,9 @@ package crypto.casestudies
 
 import scala.io.Source
 
+import scalaz._
 import scalaz.std.list._
+import scalaz.syntax.traverse._
 
 import crypto._
 import crypto.dsl._
@@ -56,8 +58,10 @@ object PersonUtils {
   }
 
   val persons = List[Person](
-    Person("Gerold", "Wootton", 34, 66274),
+    Person("Gerold", "Wootton", 34, 42133),
+    Person("Lynne", "Wootton", 25, 66274),
     Person("Misty", "Baum", 56,  62194),
+    Person("Edmund", "Baum", 61,  67232),
     Person("Columbine", "Piper", 33, 52098),
     Person("August", "Jaeger", 51,  47411),
     Person("Wenonah", "Lewis", 40, 58928),
@@ -90,16 +94,28 @@ object PersonsCaseStudy extends App {
   PersonUtils.writePersonsFile(k)(PersonUtils.epersons(k))
   val ps = PersonUtils.readPersonsFile(k)
 
+  def averageAge(ps: List[EncPerson]): CryptoM[EncInt] = {
+    average(Common.zero(k))(ps.map(_.age))
+  }
+
+  val avg = Common.decrypt(k)(locally(averageAge(ps)))
+  println(s"Average age (rounded) is: $avg")
+
   def whoEarnsMost(ps: List[EncPerson]): Crypto[EncPerson] = {
     sortBy(ps)(_.income).map(_.last)
   }
 
-  def averageAge(ps: List[EncPerson]): CryptoM[EncInt] = {
-    average(Common.zero(k))(ps.map(_.age))
-  }
-  val avg = Common.decrypt(k)(locally(averageAge(ps)))
-  println(s"Average age (rounded) is: $avg")
-
   val result = locally(whoEarnsMost(ps))
   println(s"The person earning the most money is: ${PersonUtils.decrypt(k)(result)}")
+
+  def groupLastName(ps: IList[EncPerson]): Crypto[List[IList[EncPerson]]]= {
+    ps.traverseU(p =>
+      toOpeStr(p.lastName).map((_,p))).map(_.groupBy(_._1).values.map(_.map(_._2)))
+  }
+
+  val groups = locally(groupLastName(IList(ps:_*)))
+  val groupsString =
+    groups.map(_.map(PersonUtils.decrypt(k))).map(_.toList.mkString(",")).mkString("\n")
+
+  println(s"Grouped by last name: \n$groupsString")
 }
