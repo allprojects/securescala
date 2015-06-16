@@ -140,11 +140,22 @@ object OpeStr {
     }
   }
 
+  def encryptChunk(priv: PrivKey)(input: String): String \/ List[BigInt] = {
+    input.
+      grouped(priv.maxLength).
+      toList.
+      traverseU(encrypt(priv))
+  }
+
   def decrypt(priv: PrivKey)(input: BigInt): String \/ String = {
     val numeric =
       OpeNative.decrypt(priv.key, input.toString, priv.plainBits, priv.cipherBits)
 
     numericToPlain(priv)(numeric)
+  }
+
+  def decryptChunk(priv: PrivKey)(input: List[BigInt]): String \/ String = {
+    input.traverseU(decrypt(priv)).map(_.mkString)
   }
 
   def plainToNumeric(priv: PrivKey)(plaintext: String): String \/ String = {

@@ -15,6 +15,7 @@ import scalaz._
 import scalaz.syntax.order._
 import scalaz.std.math.bigInt._
 import scalaz.std.string._
+import scalaz.std.list._
 
 import crypto._
 
@@ -67,6 +68,20 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
       val \/-(eb) = strEncrypt(b)
       a ?|? b == ea ?|? eb
     }
+
+  property("decryptChunk · encryptChunk = id") =
+    forAll(Gen.listOf(generators.allowedChar).map(_.mkString)) { (input: String) =>
+      OpeStr.encryptChunk(strKey)(input).flatMap(OpeStr.decryptChunk(strKey)) == \/-(input)
+    }
+
+  property("preserves ordering (chunked strings)") = {
+    val string = Gen.listOf(generators.allowedChar).map(_.mkString)
+    forAll(string, string) { (a: String, b: String) =>
+      val \/-(ea) = OpeStr.encryptChunk(strKey)(a)
+      val \/-(eb) = OpeStr.encryptChunk(strKey)(b)
+      a ?|? b == ea ?|? eb
+    }
+  }
 }
 
 class OpeSpec extends WordSpec with Matchers {
