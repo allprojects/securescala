@@ -92,7 +92,7 @@ class EncSpec extends WordSpec with Matchers {
 
   "Ope encoded strings" can {
     val scala: OpeString = Common.encryptStrOpe(keys)("scala")
-    val json = s"""{"ope_str":${scala.underlying}}"""
+    val json = s"""{"ope_str":${scala.underlying.mkString("[",",","]")}}"""
 
     "be printed as json" in {
       scala.asJson.nospaces should equal(json)

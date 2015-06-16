@@ -106,8 +106,7 @@ object OpeEnc {
   implicit def opeCodec: CodecJson[OpeEnc] =
     CodecJson(
       (ope: OpeEnc) =>
-      ("ope_int" := ope.underlying) ->:
-        jEmptyObject,
+      ("ope_int" := ope.underlying) ->: jEmptyObject,
       c => (c --\ "ope_int").as[BigInt].map(OpeEnc(_)))
 }
 
