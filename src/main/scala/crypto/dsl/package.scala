@@ -133,6 +133,9 @@ trait DeriveDsl {
   def sorted(xs: List[EncInt]): Crypto[List[OpeEnc]] =
     xs.traverse(toOpe).map(_.sorted)
 
+  def sortBy[A](xs: List[A])(f: A => EncInt): Crypto[List[A]] =
+    xs.traverseU(x => toOpe(f(x)).map((x,_))).map(_.sortBy(_._2)).map(_.map(_._1))
+
   implicit class DslTraverseOps[F[_]:Traverse](self: F[EncInt]) {
     def sumOpt: Crypto[Option[PaillierEnc]] = deriveDsl.sumOpt(self)
     def productOpt: Crypto[Option[ElGamalEnc]] = deriveDsl.productOpt(self)
