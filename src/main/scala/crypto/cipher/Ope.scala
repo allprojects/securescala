@@ -182,15 +182,3 @@ object OpeStr {
     }._2)
   }
 }
-
-object OpeStrApp extends App {
-  val (enc,dec,priv) = OpeStr.create(128, 7)
-  val word = "U"
-  val \/-(numeric) = OpeStr.plainToNumeric(priv)("U")
-  val \/-(plain) = OpeStr.numericToPlain(priv)(numeric)
-  println(numeric)
-  println(plain)
-  val encrypted = enc(word).valueOr(sys.error)
-  println(encrypted)
-  println(dec(encrypted))
-}
