@@ -3,6 +3,7 @@ package crypto
 import crypto.cipher._
 
 import scalaz._
+import scalaz.std.list._
 import scalaz.std.math.bigInt._
 import scalaz.syntax.order._
 
@@ -142,7 +143,8 @@ case class AesString(underlying: Array[Byte]) extends EncString {
     case _ => false
   }
 }
-case class OpeString(underlying: BigInt) extends EncString
+
+case class OpeString(underlying: List[BigInt]) extends EncString
 
 object AesString {
   implicit val aesStringEqual: Equal[AesString] = new Equal[AesString] {
@@ -173,7 +175,7 @@ object OpeString {
       (ope: OpeString) =>
       ("ope_str" := ope.underlying) ->:
         jEmptyObject,
-      c => (c --\ "ope_str").as[BigInt].map(OpeString(_)))
+      c => (c --\ "ope_str").as[List[BigInt]].map(OpeString(_)))
 }
 
 object EncString {

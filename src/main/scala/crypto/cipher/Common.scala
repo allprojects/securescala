@@ -3,6 +3,8 @@ package crypto.cipher
 import crypto._
 
 import scalaz._
+import scalaz.std.list._
+import scalaz.syntax.traverse._
 
 sealed trait Scheme { type Out }
 sealed trait AsymmetricScheme extends Scheme
@@ -16,7 +18,7 @@ case object Comparable extends Scheme { type Out = OpeEnc }
 object Common {
   def decryptStr(keys: PrivKeys): EncString => String = _ match {
     case AesString(x) => new String(keys.aesDec(x).map(_.toChar))
-    case OpeString(x) => keys.opeStrDec(x).
+    case OpeString(xs) => xs.traverseU(keys.opeStrDec).map(_.mkString).
         valueOr(e => sys.error("Failed OPE string decryption: "+e))
   }
   def decrypt(keys: PrivKeys): EncInt => BigInt = _ match {
@@ -47,7 +49,8 @@ object Common {
     x => AesString(keys.priv.aesEnc(x.toCharArray.map(_.toByte)))
 
   def encryptStrOpe(keys: KeyRing): String => OpeString =
-    x => OpeString(keys.priv.opeStrEnc(x).
+    x => OpeString(
+      x.grouped(keys.opeStrPriv.maxLength).toList.traverseU(keys.priv.opeStrEnc).
       valueOr(e => sys.error(s"Can not ope encrypt: $x\n"+e)))
 
   def encrypt(s: Scheme, keys: KeyRing): BigInt => EncInt =
