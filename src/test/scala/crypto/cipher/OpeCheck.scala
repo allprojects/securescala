@@ -12,10 +12,11 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.BooleanOperators
 
 import scalaz._
-import scalaz.syntax.order._
+import scalaz.std.list._
 import scalaz.std.math.bigInt._
 import scalaz.std.string._
-import scalaz.std.list._
+import scalaz.syntax.order._
+import scalaz.syntax.semigroup._
 
 import crypto._
 
@@ -82,6 +83,20 @@ object OpeCheck extends Properties("OPE") with CryptoCheck {
       a ?|? b == ea ?|? eb
     }
   }
+
+  property("allows concatenation (chunked strings)") =
+    forAll(generators.allowedString, generators.allowedString) { (a: String, b: String) =>
+      val enc: String => String \/ List[BigInt] = OpeStr.encryptChunk(strKey)
+      val dec: List[BigInt] => String \/ String = OpeStr.decryptChunk(strKey)
+
+      val \/-(encA) = enc(a)
+      val \/-(encB) = enc(b)
+
+      val encrypted = dec(encA |+| encB)
+      val plain = a |+| b
+      encrypted == \/-(plain)
+    }
+
 }
 
 class OpeSpec extends WordSpec with Matchers {
