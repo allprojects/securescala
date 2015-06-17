@@ -108,6 +108,18 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
       sortThenDecrypt == decryptThenSort
     }
   }
+
+  property("encrypted string concatenation") = {
+    forAll(generators.encryptedString,generators.encryptedString) {
+      (s1: EncString, s2: EncString) =>
+
+      val concatThenDecrypt = Common.decryptStr(keyRing)(interpret(concatStr(s1,s2)))
+      val decryptThenConcat =
+        Common.decryptStr(keyRing)(s1) ++ Common.decryptStr(keyRing)(s1)
+
+      concatThenDecrypt == decryptThenConcat
+    }
+  }
 }
 
 object LocalInterpreterCheck
