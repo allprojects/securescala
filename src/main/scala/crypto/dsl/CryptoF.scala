@@ -11,6 +11,8 @@ case class CompareStr[K](lhs: EncString, rhs: EncString,k: Ordering => K) extend
 case class EqualsStr[K](lhs: EncString, rhs: EncString, k: Boolean => K) extends CryptoString[K]
 case class ToAesStr[K](v: EncString, k: AesString => K) extends CryptoString[K]
 case class ToOpeStr[K](v: EncString, k: OpeString => K) extends CryptoString[K]
+case class ConcatStr[K](s1: EncString, s2: EncString, k: EncString => K)
+    extends CryptoString[K]
 
 sealed trait CryptoNumber[+K] extends CryptoF[K]
 case class Mult[K](lhs: EncInt, rhs: EncInt, k: ElGamalEnc => K) extends CryptoNumber[K]
@@ -36,6 +38,7 @@ object CryptoString {
       case CompareStr(lhs,rhs,k) => CompareStr(lhs,rhs,f compose k)
       case ToAesStr(v,k) => ToAesStr(v,f compose k)
       case ToOpeStr(v,k) => ToOpeStr(v,f compose k)
+      case ConcatStr(s1,s2,k) => ConcatStr(s1,s2,f compose k)
     }
   }
 }
