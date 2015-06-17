@@ -115,7 +115,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
       val concatThenDecrypt = Common.decryptStr(keyRing)(interpret(concatStr(s1,s2)))
       val decryptThenConcat =
-        Common.decryptStr(keyRing)(s1) ++ Common.decryptStr(keyRing)(s1)
+        Common.decryptStr(keyRing)(s1) ++ Common.decryptStr(keyRing)(s2)
 
       concatThenDecrypt == decryptThenConcat
     }
