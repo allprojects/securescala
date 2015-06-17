@@ -36,6 +36,7 @@ package object dsl extends BaseDsl with DeriveDsl {
       def =:=(that: EncString) = equalStr(self,that)
       def ?|?(that: EncString) = compareStr(self,that)
       def ++(that: EncString) = concatStr(self,that)
+      def split(regex: String) = splitStr(self,regex)
     }
   }
 }
@@ -80,6 +81,8 @@ trait BaseDsl {
     FreeAp.lift(CompareStr(lhs,rhs,identity))
   def concatStr(lhs: EncString, rhs: EncString): Crypto[EncString] =
     FreeAp.lift(ConcatStr(lhs,rhs,identity))
+  def splitStr(s: EncString, regex: String): Crypto[List[EncString]] =
+    FreeAp.lift(SplitStr(s,regex,identity))
 
   def encrypt(s: Scheme)(v: Int): Crypto[EncInt] = FreeAp.lift(Encrypt(s,v,identity))
   def toPaillier(v: EncInt): Crypto[PaillierEnc] = FreeAp.lift(ToPaillier(v,identity))
