@@ -162,12 +162,17 @@ object AesString {
 }
 
 object OpeString {
-  implicit val opeStringOrder = new Order[OpeString] {
+  implicit val opeInstance = new Order[OpeString] with Semigroup[OpeString] {
     override def order(a: OpeString, b: OpeString): Ordering = (a,b) match {
       case (OpeString(x),OpeString(y)) => x ?|? y
     }
+
+    override def append(fa: OpeString, fb: => OpeString) = (fa,fb) match {
+      case (OpeString(xs),OpeString(ys)) => OpeString(xs ++ ys)
+    }
   }
-  implicit val opeStringOrderScala = opeStringOrder.toScalaOrdering
+
+  implicit val opeStringOrderScala = opeInstance.toScalaOrdering
 
   implicit def opeCodec: CodecJson[OpeString] =
     CodecJson(
