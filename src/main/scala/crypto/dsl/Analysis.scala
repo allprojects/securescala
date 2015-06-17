@@ -117,21 +117,23 @@ object Analysis {
           case ToGamal(v,k) => Dual(DList((Multiplicative,v)))
           case ToAes(v,k) => Dual(DList((Equality,v)))
           case ToOpe(v,k) => Dual(DList((Comparable,v)))
-          case ToAesStr(_,_) => Dual(DList())
-          case ToOpeStr(_,_) => Dual(DList())
 
           case Mult(lhs,rhs,k) => Dual(DList((Multiplicative,lhs),(Multiplicative,rhs)))
           case Plus(lhs,rhs,k) => Dual(DList(((Additive),lhs),(Additive,rhs)))
           case Equals(lhs,rhs,k) => Dual(DList((Equality,lhs),(Equality,rhs)))
-          case EqualsStr(_,_,k) => Dual(DList())
           case Compare(lhs,rhs,k) => Dual(DList((Comparable,lhs),(Comparable,rhs)))
-          case CompareStr(_,_,k) => Dual(DList())
 
           case Sub(lhs,rhs,k) => Dual(DList())
           case Div(lhs,rhs,k) => Dual(DList())
           case IsEven(v,k) => Dual(DList())
           case IsOdd(v,k) => Dual(DList())
           case Encrypt(s,v,k) => Dual(DList())
+
+          case EqualsStr(_,_,k) => Dual(DList())
+          case CompareStr(_,_,k) => Dual(DList())
+          case ToAesStr(_,_) => Dual(DList())
+          case ToOpeStr(_,_) => Dual(DList())
+          case ConcatStr(_,_,_) => Dual(DList())
         }
       })).toList
   }
@@ -148,8 +150,6 @@ object Analysis {
         case ToGamal(v,k) => takeHead().map(head => FreeAp.lift(ToGamal(head,k)))
         case ToAes(v,k) => takeHead().map(head => FreeAp.lift(ToAes(head,k)))
         case ToOpe(v,k) => takeHead().map(head => FreeAp.lift(ToOpe(head,k)))
-        case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
-        case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case Mult(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Mult(l,r,k)) }
         case Plus(lhs,rhs,k) => take2Head().map { case(l,r) => FreeAp.lift(Plus(l,r,k)) }
         case Equals(lhs,rhs,k) =>
@@ -161,8 +161,12 @@ object Analysis {
         case IsEven(v,k) => cryptoState.state(FreeAp.lift(fa))
         case IsOdd(v,k) => cryptoState.state(FreeAp.lift(fa))
         case Encrypt(s,v,k) => cryptoState.state(FreeAp.lift(fa))
+
         case EqualsStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case CompareStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ConcatStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
       }
     })(ev)
   }
@@ -172,8 +176,6 @@ object Analysis {
     case ToGamal(v,k) => DList((Some(Multiplicative),v))
     case ToAes(v,k) => DList((Some(Equality),v))
     case ToOpe(v,k) => DList((Some(Comparable),v))
-    case ToAesStr(_,_) => DList()
-    case ToOpeStr(_,_) => DList()
     case Mult(lhs,rhs,k) => DList((Some(Multiplicative),lhs),(Some(Multiplicative),rhs))
     case Plus(lhs,rhs,k) => DList((Some(Additive),lhs),(Some(Additive),rhs))
     case Equals(lhs,rhs,k) => DList((Some(Equality),lhs),(Some(Equality),rhs))
@@ -185,6 +187,9 @@ object Analysis {
     case Encrypt(s,v,k) => DList()
     case EqualsStr(_,_,_) => DList()
     case CompareStr(_,_,_) => DList()
+    case ToAesStr(_,_) => DList()
+    case ToOpeStr(_,_) => DList()
+    case ConcatStr(_,_,_) => DList()
   }
 
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],EncInt)] = {
@@ -204,8 +209,6 @@ object Analysis {
         case ToGamal(v,k) => takeHead().map(h => FreeAp.lift(ToGamal(h,k)))
         case ToAes(v,k) => takeHead().map(h => FreeAp.lift(ToAes(h,k)))
         case ToOpe(v,k) => takeHead().map(h => FreeAp.lift(ToOpe(h,k)))
-        case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
-        case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case Mult(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Mult(l,r,k)) }
         case Plus(lhs,rhs,k) => take2Head().map { case (l,r) => FreeAp.lift(Plus(l,r,k)) }
         case Equals(lhs,rhs,k) =>
@@ -217,8 +220,12 @@ object Analysis {
         case IsEven(v,k) => takeHead().map(h => FreeAp.lift(IsEven(h,k)))
         case IsOdd(v,k) => takeHead().map(h => FreeAp.lift(IsOdd(h,k)))
         case Encrypt(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+
         case EqualsStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case CompareStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case ConcatStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
       }
     })(ev)
   }
