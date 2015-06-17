@@ -48,10 +48,9 @@ object Common {
   def encryptStrAes(keys: KeyRing): String => AesString =
     x => AesString(keys.priv.aesEnc(x.toCharArray.map(_.toByte)))
 
-  def encryptStrOpe(keys: KeyRing): String => OpeString =
-    x => OpeString(
-      x.grouped(keys.opeStrPriv.maxLength).toList.traverseU(keys.priv.opeStrEnc).
-      valueOr(e => sys.error(s"Can not ope encrypt: $x\n"+e)))
+  def encryptStrOpe(keys: KeyRing): String => OpeString = x =>
+    OpeString(OpeStr.encryptChunk(keys.opeStrPriv)(x).valueOr(e =>
+      sys.error(s"Can not ope encrypt: $x\n"+e)))
 
   def encrypt(s: Scheme, keys: KeyRing): BigInt => EncInt =
     input => encryptChecked(s,keys)(input).valueOr(sys.error)
