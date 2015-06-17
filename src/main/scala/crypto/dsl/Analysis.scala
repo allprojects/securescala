@@ -134,6 +134,7 @@ object Analysis {
           case ToAesStr(_,_) => Dual(DList())
           case ToOpeStr(_,_) => Dual(DList())
           case ConcatStr(_,_,_) => Dual(DList())
+          case SplitStr(_,_,_) => Dual(DList())
         }
       })).toList
   }
@@ -167,6 +168,7 @@ object Analysis {
         case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case ConcatStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+        case SplitStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
       }
     })(ev)
   }
@@ -190,6 +192,7 @@ object Analysis {
     case ToAesStr(_,_) => DList()
     case ToOpeStr(_,_) => DList()
     case ConcatStr(_,_,_) => DList()
+    case SplitStr(_,_,_) => DList()
   }
 
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],EncInt)] = {
@@ -226,6 +229,7 @@ object Analysis {
         case ToAesStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case ConcatStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+        case SplitStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
       }
     })(ev)
   }
