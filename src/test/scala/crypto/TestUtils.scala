@@ -20,6 +20,15 @@ case class EncryptedGens(keys: KeyRing) {
     case "AES" => Common.encryptStrAes(keys)(s)
   })
 
+  val encryptedStringSplit: Gen[(String,EncString)] = for {
+    scheme <- Gen.oneOf("OPE","AES")
+    s <- allowedString
+    split <- Gen.oneOf(s)
+  } yield (split.toString,(scheme match {
+    case "OPE" => Common.encryptStrOpe(keys)(s)
+    case "AES" => Common.encryptStrAes(keys)(s)
+  }))
+
   val allowedNumber: Gen[BigInt] =
     arbitrary[BigInt] retryUntil (keys.priv.opeIntPriv.domain.contains(_))
 

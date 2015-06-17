@@ -1,23 +1,19 @@
 package crypto.dsl
 
-import scala.language.higherKinds
-
-import org.scalacheck.Gen
-import org.scalacheck.Properties
-import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Prop.forAll
-
-import scala.concurrent._
-import scala.concurrent.duration._
-
 import crypto._
+import crypto.cipher._
 import crypto.dsl.Implicits._
 import crypto.remote._
-import crypto.cipher._
-
-import scalaz.syntax.traverse._
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.forAll
+import org.scalacheck.Properties
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.language.higherKinds
 import scalaz.std.list._
 import scalaz.syntax.std.list._
+import scalaz.syntax.traverse._
 
 trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
   val interpreter: CryptoInterpreter[F]
@@ -109,7 +105,7 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
     }
   }
 
-  property("encrypted string concatenation") = {
+  property("encrypted string concatenation") =
     forAll(generators.encryptedString,generators.encryptedString) {
       (s1: EncString, s2: EncString) =>
 
@@ -119,7 +115,14 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
       concatThenDecrypt == decryptThenConcat
     }
-  }
+
+  property("encrypted string splitting") =
+    forAll(generators.encryptedStringSplit) { case (r,string) =>
+      val encrypted: List[EncString] = interpret(string.split(r))
+      val plain: List[String] = Common.decryptStr(keyRing)(string).split(r).toList
+
+      encrypted.map(Common.decryptStr(keyRing)) == plain
+    }
 }
 
 object LocalInterpreterCheck
