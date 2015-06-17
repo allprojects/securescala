@@ -1,11 +1,11 @@
 package crypto.dsl
 
+import crypto._
+import crypto.cipher._
 import scalaz._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
-
-import crypto._
-import crypto.cipher._
+import scalaz.syntax.semigroup._
 
 case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
   private def doConvert(s: Scheme, in: EncInt) = Common.depConvert(keyRing)(s,in)
@@ -38,6 +38,11 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
       interpret(k(lhs ?|? rhs))
     case -\/(Coproduct(-\/(CompareStr(lhs,rhs,k)))) =>
       interpret(k(comparableStr(lhs) ?|? comparableStr(rhs)))
+
+    case -\/(Coproduct(-\/(ConcatStr(lhs@OpeString(_),rhs@OpeString(_),k)))) =>
+      interpret(k(lhs |+| rhs))
+    case -\/(Coproduct(-\/(ConcatStr(lhs,rhs,k)))) =>
+      interpret(k(comparableStr(lhs) |+| comparableStr(rhs)))
 
     case -\/(Coproduct(-\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)))) =>
       interpret(k(lhs === rhs))

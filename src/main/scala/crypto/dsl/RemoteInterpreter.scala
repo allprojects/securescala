@@ -1,23 +1,19 @@
 package crypto.dsl
 
-import com.typesafe.config.ConfigFactory
-
 import akka.pattern.ask
 import akka.util.Timeout
-
-import scala.util.Try
+import com.typesafe.config.ConfigFactory
+import crypto._
+import crypto.cipher._
+import crypto.remote._
+import scala.concurrent._
 import scala.io.StdIn
-
+import scala.util.Try
 import scalaz._
 import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
-
-import scala.concurrent._
-
-import crypto._
-import crypto.cipher._
-import crypto.remote._
+import scalaz.syntax.semigroup._
 
 case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
   implicit ctxt: ExecutionContext) extends CryptoInterpreter[Future] {
@@ -54,6 +50,14 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
       lhs_ <- service.toOpeStr(lhs)
       rhs_ <- service.toOpeStr(rhs)
       r <- interpret(k(lhs_ ?|? rhs_))
+    } yield r
+
+    case -\/(Coproduct(-\/(ConcatStr(lhs@OpeString(_),rhs@OpeString(_),k)))) =>
+      interpret(k(lhs |+| rhs))
+    case -\/(Coproduct(-\/(ConcatStr(lhs,rhs,k)))) => for {
+      lhs_ <- service.toOpeStr(lhs)
+      rhs_ <- service.toOpeStr(rhs)
+      r <- interpret(k(lhs_ |+| rhs_))
     } yield r
 
     case -\/(Coproduct(-\/(Equals(lhs@AesEnc(_),rhs@AesEnc(_),k)))) =>
