@@ -38,6 +38,16 @@ object ExamplePrograms {
       } yield r
   } yield r
 
+  def collatzConjectureHelperE(zero: EncInt, one: EncInt, two: EncInt, three: EncInt)(
+    n: EncInt): CryptoM[EncInt] = effectfully {
+    if (!(e(n>one)).!) one
+    else if (e(isEven(n)).!) {
+      collatzConjectureHelperE(zero,one,two,three)(e(n / two).!).!
+    } else {
+      collatzConjectureHelperE(zero,one,two,three)(e(e(three * n).! + one).! ).!
+    }
+  }
+
   def fib(n: EncInt): CryptoM[EncInt] = for {
     (one,two) <- encrypt(Additive)(1) tuple encrypt(Additive)(2)
     r <- fibHelper(one,two)(n)
