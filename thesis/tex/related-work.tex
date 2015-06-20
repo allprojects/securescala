@@ -126,20 +126,26 @@
 \label{sec:free-monads}
 
 \cite{Haxl}
-- essentially a free monad, here specialized as a DSL for fetching
-data from different sources, used by facebook in production
+\begin{itemize}
+\item essentially a free monad, here specialized as a DSL for fetching
+  data from different sources, used by facebook in production
+\end{itemize}
 
 \cite{DataTypesALaCarte}
-- at the end presents free monads and offers approach of composing
+\begin{itemize}
+\item at the end presents free monads and offers approach of composing
   languages via the coproduct of functors
-- used to separate applicative and monadic part of the dsl
-- also possible to split dsl into number and strings part
+\item used to separate applicative and monadic part of the dsl
+\item also possible to split dsl into number and strings part
+\end{itemize}
 
 \cite{AsymptoticImproveBind}
-- use CPS to improve asymptotics
-- essentially used to reassociate left-associated binds
-- this however is already done in scalaz, all binds are
+\begin{itemize}
+\item use CPS to improve asymptotics
+\item essentially used to reassociate left-associated binds
+\item this however is already done in scalaz, all binds are
   right-associated anyway
+\end{itemize}
 
 \cite{ReflectionWithoutRemorse}
 
@@ -151,9 +157,13 @@ Applicatives compose \cite{EssenceIterator}
 \subsection{Free Applicative Functors}
 \label{sec:free-appl-funct}
 
-- If we resign from the power of monads and use applicative functors,
-  we get the ability to analyze the program without executing it
 \cite{FreeApplicatives}
+\begin{itemize}
+\item If we resign from the power of monads and use applicative
+  functors, we get the ability to analyze the program without
+  executing it
+\end{itemize}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "../thesis"
