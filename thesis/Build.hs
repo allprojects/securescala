@@ -1,33 +1,23 @@
-import Control.Monad (replicateM_,void)
 import Data.Char (isSpace)
 import Data.List (isPrefixOf)
 import Development.Shake
-import Development.Shake.Command
 import Development.Shake.FilePath
-import Development.Shake.Util
 
-pdflatex :: String
-pdflatex = "pdflatex"
+latexmk :: String
+latexmk = "latexmk"
 
-bibtex :: String
-bibtex = "bibtex"
-
-pdflatexArgs :: String
-pdflatexArgs = "-interaction batchmode -synctex=1 -halt-on-error --shell-escape"
+latexmkArgs :: [String]
+latexmkArgs = ["-r", ".latexmkrc"]
 
 main :: IO ()
-main = shakeArgs shakeOptions $ do
+main = shakeArgs shakeOptions { shakeThreads = 4 } $ do
   want ["thesis.pdf"]
-  "*.tex" %> \out -> return ()
+  "*.tex" %> \_ -> return ()
   "*.pdf" %> \out -> (do
      let inp = out -<.> "tex"
      includes <- map extractInclude . filter isInclude <$> readFileLines inp
-     need includes
-     () <- cmd Shell [pdflatex] pdflatexArgs [inp] "> /dev/null"
-     () <- cmd Shell [bibtex] [dropExtension inp] "> /dev/null"
-     () <- cmd Shell [pdflatex] pdflatexArgs [inp] "> /dev/null"
-     () <- cmd Shell [pdflatex] pdflatexArgs [inp] "> /dev/null"
-     return ())
+     need $ "bibliography.bib" : includes
+     cmd latexmk latexmkArgs [inp])
 
 isInclude :: String -> Bool
 isInclude = ("\\include" `isPrefixOf`) . dropWhile isSpace
