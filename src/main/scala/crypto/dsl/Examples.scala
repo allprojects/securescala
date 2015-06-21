@@ -122,6 +122,10 @@ object ExamplePrograms {
     input.traverse(toOpeStr(_)).map(_.sorted)
   }
 
+  // Split the text into words and perform word count on it
+  def wordCountText(input: EncString): CryptoM[List[(OpeString,Int)]] =
+    input.split("""\s+""") >>= wordCount_
+
   // Just do it as concisely as possible
   def wordCount_(input: IList[EncString]): Crypto[List[(OpeString,Int)]] =
     input.traverse(toOpeStr).map(_.groupBy(x => x).map(_.length).toList)
