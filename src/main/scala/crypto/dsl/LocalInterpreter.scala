@@ -49,7 +49,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
         case SplitStr(s,r,k) =>
           val plain = Common.decryptStr(keyRing)(s)
           val split = plain.split(r).toList.map(Common.encryptStrOpe(keyRing))
-          interpret(k(split))
+          interpret(k(IList.fromList(split)))
 
         case Equals(lhs@AesEnc(_),rhs@AesEnc(_),k) =>
           interpret(k(lhs === rhs))

@@ -11,6 +11,7 @@ import org.scalacheck.Properties
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.higherKinds
+import scalaz._
 import scalaz.std.list._
 import scalaz.syntax.std.list._
 import scalaz.syntax.traverse._
@@ -118,8 +119,9 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
 
   property("encrypted string splitting") =
     forAll(generators.encryptedStringSplit) { case (r,string) =>
-      val encrypted: List[EncString] = interpret(string.split(r))
-      val plain: List[String] = Common.decryptStr(keyRing)(string).split(r).toList
+      val encrypted: IList[EncString] = interpret(string.split(r))
+      val plain: IList[String] =
+        IList.fromList(Common.decryptStr(keyRing)(string).split(r).toList)
 
       encrypted.map(Common.decryptStr(keyRing)) == plain
     }

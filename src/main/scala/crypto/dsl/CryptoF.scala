@@ -13,7 +13,7 @@ case class ToAesStr[K](v: EncString, k: AesString => K) extends CryptoString[K]
 case class ToOpeStr[K](v: EncString, k: OpeString => K) extends CryptoString[K]
 case class ConcatStr[K](s1: EncString, s2: EncString, k: EncString => K)
     extends CryptoString[K]
-case class SplitStr[K](s: EncString, regex: String, k: List[EncString] => K)
+case class SplitStr[K](s: EncString, regex: String, k: IList[EncString] => K)
     extends CryptoString[K]
 
 sealed trait CryptoNumber[+K] extends CryptoF[K]
