@@ -85,9 +85,14 @@ object OpeInt {
 }
 
 object OpeStr {
-  val ALLOWED_CHARS: Seq[Char] =
-    Seq(" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz": _*).
-      sortBy(_.toByte)
+  val ALLOWED_CHARS: Seq[Char] = {
+    val nums = "0123456789"
+    val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    val special = " -.()[],\"\n:;'"
+
+    Seq(nums ++ chars ++ special: _*). sortBy(_.toByte)
+  }
+
   private val CHARSET_BASE: Int = ALLOWED_CHARS.length + 1
   private val BITS_PER_CHAR: Int =
     math.ceil(math.log((CHARSET_BASE+1).toDouble)/math.log(2)).toInt
