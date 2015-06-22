@@ -23,7 +23,7 @@ case class EncryptedGens(keys: KeyRing) {
   val encryptedStringSplit: Gen[(String,EncString)] = for {
     scheme <- Gen.oneOf("OPE","AES")
     s <- allowedString
-    split <- Gen.oneOf(s)
+    split <- Gen.oneOf(s).map("""\Q""" + _ + """\E""")
   } yield (split.toString,(scheme match {
     case "OPE" => Common.encryptStrOpe(keys)(s)
     case "AES" => Common.encryptStrAes(keys)(s)
