@@ -76,11 +76,11 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
           val r = Common.encrypt(Additive, keyRing)(plainLhs - plainRhs)
           interpret(k(r))
 
-        case Div(lhs,rhs,k) =>
-          val plainLhs = Common.decrypt(keyRing.priv)(lhs)
-          val plainRhs = Common.decrypt(keyRing.priv)(rhs)
-          val r = Common.encrypt(Additive, keyRing)(plainLhs / plainRhs)
-          interpret(k(r))
+        case Div(lhs,rhs,k) => interpret(k(EncRatio(lhs,rhs)))
+          // val plainLhs = Common.decrypt(keyRing.priv)(lhs)
+          // val plainRhs = Common.decrypt(keyRing.priv)(rhs)
+          // val r = Common.encrypt(Additive, keyRing)(plainLhs / plainRhs)
+          // interpret(k(r))
 
         case IsEven(v,k) =>
           val plain = Common.decrypt(keyRing.priv)(v)

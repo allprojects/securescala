@@ -21,6 +21,11 @@ object Common {
     case OpeString(xs) => xs.traverseU(keys.opeStrDec).map(_.mkString).
         valueOr(e => sys.error("Failed OPE string decryption: "+e))
   }
+
+  def decryptRatio(keys: PrivKeys): EncRatio => Double = {
+    case EncRatio(n,d) => decrypt(keys)(n).toDouble / decrypt(keys)(d).toDouble
+  }
+
   def decrypt(keys: PrivKeys): EncInt => BigInt = _ match {
     case PaillierEnc(x) => keys.paillier(x)
     case ElGamalEnc(x,y) => keys.elgamal(x,y)

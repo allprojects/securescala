@@ -31,7 +31,7 @@ object ExamplePrograms {
       r <- if (!greaterOne) n.lifted else for {
         cond <- isEven(n)
         r <- if (cond) {
-          n / two >>= collatzConjectureHelper(zero,one,two,three)
+          n /! two >>= collatzConjectureHelper(zero,one,two,three)
         } else {
           three * n >>= (_+one) >>= collatzConjectureHelper(zero,one,two,three)
         }
@@ -42,7 +42,7 @@ object ExamplePrograms {
     n: EncInt): CryptoM[EncInt] = effectfully {
     if (!(e(n>one)).!) one
     else if (e(isEven(n)).!) {
-      collatzConjectureHelperE(zero,one,two,three)(e(n / two).!).!
+      collatzConjectureHelperE(zero,one,two,three)((n /! two).!).!
     } else {
       collatzConjectureHelperE(zero,one,two,three)(e(e(three * n).! + one).! ).!
     }
@@ -209,7 +209,6 @@ object FibExample extends App {
 }
 
 object AverageExample extends App {
-  import ExamplePrograms._
   import Repl._
 
   val randomNumbers = List.fill(5)(Random.nextInt.abs)
@@ -218,12 +217,11 @@ object AverageExample extends App {
   val encNums: List[EncInt] =
     randomNumbers.map(Common.encrypt(Additive, keyRing) compose BigInt.apply)
 
-  val (sum,len) = Repl.runProgram(sumAndLength(zero)(encNums))
-  val resultEnc = Common.decrypt(keyRing.priv)(sum) / Common.decrypt(keyRing.priv)(len)
+  val resultEnc = Repl.runProgram(average(Common.zero(keyRing))(encNums))
 
-  val normalAverage = randomNumbers.map(BigInt(_)).reduce(_+_) / randomNumbers.length
+  val normalAverage = randomNumbers.map(_.toDouble).reduce(_+_) / randomNumbers.length
   println(s"Result for normal    program: ${normalAverage}")
-  println(s"Result for encrypted program: ${resultEnc}")
+  println(s"Result for encrypted program: ${Common.decryptRatio(keyRing)(resultEnc)}")
 }
 
 object WordSorting extends App {

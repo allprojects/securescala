@@ -24,6 +24,7 @@ package object dsl extends BaseDsl with DeriveDsl {
       def +(that: EncInt) = add(self,that)
       def -(that: EncInt) = subtract(self,that)
       def /(that: EncInt) = divide(self,that)
+      def /!(that: EncInt) = integerDivide(self,that)
       def =:=(that: EncInt) = equal(self,that)
       def ?|?(that: EncInt) = compare(self,that)
       def <(that: EncInt) = compare(self,that).map(_ == LT)
@@ -37,6 +38,11 @@ package object dsl extends BaseDsl with DeriveDsl {
       def ?|?(that: EncString) = compareStr(self,that)
       def ++(that: EncString) = concatStr(self,that)
       def split(regex: String) = splitStr(self,regex)
+    }
+
+    implicit class EncRatioOps(self: EncRatio) {
+      def ceil = ceilRatio(self)
+      def floor = floorRatio(self)
     }
   }
 }
@@ -92,9 +98,18 @@ trait BaseDsl {
   def toAesStr(v: EncString): Crypto[AesString] = FreeAp.lift(ToAesStr(v,identity))
   def toOpeStr(v: EncString): Crypto[OpeString] = FreeAp.lift(ToOpeStr(v,identity))
 
+  def ceilRatio(r: EncRatio): Crypto[EncInt] = FreeAp.lift(CeilRatio(r,identity))
+  def floorRatio(r: EncRatio): Crypto[EncInt] = FreeAp.lift(FloorRatio(r,identity))
+
   def subtract(lhs: EncInt, rhs: EncInt): Crypto[EncInt] =
     FreeAp.lift(Sub(lhs,rhs,identity))
-  def divide(lhs: EncInt, rhs: EncInt): Crypto[EncInt] = FreeAp.lift(Div(lhs,rhs,identity))
+  def divide(lhs: EncInt, rhs: EncInt): Crypto[EncRatio] =
+    FreeAp.lift(Div(lhs,rhs,identity))
+
+  def integerDivide(lhs: EncInt, rhs: EncInt): CryptoM[EncInt] = for {
+    ratio <- embed(divide(lhs,rhs))
+    result <- embed(floorRatio(ratio))
+  } yield result
 
   def isEven(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsEven(v,identity))
   def isOdd(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsOdd(v,identity))
@@ -130,7 +145,7 @@ trait DeriveDsl {
   def productOpt[F[_]:Traverse](xs: F[EncInt]): Crypto[Option[ElGamalEnc]] =
     xs.traverse(toGamal).map(_.foldLeft(None: Option[ElGamalEnc])(_ ⊹ Some(_)))
 
-  def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[EncInt]): CryptoM[EncInt] = for {
+  def average[F[_]:Traverse](zero: PaillierEnc)(xs: F[EncInt]): CryptoM[EncRatio] = for {
     sum <- sumA(zero)(xs)
     n <- encrypt(Additive) { xs.length }
     r <- divide(sum,n)

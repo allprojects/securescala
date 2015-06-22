@@ -10,6 +10,8 @@ import scalaz.syntax.order._
 import argonaut._
 import Argonaut._
 
+case class EncRatio(nominator: EncInt, denominator: EncInt)
+
 sealed trait EncInt
 class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends EncInt with Serializable {
   def +(that: PaillierEnc): PaillierEnc = (this,that) match {

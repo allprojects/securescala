@@ -6,6 +6,11 @@ import crypto._
 import crypto.cipher._
 
 sealed trait CryptoF[+K]
+
+sealed trait CryptoRatio[+K] extends CryptoF[K]
+case class CeilRatio[K](r: EncRatio, k: EncInt => K) extends CryptoRatio[K]
+case class FloorRatio[K](r: EncRatio, k: EncInt => K) extends CryptoRatio[K]
+
 sealed trait CryptoString[+K] extends CryptoF[K]
 case class CompareStr[K](lhs: EncString, rhs: EncString,k: Ordering => K) extends CryptoString[K]
 case class EqualsStr[K](lhs: EncString, rhs: EncString, k: Boolean => K) extends CryptoString[K]
@@ -29,9 +34,18 @@ case class ToAes[K](v: EncInt, k: AesEnc => K) extends CryptoNumber[K]
 case class ToOpe[K](v: EncInt, k: OpeEnc => K) extends CryptoNumber[K]
 
 case class Sub[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoNumber[K]
-case class Div[K](lhs: EncInt, rhs: EncInt, k: EncInt => K) extends CryptoNumber[K]
+case class Div[K](lhs: EncInt, rhs: EncInt, k: EncRatio => K) extends CryptoNumber[K]
 case class IsEven[K](v: EncInt, k: Boolean => K) extends CryptoNumber[K]
 case class IsOdd[K](v: EncInt, k: Boolean => K) extends CryptoNumber[K]
+
+object CryptoRatio {
+  implicit val instance: Functor[CryptoRatio] = new Functor[CryptoRatio] {
+    def map[A,B](fa: CryptoRatio[A])(f: A => B): CryptoRatio[B] = fa match {
+      case FloorRatio(ratio,k) => FloorRatio(ratio, f compose k)
+      case CeilRatio(ratio,k) => CeilRatio(ratio, f compose k)
+    }
+  }
+}
 
 object CryptoString {
   implicit val instance: Functor[CryptoString] = new Functor[CryptoString] {
@@ -71,6 +85,7 @@ object CryptoF {
     def map[A,B](fa: CryptoF[A])(f: A => B): CryptoF[B] = fa match {
       case fb: CryptoNumber[A] => Functor[CryptoNumber].map(fb)(f)
       case fb: CryptoString[A] => Functor[CryptoString].map(fb)(f)
+      case fc: CryptoRatio[A] => Functor[CryptoRatio].map(fc)(f)
     }
   }
 }
