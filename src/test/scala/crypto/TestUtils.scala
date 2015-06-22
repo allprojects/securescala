@@ -37,6 +37,11 @@ case class EncryptedGens(keys: KeyRing) {
     i <- allowedNumber
   } yield Common.encrypt(scheme, keys)(i)
 
+  def encryptedRatio: Gen[EncRatio] = for {
+    n <- encryptedNumber
+    d <- encryptedNumber
+  } yield EncRatio(n,d)
+
   def encryptedList(maxSize: Int): Gen[List[EncInt]] = for {
     n <- Gen.choose(0,maxSize)
     xs <- Gen.listOfN(n, encryptedNumber)

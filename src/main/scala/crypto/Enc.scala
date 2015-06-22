@@ -200,3 +200,20 @@ object EncString {
     }
   }
 }
+
+object EncRatio {
+  implicit val encode: EncodeJson[EncRatio] = EncodeJson {
+    case EncRatio(n,d) => (("enc_ratio_num" := n)
+        ->: ("enc_ratio_den" := d) ->: jEmptyObject)
+  }
+
+  def decode(key: PubKeys): DecodeJson[EncRatio] = {
+    implicit val normalDecoder = EncInt.decode(key)
+    DecodeJson { c =>
+      for {
+        n <- (c --\ "enc_ratio_num").as[EncInt]
+        d <- (c --\ "enc_ratio_den").as[EncInt]
+      } yield EncRatio(n,d)
+    }
+  }
+}

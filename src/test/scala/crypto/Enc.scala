@@ -108,6 +108,7 @@ class EncSpec extends WordSpec with Matchers {
 object EncCheck extends Properties("Enc") with CryptoCheck {
   import generators._
   implicit val decoderInt = EncInt.decode(keyRing)
+  implicit val decoderRatio = EncRatio.decode(keyRing)
 
   property("fromJSON . toJSON = id (numbers)") =
     forAll(encryptedNumber) { (input: EncInt) =>
@@ -117,5 +118,10 @@ object EncCheck extends Properties("Enc") with CryptoCheck {
   property("fromJSON . toJSON = id (strings)") =
     forAll(encryptedString) { (input: EncString) =>
       Parse.decodeOption[EncString](input.asJson.nospaces) == Some(input)
+    }
+
+  property("fromJSON . toJSON = id (ratios)") =
+    forAll(encryptedRatio) { (input: EncRatio) =>
+      Parse.decodeOption[EncRatio](input.asJson.nospaces) == Some(input)
     }
 }
