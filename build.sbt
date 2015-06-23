@@ -43,7 +43,7 @@ libraryDependencies += "commons-codec" % "commons-codec" % "1.10"
 
 libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
 
-libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
+libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.2"
 
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.11" % "2.3.10"
 
