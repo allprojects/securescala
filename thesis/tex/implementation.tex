@@ -18,13 +18,14 @@
 \begin{itemize}
 \item Applicative is weaker than Monad
 \item (Even better: Applicatives compose!)
-% \item $\forall f. Monad f \rightarrow Applicative f$
-%   ``Every Monad has an Applicative instance''
-% \item $\not \forall f. Applicative f \rightarrow$
-%   ``Not every Applicative is also a Monad''
+\item $\forall f. Monad f \rightarrow Applicative f$
+  ``Every Monad has an Applicative instance''
+\item $\not \forall f. Applicative f \rightarrow Monad f$
+  ``Not every Applicative is also a Monad''
   \begin{itemize}
   \item ZipList
   \item Validation
+  \item Concurrently/Futures(!)
   \item Our DSL
   \end{itemize}
 \item weaker = better for us
@@ -43,6 +44,7 @@
 \item monads are inherently sequential
 \item \texttt{ma >>= f} \textbf{requires} sequential evaluation of \texttt{ma}
   before \texttt{f} can be applied
+\item unless cheating like scala.concurrent.Future
 \item applicatives are not, can choose order of evaluation of effects
 \end{itemize}
 
