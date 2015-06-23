@@ -139,10 +139,10 @@ object LicensePlateData {
 
   private def genEvtsFor(rng:Random)(plate:Car): Seq[LicensePlateEvent] = {
     def now = TimeStamp(0)
-    def rndDelay = rng.nextInt(6000*1000).toLong + (3000*1000)
+    def rndDelay = rng.nextInt(300*1000).toLong + (120*1000)
 
     val ts: Seq[TimeStamp] =
-      Stream.iterate(now.advance(rng.nextInt(100000*1000).toLong),5)(_.advance(rndDelay))
+      Stream.iterate(now.advance(rng.nextInt(1000*1000).toLong),5)(_.advance(rndDelay))
 
     Seq(
       CarStartEvent(plate,ts(0)),
