@@ -48,7 +48,7 @@ final case class CarGoalEvent(
   @BeanProperty time: TimeStamp
 )
 
-object UDF {
+object LP {
   def difference(tx: TimeStamp, ty: TimeStamp) =
     TimeStamp(tx.unwrap.max(ty.unwrap) - tx.unwrap.min(ty.unwrap))
 }
@@ -74,7 +74,7 @@ INSERT INTO CompleteCarRun
 SELECT s.time as startTime,
        g.time as goalTime,
        s.license as license,
-       UDF.difference(g.time,s.time) as duration
+       LP.difference(g.time,s.time) as duration
 FROM PATTERN [ every s=CarStartEvent
                -> c1=C1Event(license=s.license)
                -> c2=C2Event(license=c1.license)
