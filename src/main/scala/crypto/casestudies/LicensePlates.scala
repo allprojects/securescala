@@ -33,11 +33,11 @@ case object DefaultClock extends Clock {
 // plate together with the timestamp
 //
 // Visually:
-//             1               2                    3
-//   ----------|---------------|--------------------|-
-//  A  -   -   -   -   -   -   -   -   -   -   -   -  B
-//   ----------|---------------|--------------------|-
-//   [   1    ] [     1.5     ] [        2         ]
+//             1         2         3
+//   ----------|---------|---------|-
+//  A  -   -   -   -   - -   -   -   B
+//   ----------|---------|---------|-
+//
 
 sealed trait LicensePlateEvent {
   @BeanProperty def car: Car
@@ -96,20 +96,22 @@ object LicensePlates extends App with EsperImplicits {
 INSERT INTO CompleteCarRun
 SELECT s.time as startTime,
        g.time as goalTime,
-       s.license as license,
+       s.car as car,
        LP.difference(g.time,s.time) as duration
 FROM PATTERN [ every s=CarStartEvent
-               -> c1=C1Event(license=s.license)
-               -> c2=C2Event(license=c1.license)
-               -> c3=C3Event(license=c2.license)
-               -> g=CarGoalEvent(license=c3.license)
+               -> c1=C1Event(car=s.car)
+               -> c2=C2Event(car=c1.car)
+               -> c3=C3Event(car=c2.car)
+               -> g=CarGoalEvent(car=c3.car)
              ]
 """) += { (es: Seq[EventBean]) =>
-    println(f"${es.head.get("license").asInstanceOf[Car].license}%-9s completed in ${es.head.get("duration")}%s")
+    println(f"${es.head.get("car").asInstanceOf[Car].license}%-9s completed in ${es.head.get("duration")}%s")
   }
 
   def sendEvent(e: LicensePlateEvent): Unit = {
-    rt.sendEvent(new CurrentTimeEvent(e.time.unwrap))
+    if (rt.getCurrentTime != e.time.unwrap) { // avoid duplicates
+      rt.sendEvent(new CurrentTimeEvent(e.time.unwrap))
+    }
     rt.sendEvent(e)
   }
 
@@ -120,7 +122,7 @@ object LicensePlateData {
   val FILE_NAME = "license-plates.csv"
 
   def main(args: Array[String]) = {
-    val N = 100000
+    val N = 1000
     println(s"Generating events for ${N} different cars...")
     val rng = new Random
 
