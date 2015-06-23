@@ -8,7 +8,7 @@ import scala.beans.BeanProperty
 import scala.util._
 import scala.io._
 
-final case class LicensePlate(@BeanProperty unwrap: String)
+final case class Car(@BeanProperty license: String)
 final case class TimeStamp(@BeanProperty unwrap: Long) {
   def advance(d: Long): TimeStamp = TimeStamp(unwrap + d)
 }
@@ -39,32 +39,32 @@ case object DefaultClock extends Clock {
 //   [   1    ] [     1.5     ] [        2         ]
 
 sealed trait LicensePlateEvent {
-  @BeanProperty def license: LicensePlate
+  @BeanProperty def car: Car
   @BeanProperty def time: TimeStamp
 }
 
 final case class CarStartEvent(
-  @BeanProperty license: LicensePlate,
+  @BeanProperty car: Car,
   @BeanProperty time: TimeStamp
 ) extends LicensePlateEvent
 
 final case class C1Event(
-  @BeanProperty license: LicensePlate,
+  @BeanProperty car: Car,
   @BeanProperty time: TimeStamp
 ) extends LicensePlateEvent
 
 final case class C2Event(
-  @BeanProperty license: LicensePlate,
+  @BeanProperty car: Car,
   @BeanProperty time: TimeStamp
 ) extends LicensePlateEvent
 
 final case class C3Event(
-  @BeanProperty license: LicensePlate,
+  @BeanProperty car: Car,
   @BeanProperty time: TimeStamp
 ) extends LicensePlateEvent
 
 final case class CarGoalEvent(
-  @BeanProperty license: LicensePlate,
+  @BeanProperty car: Car,
   @BeanProperty time: TimeStamp
 ) extends LicensePlateEvent
 
@@ -102,7 +102,7 @@ FROM PATTERN [ every s=CarStartEvent
                -> g=CarGoalEvent(license=c3.license)
              ]
 """) += { (es: Seq[EventBean]) =>
-    println(f"${es.head.get("license").asInstanceOf[LicensePlate].unwrap}%-9s completed in ${es.head.get("duration")}%s")
+    println(f"${es.head.get("license").asInstanceOf[Car].license}%-9s completed in ${es.head.get("duration")}%s")
   }
 }
 
@@ -112,7 +112,7 @@ object LicensePlateData {
     println(s"Generating events for ${N} different cars...")
     val rng = new Random
 
-    val plates = Gen.listOfN(N, Arbitrary.arbitrary[LicensePlate]).sample.get
+    val plates = Gen.listOfN(N, Arbitrary.arbitrary[Car]).sample.get
     val evts = plates.flatMap(genEvtsFor(rng))
     writeEvents("license-plates.csv")(evts)
 
@@ -121,9 +121,9 @@ object LicensePlateData {
 
   val SEPARATOR = ","
   private def genericEventToLine(e: LicensePlateEvent): String =
-    e.time.unwrap + SEPARATOR + e.license.unwrap
+    e.time.unwrap + SEPARATOR + e.car.license
 
-  private def genEvtsFor(rng:Random)(plate:LicensePlate): Seq[LicensePlateEvent] = {
+  private def genEvtsFor(rng:Random)(plate:Car): Seq[LicensePlateEvent] = {
     def now = TimeStamp(0)
     def rndDelay = rng.nextInt(6000*1000).toLong + (3000*1000)
 
@@ -159,11 +159,11 @@ object LicensePlateData {
   private def parseEvent(s: String): LicensePlateEvent = {
     val Array(t,p,n) = s.split(",")
     n match {
-      case "start" => CarStartEvent(LicensePlate(p),TimeStamp(t.toLong))
-      case "c1" => C1Event(LicensePlate(p),TimeStamp(t.toLong))
-      case "c2" => C2Event(LicensePlate(p),TimeStamp(t.toLong))
-      case "c3" => C3Event(LicensePlate(p),TimeStamp(t.toLong))
-      case "goal" => CarGoalEvent(LicensePlate(p),TimeStamp(t.toLong))
+      case "start" => CarStartEvent(Car(p),TimeStamp(t.toLong))
+      case "c1" => C1Event(Car(p),TimeStamp(t.toLong))
+      case "c2" => C2Event(Car(p),TimeStamp(t.toLong))
+      case "c3" => C3Event(Car(p),TimeStamp(t.toLong))
+      case "goal" => CarGoalEvent(Car(p),TimeStamp(t.toLong))
     }
   }
 
@@ -172,17 +172,17 @@ object LicensePlateData {
   }
 }
 
-object LicensePlate {
+object Car {
   private val MAX_LICENSE_PLATE_LENGTH = 8
 
-  implicit val arbitraryLicensePlate: Arbitrary[LicensePlate] = Arbitrary[LicensePlate] {
+  implicit val arbitraryLicensePlate: Arbitrary[Car] = Arbitrary[Car] {
     for {
       prefix <- Gen.oneOf(prefixes)
       numLetters <- Gen.oneOf(1,2)
       letters <- Gen.listOfN(numLetters, Gen.oneOf('A' to 'Z'))
       remainingSlots = MAX_LICENSE_PLATE_LENGTH - prefix.length - numLetters
       digits <- Gen.listOfN(remainingSlots.min(4), Gen.oneOf(1 to 9))
-    } yield LicensePlate(prefix + "-" + letters.mkString + digits.mkString)
+    } yield Car(prefix + "-" + letters.mkString + digits.mkString)
   }
 
   private val prefixes = Seq(
