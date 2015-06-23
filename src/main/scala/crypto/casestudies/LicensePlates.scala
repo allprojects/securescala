@@ -1,14 +1,24 @@
 package crypto.casestudies
 
 import com.espertech.esper.client._
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Paths, Files}
 import org.scalacheck._
 import scala.beans.BeanProperty
-import scala.concurrent._
-import scala.concurrent.duration._
 import scala.util._
+import scala.io._
 
 final case class LicensePlate(@BeanProperty unwrap: String)
-final case class TimeStamp(@BeanProperty unwrap: Long)
+final case class TimeStamp(@BeanProperty unwrap: Long) {
+  def advance(d: Long): TimeStamp = TimeStamp(unwrap + d)
+}
+
+object TimeStamp {
+  implicit val instance: Ordering[TimeStamp] = new Ordering[TimeStamp] {
+    override def compare(x: TimeStamp, y: TimeStamp): Int =
+      implicitly[Ordering[Long]].compare(x.unwrap,y.unwrap)
+  }
+}
 
 trait Clock { def now: TimeStamp }
 case object DefaultClock extends Clock {
@@ -26,27 +36,37 @@ case object DefaultClock extends Clock {
 //   ----------|---------------|--------------------|-
 //  A  -   -   -   -   -   -   -   -   -   -   -   -  B
 //   ----------|---------------|--------------------|-
-//
+//   [   1    ] [     1.5     ] [        2         ]
+
+sealed trait LicensePlateEvent {
+  @BeanProperty def license: LicensePlate
+  @BeanProperty def time: TimeStamp
+}
+
 final case class CarStartEvent(
   @BeanProperty license: LicensePlate,
   @BeanProperty time: TimeStamp
-)
+) extends LicensePlateEvent
+
 final case class C1Event(
   @BeanProperty license: LicensePlate,
   @BeanProperty time: TimeStamp
-)
+) extends LicensePlateEvent
+
 final case class C2Event(
   @BeanProperty license: LicensePlate,
   @BeanProperty time: TimeStamp
-)
+) extends LicensePlateEvent
+
 final case class C3Event(
   @BeanProperty license: LicensePlate,
   @BeanProperty time: TimeStamp
-)
+) extends LicensePlateEvent
+
 final case class CarGoalEvent(
   @BeanProperty license: LicensePlate,
   @BeanProperty time: TimeStamp
-)
+) extends LicensePlateEvent
 
 object LP {
   def difference(tx: TimeStamp, ty: TimeStamp) =
@@ -84,36 +104,78 @@ FROM PATTERN [ every s=CarStartEvent
 """) += { (es: Seq[EventBean]) =>
     println(f"${es.head.get("license").asInstanceOf[LicensePlate].unwrap}%-9s completed in ${es.head.get("duration")}%s")
   }
+}
 
-  def driveCar(rt: EPRuntime, clock: Clock)(plate: LicensePlate) = {
-    def now = clock.now
-    def delay() = Thread.sleep(rng.nextInt(60).toLong + 60)
+object LicensePlateData {
+  def main(args: Array[String]) = {
+    val N = 100000
+    println(s"Generating events for ${N} different cars...")
+    val rng = new Random
 
-    delay()
-    rt.sendEvent(CarStartEvent(plate,now))
-    delay()
-    rt.sendEvent(C1Event(plate,now))
-    delay()
-    rt.sendEvent(C2Event(plate,now))
-    delay()
-    rt.sendEvent(C3Event(plate,now))
-    delay()
-    rt.sendEvent(CarGoalEvent(plate,now))
+    val plates = Gen.listOfN(N, Arbitrary.arbitrary[LicensePlate]).sample.get
+    val evts = plates.flatMap(genEvtsFor(rng))
+    writeEvents("license-plates.csv")(evts)
+
+    println("done!")
   }
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-  val cars = Future.traverse(0 to 100)  { i =>
-    val plate = LicensePlate.arbitraryLicensePlate.arbitrary.sample.get
-    Future(driveCar(rt, DefaultClock)(plate))
+  val SEPARATOR = ","
+  private def genericEventToLine(e: LicensePlateEvent): String =
+    e.time.unwrap + SEPARATOR + e.license.unwrap
+
+  private def genEvtsFor(rng:Random)(plate:LicensePlate): Seq[LicensePlateEvent] = {
+    def now = TimeStamp(0)
+    def rndDelay = rng.nextInt(6000*1000).toLong + (3000*1000)
+
+    val ts: Seq[TimeStamp] =
+      Stream.iterate(now.advance(rng.nextInt(100000*1000).toLong),5)(_.advance(rndDelay))
+
+    Seq(
+      CarStartEvent(plate,ts(0)),
+      C1Event(plate,ts(1)),
+      C2Event(plate,ts(2)),
+      C3Event(plate,ts(3)),
+      CarGoalEvent(plate,ts(4))
+    )
   }
 
-  Await.result(cars, 30.minutes)
+  private def eventToLine(e: LicensePlateEvent): String = e match {
+    case CarStartEvent(p,t) => genericEventToLine(e) + SEPARATOR + "start"
+    case C1Event(p,t) => genericEventToLine(e) + SEPARATOR + "c1"
+    case C2Event(p,t) => genericEventToLine(e) + SEPARATOR + "c2"
+    case C3Event(p,t) => genericEventToLine(e) + SEPARATOR + "c3"
+    case CarGoalEvent(p,t) => genericEventToLine(e) + SEPARATOR + "goal"
+  }
+
+  def writeEvents(fileName: String)(e: Seq[LicensePlateEvent]): Unit = {
+    val fileContent = e.sortBy(_.time).map(eventToLine).mkString("\n")
+    Files.write(
+      Paths.get(fileName),
+      fileContent.getBytes(StandardCharsets.UTF_8))
+
+    ()
+  }
+
+  private def parseEvent(s: String): LicensePlateEvent = {
+    val Array(t,p,n) = s.split(",")
+    n match {
+      case "start" => CarStartEvent(LicensePlate(p),TimeStamp(t.toLong))
+      case "c1" => C1Event(LicensePlate(p),TimeStamp(t.toLong))
+      case "c2" => C2Event(LicensePlate(p),TimeStamp(t.toLong))
+      case "c3" => C3Event(LicensePlate(p),TimeStamp(t.toLong))
+      case "goal" => CarGoalEvent(LicensePlate(p),TimeStamp(t.toLong))
+    }
+  }
+
+  def readEvents(fileName: String): Seq[LicensePlateEvent] = {
+    Source.fromFile(fileName).getLines.map(parseEvent).toSeq
+  }
 }
 
 object LicensePlate {
   private val MAX_LICENSE_PLATE_LENGTH = 8
 
-  val arbitraryLicensePlate: Arbitrary[LicensePlate] = Arbitrary[LicensePlate] {
+  implicit val arbitraryLicensePlate: Arbitrary[LicensePlate] = Arbitrary[LicensePlate] {
     for {
       prefix <- Gen.oneOf(prefixes)
       numLetters <- Gen.oneOf(1,2)
