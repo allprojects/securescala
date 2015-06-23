@@ -1,12 +1,13 @@
 package crypto.casestudies
 
 import com.espertech.esper.client._
+import com.espertech.esper.client.time._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Paths, Files}
 import org.scalacheck._
 import scala.beans.BeanProperty
-import scala.util._
 import scala.io._
+import scala.util._
 
 final case class Car(@BeanProperty license: String)
 final case class TimeStamp(@BeanProperty unwrap: Long) {
@@ -84,9 +85,11 @@ object LicensePlates extends App with EsperImplicits {
   config.addEventType(classOf[CarGoalEvent])
 
   val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
+  val rt = epService.getEPRuntime
+
+  rt.sendEvent(new TimerControlEvent(TimerControlEvent.ClockType.CLOCK_EXTERNAL))
 
   val rng = new Random
-  val rt = epService.getEPRuntime
   val admin = epService.getEPAdministrator
 
   admin.createEPL("""
@@ -104,12 +107,20 @@ FROM PATTERN [ every s=CarStartEvent
 """) += { (es: Seq[EventBean]) =>
     println(f"${es.head.get("license").asInstanceOf[Car].license}%-9s completed in ${es.head.get("duration")}%s")
   }
+
+  def sendEvent(e: LicensePlateEvent): Unit = {
+    rt.sendEvent(new CurrentTimeEvent(e.time.unwrap))
+    rt.sendEvent(e)
+  }
+
+  LicensePlateData.readEventsDef.foreach(sendEvent)
 }
 
 object LicensePlateData {
+  val FILE_NAME = "license-plates.csv"
+
   def main(args: Array[String]) = {
     val N = 100000
-    val FILE_NAME = "license-plates.csv"
     println(s"Generating events for ${N} different cars...")
     val rng = new Random
 
@@ -171,6 +182,8 @@ object LicensePlateData {
   def readEvents(fileName: String): Seq[LicensePlateEvent] = {
     Source.fromFile(fileName).getLines.map(parseEvent).toSeq
   }
+
+  def readEventsDef: Seq[LicensePlateEvent] = readEvents(FILE_NAME)
 }
 
 object Car {
