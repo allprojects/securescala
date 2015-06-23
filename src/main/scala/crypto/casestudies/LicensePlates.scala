@@ -71,7 +71,7 @@ final case class CarGoalEvent(
 
 object LP {
   def difference(tx: TimeStamp, ty: TimeStamp) =
-    TimeStamp(tx.unwrap.max(ty.unwrap) - tx.unwrap.min(ty.unwrap))
+    f"${(tx.unwrap.max(ty.unwrap) - tx.unwrap.min(ty.unwrap)) / 1000 / 60.0}%.2f"
 }
 
 object LicensePlates extends App with EsperImplicits {
@@ -139,10 +139,10 @@ object LicensePlateData {
 
   private def genEvtsFor(rng:Random)(plate:Car): Seq[LicensePlateEvent] = {
     def now = TimeStamp(0)
-    def rndDelay = rng.nextInt(300*1000).toLong + (120*1000)
+    def rndDelay = rng.nextInt(600*1000).toLong + rng.nextInt(120*1000).toLong
 
     val ts: Seq[TimeStamp] =
-      Stream.iterate(now.advance(rng.nextInt(1000*1000).toLong),5)(_.advance(rndDelay))
+      Stream.iterate(now.advance(rng.nextInt(10000*1000).toLong),5)(_.advance(rndDelay))
 
     Seq(
       CarStartEvent(plate,ts(0)),
