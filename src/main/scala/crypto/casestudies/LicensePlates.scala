@@ -109,12 +109,13 @@ FROM PATTERN [ every s=CarStartEvent
 object LicensePlateData {
   def main(args: Array[String]) = {
     val N = 100000
+    val FILE_NAME = "license-plates.csv"
     println(s"Generating events for ${N} different cars...")
     val rng = new Random
 
     val plates = Gen.listOfN(N, Arbitrary.arbitrary[Car]).sample.get
     val evts = plates.flatMap(genEvtsFor(rng))
-    writeEvents("license-plates.csv")(evts)
+    writeEvents(FILE_NAME)(evts)
 
     println("done!")
   }
