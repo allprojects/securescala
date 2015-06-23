@@ -51,6 +51,9 @@ object Analysis {
 
         case IsEven(_,_) => 0
         case IsOdd(_,_) => 0
+
+        case CeilRatio(_,_) => 2
+        case FloorRatio(_,_) => 2
       }
     })
   }
