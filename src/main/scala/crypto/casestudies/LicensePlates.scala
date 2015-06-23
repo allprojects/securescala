@@ -33,11 +33,11 @@ case object DefaultClock extends Clock {
 // plate together with the timestamp
 //
 // Visually:
-//             1         2         3
-//   ----------|---------|---------|-
-//  A  -   -   -   -   - -   -   -   B
-//   ----------|---------|---------|-
-//
+//  S             1         2         3 G
+//  T   ----------|---------|---------| O
+//  A ->  -   -   -   -   -   -   -   | A
+//  R   ----------|---------|---------| L
+//  T
 
 sealed trait LicensePlateEvent {
   @BeanProperty def car: Car
