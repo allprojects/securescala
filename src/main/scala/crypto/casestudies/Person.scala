@@ -94,12 +94,12 @@ object PersonsCaseStudy extends App {
   PersonUtils.writePersonsFile(k)(PersonUtils.epersons(k))
   val ps = PersonUtils.readPersonsFile(k)
 
-  def averageAge(ps: List[EncPerson]): CryptoM[EncInt] = {
+  def averageAge(ps: List[EncPerson]): CryptoM[EncRatio] = {
     average(Common.zero(k))(ps.map(_.age))
   }
 
-  val avg = Common.decrypt(k)(locally(averageAge(ps)))
-  println(s"Average age (rounded) is: $avg")
+  val avg = Common.decryptRatio(k)(locally(averageAge(ps)))
+  println(s"Average age is: $avg")
 
   def whoEarnsMost(ps: List[EncPerson]): Crypto[EncPerson] = {
     sortBy(ps)(_.income).map(_.last)

@@ -49,6 +49,16 @@ trait InterpreterCheck[F[_]] extends CryptoCheck { this: Properties =>
       decryptThenProd == prodThenDecrypt
     }
 
+  property("average of a list") =
+    forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[EncInt]) =>
+      val avgThenDecrypt =
+        Common.decryptRatio(keyRing)(interpret(average(Common.zero(keyRing))(xs)))
+      val decryptThenAvg =
+        xs.map(Common.decrypt(keyRing)).sum.toDouble / xs.length.toDouble
+
+      avgThenDecrypt == decryptThenAvg
+    }
+
   property("monadic sum == applicative sum") =
     forAll(generators.nonEmptyEncryptedList(10)) { (xs: List[EncInt]) =>
 

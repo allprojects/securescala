@@ -23,7 +23,7 @@ case class EncryptedGens(keys: KeyRing) {
   val encryptedStringSplit: Gen[(String,EncString)] = for {
     scheme <- Gen.oneOf("OPE","AES")
     s <- allowedString
-    split <- Gen.oneOf(s)
+    split <- Gen.oneOf(s).map("""\Q""" + _ + """\E""")
   } yield (split.toString,(scheme match {
     case "OPE" => Common.encryptStrOpe(keys)(s)
     case "AES" => Common.encryptStrAes(keys)(s)
@@ -36,6 +36,11 @@ case class EncryptedGens(keys: KeyRing) {
     scheme <- Gen.oneOf(Additive, Multiplicative, Equality, Comparable)
     i <- allowedNumber
   } yield Common.encrypt(scheme, keys)(i)
+
+  def encryptedRatio: Gen[EncRatio] = for {
+    n <- encryptedNumber
+    d <- encryptedNumber
+  } yield EncRatio(n,d)
 
   def encryptedList(maxSize: Int): Gen[List[EncInt]] = for {
     n <- Gen.choose(0,maxSize)

@@ -51,6 +51,9 @@ object Analysis {
 
         case IsEven(_,_) => 0
         case IsOdd(_,_) => 0
+
+        case CeilRatio(_,_) => 2
+        case FloorRatio(_,_) => 2
       }
     })
   }
@@ -135,6 +138,8 @@ object Analysis {
           case ToOpeStr(_,_) => Dual(DList())
           case ConcatStr(_,_,_) => Dual(DList())
           case SplitStr(_,_,_) => Dual(DList())
+          case CeilRatio(_,_) => Dual(DList())
+          case FloorRatio(_,_) => Dual(DList())
         }
       })).toList
   }
@@ -169,6 +174,9 @@ object Analysis {
         case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case ConcatStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case SplitStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+
+        case CeilRatio(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case FloorRatio(_,_) => cryptoState.state(FreeAp.lift(fa))
       }
     })(ev)
   }
@@ -193,6 +201,8 @@ object Analysis {
     case ToOpeStr(_,_) => DList()
     case ConcatStr(_,_,_) => DList()
     case SplitStr(_,_,_) => DList()
+    case CeilRatio(_,_) => DList()
+    case FloorRatio(_,_) => DList()
   }
 
   def extractNumbers[A](p: Crypto[A]): List[(Option[Scheme],EncInt)] = {
@@ -230,6 +240,9 @@ object Analysis {
         case ToOpeStr(_,_) => cryptoState.state(FreeAp.lift(fa))
         case ConcatStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
         case SplitStr(_,_,_) => cryptoState.state(FreeAp.lift(fa))
+
+        case FloorRatio(_,_) => cryptoState.state(FreeAp.lift(fa))
+        case CeilRatio(_,_) => cryptoState.state(FreeAp.lift(fa))
       }
     })(ev)
   }

@@ -58,6 +58,8 @@ trait CryptoServicePlus extends CryptoService {
   def isEven(enc: EncInt): Future[Boolean]
   def isOdd(enc: EncInt): Future[Boolean]
   def splitStr(enc: EncString, regex: String): Future[List[EncString]]
+  def floorRatio(ratio: EncRatio): Future[EncInt]
+  def ceilRatio(ratio: EncRatio): Future[EncInt]
 }
 
 class CryptoServiceImpl(keyRing: KeyRing)(implicit ec: ExecutionContext)
@@ -123,6 +125,16 @@ class CryptoServiceImpl(keyRing: KeyRing)(implicit ec: ExecutionContext)
   override def splitStr(enc: EncString, regex: String): Future[List[EncString]] = {
     val split: List[String] = Common.decryptStr(keyRing)(enc).split(regex).toList
     Future.traverse(split)(x=>Future(Common.encryptStrOpe(keyRing)(x)))
+  }
+
+  override def floorRatio(ratio: EncRatio): Future[EncInt] = wrap {
+    Common.encrypt(Additive,keyRing)(
+      math.floor(Common.decryptRatio(keyRing)(ratio).toDouble).toLong)
+  }
+
+  override def ceilRatio(ratio: EncRatio): Future[EncInt] = wrap {
+    Common.encrypt(Additive,keyRing)(
+      math.ceil(Common.decryptRatio(keyRing)(ratio).toDouble).toLong)
   }
 }
 

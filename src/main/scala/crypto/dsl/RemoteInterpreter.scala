@@ -123,14 +123,12 @@ case class RemoteInterpreter(service: CryptoServicePlus, pubKeys: PubKeys)(
           }
           res.flatMap(x => interpret(k(x)))
 
-        case Sub(lhs,rhs,k) =>
-          service.subtract(lhs,rhs).flatMap(x => interpret(k(x)))
-        case Div(lhs,rhs,k) =>
-          service.integerDivide(lhs,rhs).flatMap(x => interpret(k(x)))
-        case IsEven(v,k) =>
-          service.isEven(v).flatMap(x => interpret(k(x)))
-        case IsOdd(v,k) =>
-          service.isOdd(v).flatMap(x => interpret(k(x)))
+        case Sub(lhs,rhs,k) => service.subtract(lhs,rhs).flatMap(x => interpret(k(x)))
+        case Div(lhs,rhs,k) => interpret(k(EncRatio(lhs,rhs)))
+        case FloorRatio(r,k) => service.floorRatio(r).flatMap(x => interpret(k(x)))
+        case CeilRatio(r,k) => service.ceilRatio(r).flatMap(x => interpret(k(x)))
+        case IsEven(v,k) => service.isEven(v).flatMap(x => interpret(k(x)))
+        case IsOdd(v,k) => service.isOdd(v).flatMap(x => interpret(k(x)))
       }
 
       case Coproduct(\/-(em@Embed())) => for {

@@ -10,6 +10,8 @@ import scalaz.syntax.order._
 import argonaut._
 import Argonaut._
 
+final case class EncRatio(nominator: EncInt, denominator: EncInt)
+
 sealed trait EncInt
 class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends EncInt with Serializable {
   def +(that: PaillierEnc): PaillierEnc = (this,that) match {
@@ -195,6 +197,23 @@ object EncString {
         case DecodeResult(\/-(x)) => DecodeResult.ok(x)
         case DecodeResult(-\/(err)) => DecodeResult.fail(err._1,err._2)
       }
+    }
+  }
+}
+
+object EncRatio {
+  implicit val encode: EncodeJson[EncRatio] = EncodeJson {
+    case EncRatio(n,d) => (("enc_ratio_num" := n)
+        ->: ("enc_ratio_den" := d) ->: jEmptyObject)
+  }
+
+  def decode(key: PubKeys): DecodeJson[EncRatio] = {
+    implicit val normalDecoder = EncInt.decode(key)
+    DecodeJson { c =>
+      for {
+        n <- (c --\ "enc_ratio_num").as[EncInt]
+        d <- (c --\ "enc_ratio_den").as[EncInt]
+      } yield EncRatio(n,d)
     }
   }
 }
