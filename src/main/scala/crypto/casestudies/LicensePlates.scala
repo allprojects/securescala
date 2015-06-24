@@ -67,7 +67,6 @@ object LicensePlateEvent {
       }
     )
   }
-
 }
 
 final case class CarStartEvent(
@@ -204,20 +203,10 @@ object LicensePlateData {
     ()
   }
 
-  private def parseEvent(s: String): LicensePlateEvent = {
-    val Array(t,p,speed,n) = s.split(",")
-    n match {
-      case "start" => CarStartEvent(p,t.toLong,speed.toInt)
-      case "goal" => CarGoalEvent(p,t.toLong,speed.toInt)
-      case _ => CheckPointEvent(p,t.toLong,speed.toInt,n.toInt)
-    }
-  }
+  def readEvents(fileName: String): List[LicensePlateEvent] =
+    Parse.decodeOption[List[LicensePlateEvent]](Source.fromFile(fileName).mkString).get
 
-  def readEvents(fileName: String): Seq[LicensePlateEvent] = {
-    Source.fromFile(fileName).getLines.map(parseEvent).toSeq
-  }
-
-  def readEventsDef: Seq[LicensePlateEvent] = readEvents(FILE_NAME)
+  def readEventsDef: List[LicensePlateEvent] = readEvents(FILE_NAME)
 }
 
 object Car {
