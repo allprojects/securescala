@@ -216,5 +216,5 @@ object LicensePlate {
     "WOS","WR","WRN","WS","WSF","WST","WSW","WT","WTM","WÜ",
     "WUG","WÜM","WUN","WUR","WW","WZ","WIZ","WZL","X","Y",
     "Z","ZE","ZEL","ZI","ZP","ZR","ZW","ZZ"
-  )
+  ).filterNot(s => "ÄäÖöÜü".toList.exists(s.contains(_)))
 }

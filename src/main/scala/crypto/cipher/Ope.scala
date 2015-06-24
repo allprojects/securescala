@@ -88,10 +88,9 @@ object OpeStr {
   val ALLOWED_CHARS: Seq[Char] = {
     val nums = "0123456789"
     val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-    val umlaute = "ÄäÖöÜü"
     val special = " -.()[],\"\n:;'"
 
-    Seq(nums ++ chars ++ umlaute ++ special: _*). sortBy(_.toByte)
+    Seq(nums ++ chars ++ special: _*). sortBy(_.toByte)
   }
 
   private val CHARSET_BASE: Int = ALLOWED_CHARS.length + 1
