@@ -1,3 +1,15 @@
+// The three checkpoint events correspond to checkpoints on a
+// street from A to B
+// Cars with a license plate move along the street and are captured
+// by cameras, scanning the license plate and triggering an event of the license
+// plate together with the timestamp
+//
+// Visually:
+//  S             1         2         3 G
+//  T   ----------|---------|---------| O
+//  A ->  -   -   -   -   -   -   -   | A
+//  R   ----------|---------|---------| L
+//  T
 package crypto.casestudies
 
 import com.espertech.esper.client._
@@ -25,19 +37,6 @@ trait Clock { def now: TimeStamp }
 case object DefaultClock extends Clock {
   def now = TimeStamp(System.currentTimeMillis)
 }
-
-// The three checkpoint events correspond to checkpoints on a
-// street from A to B
-// Cars with a license plate move along the street and are captured
-// by cameras, scanning the license plate and triggering an event of the license
-// plate together with the timestamp
-//
-// Visually:
-//  S             1         2         3 G
-//  T   ----------|---------|---------| O
-//  A ->  -   -   -   -   -   -   -   | A
-//  R   ----------|---------|---------| L
-//  T
 
 sealed trait LicensePlateEvent {
   @BeanProperty def car: Car
