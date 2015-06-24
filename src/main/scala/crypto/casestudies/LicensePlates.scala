@@ -96,15 +96,20 @@ FROM PATTERN [ every s=CarStartEvent
 
   val N = 1000
   println(s"Generating events for ${N} different cars...")
-  val rng = new Random
-
-  val plates = Gen.listOfN(N, LicensePlate.plateGen).sample.get
-  val evts = plates.flatMap(LicensePlateData.genEvtsFor(rng))
+  val evts = LicensePlateData.genEvents(N)
   println("done!")
+
   evts.foreach(sendEvent)
 }
 
 object LicensePlateData {
+
+  def genEvents(n: Int): List[LicensePlateEvent] = {
+    val rng = new Random
+    val plates = Gen.listOfN(n, LicensePlate.plateGen).sample.get
+    plates.flatMap(LicensePlateData.genEvtsFor(rng))
+  }
+
   def genEvtsFor(rng:Random)(plate:String): Seq[LicensePlateEvent] = {
     def now = 0
     def rndDelay = rng.nextInt(600*1000).toLong + rng.nextInt(120*1000).toLong
