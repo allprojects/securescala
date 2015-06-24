@@ -98,7 +98,7 @@ FROM PATTERN [ every s=CarStartEvent
   println(s"Generating events for ${N} different cars...")
   val rng = new Random
 
-  val plates = Gen.listOfN(N, Car.plateGen).sample.get
+  val plates = Gen.listOfN(N, LicensePlate.plateGen).sample.get
   val evts = plates.flatMap(LicensePlateData.genEvtsFor(rng))
   println("done!")
   evts.foreach(sendEvent)
@@ -130,7 +130,7 @@ object LicensePlateData {
   }
 }
 
-object Car {
+object LicensePlate {
   private val MAX_LICENSE_PLATE_LENGTH = 8
 
   implicit def plateGen: Gen[String] =
