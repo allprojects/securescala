@@ -32,11 +32,6 @@ object TimeStamp {
   }
 }
 
-trait Clock { def now: TimeStamp }
-case object DefaultClock extends Clock {
-  def now = TimeStamp(System.currentTimeMillis)
-}
-
 sealed trait LicensePlateEvent {
   @BeanProperty def car: Car
   @BeanProperty def time: TimeStamp
