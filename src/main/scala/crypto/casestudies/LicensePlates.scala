@@ -60,7 +60,6 @@ object LicensePlates extends App with EsperImplicits {
   val admin = epService.getEPAdministrator
 
   val speeders = admin.createEPL("""
-INSERT INTO Speeders
 SELECT car AS license, number, speed
 FROM CheckPointEvent
 WHERE speed > 133""")
@@ -72,13 +71,11 @@ WHERE speed > 133""")
   }
 
   val completions = admin.createEPL("""
-INSERT INTO CompleteCarRun
 SELECT s.time as startTime,
        g.time as goalTime,
        s.car as car,
-       g.time as goalTime,
-       s.time as startTime,
-       g.speed as maxSpeed
+       g.time - s.time as duration,
+       max(s.speed,c1.speed,c2.speed,c3.speed,g.speed) as maxSpeed
 FROM PATTERN [ every s=CarStartEvent
                -> c1=CheckPointEvent(car=s.car,number=1)
                -> c2=CheckPointEvent(car=c1.car,number=2)
@@ -86,6 +83,13 @@ FROM PATTERN [ every s=CarStartEvent
                -> g=CarGoalEvent(car=c3.car)
              ]
 """)
+
+  completions += { (es: Seq[EventBean]) =>
+    println(
+      f"${es.head.get("car")}%-9s " +
+      f"completed in ${es.head.get("duration").asInstanceOf[Long] / 1000}%ss " +
+      f"with speed ${(es.head.get("maxSpeed"))}%3s")
+  }
 
   def sendEvent(e: LicensePlateEvent): Unit = {
     if (rt.getCurrentTime != e.time) { // avoid duplicates
@@ -97,9 +101,12 @@ FROM PATTERN [ every s=CarStartEvent
   val N = 1000
   println(s"Generating events for ${N} different cars...")
   val evts = LicensePlateData.genEvents(N)
-  println("done!")
+  println(s"done! Generated ${evts.size} events")
 
+  val start = System.currentTimeMillis
   evts.foreach(sendEvent)
+  val end = System.currentTimeMillis
+  println(s"Time for event processing: ${(end - start) / 1000.0}s")
 }
 
 object LicensePlateData {
