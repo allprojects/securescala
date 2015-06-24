@@ -17,42 +17,12 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Paths, Files}
 import org.scalacheck._
 import scala.beans.BeanProperty
-import scala.io._
 import scala.util._
-import argonaut._
-import Argonaut._
 
 sealed trait LicensePlateEvent {
   @BeanProperty def car: String
   @BeanProperty def time: Long
   @BeanProperty def speed: Int
-}
-
-object LicensePlateEvent {
-  implicit val codec: CodecJson[LicensePlateEvent] = {
-
-    def generic(e: LicensePlateEvent) =
-      ("car" := e.car) ->: ("time" := e.time) ->: ("speed" := e.speed) ->: jEmptyObject
-
-    CodecJson(
-      (e: LicensePlateEvent) => e match {
-        case CarStartEvent(_,_,_) => ("type" := "start") ->: generic(e)
-        case CheckPointEvent(_,_,_,n) => ("type" := "cp"+n) ->: generic(e)
-        case CarGoalEvent(_,_,_) => ("type" := "goal") ->: generic(e)
-      } ,
-      c => for {
-        car <- (c --\ "car").as[String]
-        time <- (c --\ "time").as[Long]
-        speed <- (c --\ "speed").as[Int]
-        typ <- (c --\ "type").as[String]
-      } yield typ match {
-        case "start" => CarStartEvent(car,time,speed)
-        case "cp1" | "cp2" | "cp3" =>
-          CheckPointEvent(car,time,speed,typ.last.toString.toInt)
-        case "goal" => CarGoalEvent(car,time,speed)
-      }
-    )
-  }
 }
 
 final case class CarStartEvent(
@@ -87,7 +57,6 @@ object LicensePlates extends App with EsperImplicits {
 
   rt.sendEvent(new TimerControlEvent(TimerControlEvent.ClockType.CLOCK_EXTERNAL))
 
-  val rng = new Random
   val admin = epService.getEPAdministrator
 
   val speeders = admin.createEPL("""
@@ -125,27 +94,18 @@ FROM PATTERN [ every s=CarStartEvent
     rt.sendEvent(e)
   }
 
-  LicensePlateData.readEventsDef.foreach(sendEvent)
+  val N = 1000
+  println(s"Generating events for ${N} different cars...")
+  val rng = new Random
+
+  val plates = Gen.listOfN(N, Car.plateGen).sample.get
+  val evts = plates.flatMap(LicensePlateData.genEvtsFor(rng))
+  println("done!")
+  evts.foreach(sendEvent)
 }
 
 object LicensePlateData {
-  val FILE_NAME = "license-plates.json"
-
-  def main(args: Array[String]) = {
-    val N = 1000
-    println(s"Generating events for ${N} different cars...")
-    val rng = new Random
-
-    val plates = Gen.listOfN(N, Car.plateGen).sample.get
-    val evts = plates.flatMap(genEvtsFor(rng))
-    writeEvents(FILE_NAME)(evts)
-
-    println("done!")
-  }
-
-  val SEPARATOR = ","
-
-  private def genEvtsFor(rng:Random)(plate:String): Seq[LicensePlateEvent] = {
+  def genEvtsFor(rng:Random)(plate:String): Seq[LicensePlateEvent] = {
     def now = 0
     def rndDelay = rng.nextInt(600*1000).toLong + rng.nextInt(120*1000).toLong
 
@@ -168,21 +128,6 @@ object LicensePlateData {
       CarGoalEvent(plate,ts(4),speeds(4))
     )
   }
-
-  def writeEvents(fileName: String)(es: List[LicensePlateEvent]): Unit = {
-    val fileContent: String = es.sortBy(_.time).asJson.nospaces
-
-    Files.write(
-      Paths.get(fileName),
-      fileContent.getBytes(StandardCharsets.UTF_8))
-
-    ()
-  }
-
-  def readEvents(fileName: String): List[LicensePlateEvent] =
-    Parse.decodeOption[List[LicensePlateEvent]](Source.fromFile(fileName).mkString).get
-
-  def readEventsDef: List[LicensePlateEvent] = readEvents(FILE_NAME)
 }
 
 object Car {
