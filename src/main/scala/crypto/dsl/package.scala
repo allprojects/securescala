@@ -31,6 +31,8 @@ package object dsl extends BaseDsl with DeriveDsl {
       def <=(that: EncInt) = compare(self,that).map(x => x == LT || x == EQ)
       def >(that: EncInt) = compare(self,that).map(_ == GT)
       def >=(that: EncInt) = compare(self,that).map(x => x == GT || x == EQ)
+      def min(that: EncInt) = (self < that).map(cond => if (cond) self else that)
+      def max(that: EncInt) = (self > that).map(cond => if (cond) self else that)
     }
 
     implicit class EncStringInfixOps(self: EncString) {
