@@ -19,11 +19,55 @@ import org.scalacheck._
 import scala.beans.BeanProperty
 import scala.io._
 import scala.util._
+import argonaut._
+import Argonaut._
 
 sealed trait LicensePlateEvent {
   @BeanProperty def car: String
   @BeanProperty def time: Long
   @BeanProperty def speed: Int
+}
+
+object LicensePlateEvent {
+  implicit val codec: CodecJson[LicensePlateEvent] = {
+
+    CodecJson(
+      { (e: LicensePlateEvent) => e match {
+        case CarStartEvent(_,_,_) =>
+          ("car" := e.car) ->:
+          ("time" := e.time) ->:
+          ("speed" := e.speed) ->:
+          ("type" := "start") ->:
+          jEmptyObject
+        case CheckPointEvent(_,_,_,n) =>
+          ("car" := e.car) ->:
+          ("time" := e.time) ->:
+          ("speed" := e.speed) ->:
+          ("type" := "cp"+n) ->:
+          jEmptyObject
+        case CarGoalEvent(_,_,_) =>
+          ("car" := e.car) ->:
+          ("time" := e.time) ->:
+          ("speed" := e.speed) ->:
+          ("type" := "goal") ->:
+          jEmptyObject
+      }
+      },
+      c => for {
+        car <- (c --\ "car").as[String]
+        time <- (c --\ "time").as[Long]
+        speed <- (c --\ "speed").as[Int]
+        typ <- (c --\ "type").as[String]
+      } yield {
+        typ match {
+          case "start" => CarStartEvent(car,time,speed)
+          case "cp1" | "cp2" | "cp3" => CheckPointEvent(car,time,speed,typ.last.toInt)
+          case "goal" => CarGoalEvent(car,time,speed)
+        }
+      }
+    )
+  }
+
 }
 
 final case class CarStartEvent(
@@ -110,7 +154,7 @@ FROM PATTERN [ every s=CarStartEvent
 }
 
 object LicensePlateData {
-  val FILE_NAME = "license-plates.csv"
+  val FILE_NAME = "license-plates.json"
 
   def main(args: Array[String]) = {
     val N = 1000
@@ -125,8 +169,6 @@ object LicensePlateData {
   }
 
   val SEPARATOR = ","
-  private def genericEventToLine(e: LicensePlateEvent): String =
-    e.time + SEPARATOR + e.car + SEPARATOR + e.speed
 
   private def genEvtsFor(rng:Random)(plate:String): Seq[LicensePlateEvent] = {
     def now = 0
@@ -152,14 +194,9 @@ object LicensePlateData {
     )
   }
 
-  private def eventToLine(e: LicensePlateEvent): String = e match {
-    case CarStartEvent(p,t,s) => genericEventToLine(e) + SEPARATOR + "start"
-    case CheckPointEvent(p,t,s,n) => genericEventToLine(e) + SEPARATOR + n
-    case CarGoalEvent(p,t,s) => genericEventToLine(e) + SEPARATOR + "goal"
-  }
+  def writeEvents(fileName: String)(es: List[LicensePlateEvent]): Unit = {
+    val fileContent: String = es.sortBy(_.time).asJson.nospaces
 
-  def writeEvents(fileName: String)(e: Seq[LicensePlateEvent]): Unit = {
-    val fileContent = e.sortBy(_.time).map(eventToLine).mkString("\n")
     Files.write(
       Paths.get(fileName),
       fileContent.getBytes(StandardCharsets.UTF_8))
