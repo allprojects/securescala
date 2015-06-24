@@ -20,46 +20,34 @@ import scala.beans.BeanProperty
 import scala.io._
 import scala.util._
 
-final case class Car(@BeanProperty license: String)
-final case class TimeStamp(@BeanProperty unwrap: Long) {
-  def advance(d: Long): TimeStamp = TimeStamp(unwrap + d)
-}
-
-object TimeStamp {
-  implicit val instance: Ordering[TimeStamp] = new Ordering[TimeStamp] {
-    override def compare(x: TimeStamp, y: TimeStamp): Int =
-      implicitly[Ordering[Long]].compare(x.unwrap,y.unwrap)
-  }
-}
-
 sealed trait LicensePlateEvent {
-  @BeanProperty def car: Car
-  @BeanProperty def time: TimeStamp
+  @BeanProperty def car: String
+  @BeanProperty def time: Long
   @BeanProperty def speed: Int
 }
 
 final case class CarStartEvent(
-  @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp,
+  @BeanProperty car: String,
+  @BeanProperty time: Long,
   @BeanProperty speed: Int
 ) extends LicensePlateEvent
 
 final case class CheckPointEvent(
-  @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp,
+  @BeanProperty car: String,
+  @BeanProperty time: Long,
   @BeanProperty speed: Int,
   @BeanProperty number: Int
 ) extends LicensePlateEvent
 
 final case class CarGoalEvent(
-  @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp,
+  @BeanProperty car: String,
+  @BeanProperty time: Long,
   @BeanProperty speed: Int
 ) extends LicensePlateEvent
 
 object LP {
-  def difference(tx: TimeStamp, ty: TimeStamp) =
-    f"${(tx.unwrap.max(ty.unwrap) - tx.unwrap.min(ty.unwrap)) / 1000 / 60.0}%.2f"
+  def difference(tx: Long, ty: Long) =
+    f"${(tx.max(ty) - tx.min(ty)) / 1000 / 60.0}%.2f"
 }
 
 object LicensePlates extends App with EsperImplicits {
@@ -80,7 +68,7 @@ object LicensePlates extends App with EsperImplicits {
 
   val speeders = admin.createEPL("""
 INSERT INTO Speeders
-SELECT car.license AS license, number, speed
+SELECT car AS license, number, speed
 FROM CheckPointEvent
 WHERE speed > 133""")
 
@@ -106,14 +94,14 @@ FROM PATTERN [ every s=CarStartEvent
 """)
 
   // completions += { (es: Seq[EventBean]) =>
-  //   println(f"${es.head.get("car").asInstanceOf[Car].license}%-9s " +
+  //   println(f"${es.head.get("car").asInstanceOf[String].license}%-9s " +
   //     f"completed in ${es.head.get("duration")}%ss " +
   //     f"with speed ${es.head.get("maxSpeed")}%3s")
   // }
 
   def sendEvent(e: LicensePlateEvent): Unit = {
-    if (rt.getCurrentTime != e.time.unwrap) { // avoid duplicates
-      rt.sendEvent(new CurrentTimeEvent(e.time.unwrap))
+    if (rt.getCurrentTime != e.time) { // avoid duplicates
+      rt.sendEvent(new CurrentTimeEvent(e.time))
     }
     rt.sendEvent(e)
   }
@@ -129,7 +117,7 @@ object LicensePlateData {
     println(s"Generating events for ${N} different cars...")
     val rng = new Random
 
-    val plates = Gen.listOfN(N, Arbitrary.arbitrary[Car]).sample.get
+    val plates = Gen.listOfN(N, Car.plateGen).sample.get
     val evts = plates.flatMap(genEvtsFor(rng))
     writeEvents(FILE_NAME)(evts)
 
@@ -138,14 +126,14 @@ object LicensePlateData {
 
   val SEPARATOR = ","
   private def genericEventToLine(e: LicensePlateEvent): String =
-    e.time.unwrap + SEPARATOR + e.car.license + SEPARATOR + e.speed
+    e.time + SEPARATOR + e.car + SEPARATOR + e.speed
 
-  private def genEvtsFor(rng:Random)(plate:Car): Seq[LicensePlateEvent] = {
-    def now = TimeStamp(0)
+  private def genEvtsFor(rng:Random)(plate:String): Seq[LicensePlateEvent] = {
+    def now = 0
     def rndDelay = rng.nextInt(600*1000).toLong + rng.nextInt(120*1000).toLong
 
-    val ts: Seq[TimeStamp] =
-      Stream.iterate(now.advance(rng.nextInt(10000*1000).toLong),5)(_.advance(rndDelay))
+    val ts: Seq[Long] =
+      Stream.iterate(now + (rng.nextInt(10000*1000).toLong),5)(_ + rndDelay)
 
     val speeds: Seq[Int] = List.fill(5)(
       100 +
@@ -182,9 +170,9 @@ object LicensePlateData {
   private def parseEvent(s: String): LicensePlateEvent = {
     val Array(t,p,speed,n) = s.split(",")
     n match {
-      case "start" => CarStartEvent(Car(p),TimeStamp(t.toLong),speed.toInt)
-      case "goal" => CarGoalEvent(Car(p),TimeStamp(t.toLong),speed.toInt)
-      case _ => CheckPointEvent(Car(p),TimeStamp(t.toLong),speed.toInt,n.toInt)
+      case "start" => CarStartEvent(p,t.toLong,speed.toInt)
+      case "goal" => CarGoalEvent(p,t.toLong,speed.toInt)
+      case _ => CheckPointEvent(p,t.toLong,speed.toInt,n.toInt)
     }
   }
 
@@ -198,15 +186,14 @@ object LicensePlateData {
 object Car {
   private val MAX_LICENSE_PLATE_LENGTH = 8
 
-  implicit val arbitraryLicensePlate: Arbitrary[Car] = Arbitrary[Car] {
+  implicit def plateGen: Gen[String] =
     for {
       prefix <- Gen.oneOf(prefixes)
       numLetters <- Gen.oneOf(1,2)
       letters <- Gen.listOfN(numLetters, Gen.oneOf('A' to 'Z'))
       remainingSlots = MAX_LICENSE_PLATE_LENGTH - prefix.length - numLetters
       digits <- Gen.listOfN(remainingSlots.min(4), Gen.oneOf(1 to 9))
-    } yield Car(prefix + "-" + letters.mkString + digits.mkString)
-  }
+    } yield (prefix + "-" + letters.mkString + digits.mkString)
 
   private val prefixes = Seq(
     "A","AA","AB","ABG","ABI","AC","AE","AH","AIB","AIC",
