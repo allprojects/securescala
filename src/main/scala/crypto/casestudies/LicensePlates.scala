@@ -61,7 +61,8 @@ object LicensePlateEvent {
       } yield {
         typ match {
           case "start" => CarStartEvent(car,time,speed)
-          case "cp1" | "cp2" | "cp3" => CheckPointEvent(car,time,speed,typ.last.toInt)
+          case "cp1" | "cp2" | "cp3" =>
+            CheckPointEvent(car,time,speed,typ.last.toString.toInt)
           case "goal" => CarGoalEvent(car,time,speed)
         }
       }
