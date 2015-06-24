@@ -1,8 +1,7 @@
 // The three checkpoint events correspond to checkpoints on a
 // street from A to B
 // Cars with a license plate move along the street and are captured
-// by cameras, scanning the license plate and triggering an event of the license
-// plate together with the timestamp
+// by cameras, scanning the license plate and triggering an event
 //
 // Visually:
 //  S             1         2         3 G
