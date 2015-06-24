@@ -35,24 +35,21 @@ object LicensePlateEvent {
       ("car" := e.car) ->: ("time" := e.time) ->: ("speed" := e.speed) ->: jEmptyObject
 
     CodecJson(
-      { (e: LicensePlateEvent) => e match {
+      (e: LicensePlateEvent) => e match {
         case CarStartEvent(_,_,_) => ("type" := "start") ->: generic(e)
         case CheckPointEvent(_,_,_,n) => ("type" := "cp"+n) ->: generic(e)
         case CarGoalEvent(_,_,_) => ("type" := "goal") ->: generic(e)
-      }
-      },
+      } ,
       c => for {
         car <- (c --\ "car").as[String]
         time <- (c --\ "time").as[Long]
         speed <- (c --\ "speed").as[Int]
         typ <- (c --\ "type").as[String]
-      } yield {
-        typ match {
-          case "start" => CarStartEvent(car,time,speed)
-          case "cp1" | "cp2" | "cp3" =>
-            CheckPointEvent(car,time,speed,typ.last.toString.toInt)
-          case "goal" => CarGoalEvent(car,time,speed)
-        }
+      } yield typ match {
+        case "start" => CarStartEvent(car,time,speed)
+        case "cp1" | "cp2" | "cp3" =>
+          CheckPointEvent(car,time,speed,typ.last.toString.toInt)
+        case "goal" => CarGoalEvent(car,time,speed)
       }
     )
   }
