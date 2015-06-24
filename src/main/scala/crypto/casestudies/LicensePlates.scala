@@ -31,26 +31,14 @@ sealed trait LicensePlateEvent {
 object LicensePlateEvent {
   implicit val codec: CodecJson[LicensePlateEvent] = {
 
+    def generic(e: LicensePlateEvent) =
+      ("car" := e.car) ->: ("time" := e.time) ->: ("speed" := e.speed) ->: jEmptyObject
+
     CodecJson(
       { (e: LicensePlateEvent) => e match {
-        case CarStartEvent(_,_,_) =>
-          ("car" := e.car) ->:
-          ("time" := e.time) ->:
-          ("speed" := e.speed) ->:
-          ("type" := "start") ->:
-          jEmptyObject
-        case CheckPointEvent(_,_,_,n) =>
-          ("car" := e.car) ->:
-          ("time" := e.time) ->:
-          ("speed" := e.speed) ->:
-          ("type" := "cp"+n) ->:
-          jEmptyObject
-        case CarGoalEvent(_,_,_) =>
-          ("car" := e.car) ->:
-          ("time" := e.time) ->:
-          ("speed" := e.speed) ->:
-          ("type" := "goal") ->:
-          jEmptyObject
+        case CarStartEvent(_,_,_) => ("type" := "start") ->: generic(e)
+        case CheckPointEvent(_,_,_,n) => ("type" := "cp"+n) ->: generic(e)
+        case CarGoalEvent(_,_,_) => ("type" := "goal") ->: generic(e)
       }
       },
       c => for {
