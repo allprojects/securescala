@@ -42,3 +42,15 @@
 /presentation/preview.pyg
 /presentation/preview.tex
 /thesis/.shake/
+/ghci-debugger.json
+/ghci-debugger-wordcount.json
+/analysis-bench/
+/delayed-bench/
+/factfib-bench/
+/interp-bench/
+/2015-05-26.zip
+/2015-05-27-delay.zip
+/persons.json
+/scheme-bench/
+/license-plates.csv
+/license-plates.json
