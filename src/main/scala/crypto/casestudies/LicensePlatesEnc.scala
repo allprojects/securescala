@@ -70,7 +70,7 @@ FROM CheckPointEventEnc
 WHERE Interp.isTooFast(speed)""")
 
   speeders += { es =>
-    println(
+    println("*FLASH*: " +
       f"${Interp.decryptStr(es.head.get("license").asInstanceOf[EncString])}%-9s " +
       s"(${Interp.decrypt(es.head.get("speed").asInstanceOf[EncInt])}km/h) " +
       s"at checkpoint ${es.head.get("number")}")
@@ -113,7 +113,7 @@ FROM PATTERN [ every s=CarStartEventEnc
   val start = System.currentTimeMillis
   evts.foreach(sendEvent)
   val end = System.currentTimeMillis
-  println(s"$Time for event processing: {(end - start) / 1000.0}s")
+  println(s"Time for event processing: ${(end - start) / 1000.0}s")
 }
 
 object Interp {

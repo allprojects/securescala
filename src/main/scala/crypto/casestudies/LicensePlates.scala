@@ -112,10 +112,10 @@ object LicensePlateData {
 
   def genEvtsFor(rng:Random)(plate:String): Seq[LicensePlateEvent] = {
     def now = 0
-    def rndDelay = rng.nextInt(600*1000).toLong + rng.nextInt(120*1000).toLong
+    def rndDelay = rng.nextInt(6*1000).toLong + rng.nextInt(12*1000).toLong
 
     val ts: Seq[Long] =
-      Stream.iterate(now + (rng.nextInt(10000*1000).toLong),5)(_ + rndDelay)
+      Stream.iterate(now + (rng.nextInt(10*1000).toLong),5)(_ + rndDelay)
 
     val speeds: Seq[Int] = List.fill(5)(
       100 +
