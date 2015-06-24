@@ -35,31 +35,26 @@ object TimeStamp {
 sealed trait LicensePlateEvent {
   @BeanProperty def car: Car
   @BeanProperty def time: TimeStamp
+  @BeanProperty def speed: Int
 }
 
 final case class CarStartEvent(
   @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp
+  @BeanProperty time: TimeStamp,
+  @BeanProperty speed: Int
 ) extends LicensePlateEvent
 
-final case class C1Event(
+final case class CheckPointEvent(
   @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp
-) extends LicensePlateEvent
-
-final case class C2Event(
-  @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp
-) extends LicensePlateEvent
-
-final case class C3Event(
-  @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp
+  @BeanProperty time: TimeStamp,
+  @BeanProperty speed: Int,
+  @BeanProperty number: Int
 ) extends LicensePlateEvent
 
 final case class CarGoalEvent(
   @BeanProperty car: Car,
-  @BeanProperty time: TimeStamp
+  @BeanProperty time: TimeStamp,
+  @BeanProperty speed: Int
 ) extends LicensePlateEvent
 
 object LP {
@@ -72,9 +67,7 @@ object LicensePlates extends App with EsperImplicits {
   config.addImport("crypto.casestudies.*")
 
   config.addEventType(classOf[CarStartEvent])
-  config.addEventType(classOf[C1Event])
-  config.addEventType(classOf[C2Event])
-  config.addEventType(classOf[C3Event])
+  config.addEventType(classOf[CheckPointEvent])
   config.addEventType(classOf[CarGoalEvent])
 
   val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
@@ -85,21 +78,38 @@ object LicensePlates extends App with EsperImplicits {
   val rng = new Random
   val admin = epService.getEPAdministrator
 
-  admin.createEPL("""
+  val speeders = admin.createEPL("""
+INSERT INTO Speeders
+SELECT car.license AS license, number, speed
+FROM CheckPointEvent
+WHERE speed > 133""")
+
+  speeders += { es =>
+    println(f"*FLASH* ${es.head.get("license")}%-9s " +
+      s"(${es.head.get("speed")}km/h) " +
+      s"at checkpoint ${es.head.get("number")}")
+  }
+
+  val completions = admin.createEPL("""
 INSERT INTO CompleteCarRun
 SELECT s.time as startTime,
        g.time as goalTime,
        s.car as car,
-       LP.difference(g.time,s.time) as duration
+       LP.difference(g.time,s.time) as duration,
+       g.speed as maxSpeed
 FROM PATTERN [ every s=CarStartEvent
-               -> c1=C1Event(car=s.car)
-               -> c2=C2Event(car=c1.car)
-               -> c3=C3Event(car=c2.car)
+               -> c1=CheckPointEvent(car=s.car,number=1)
+               -> c2=CheckPointEvent(car=c1.car,number=2)
+               -> c3=CheckPointEvent(car=c2.car,number=3)
                -> g=CarGoalEvent(car=c3.car)
              ]
-""") += { (es: Seq[EventBean]) =>
-    println(f"${es.head.get("car").asInstanceOf[Car].license}%-9s completed in ${es.head.get("duration")}%s")
-  }
+""")
+
+  // completions += { (es: Seq[EventBean]) =>
+  //   println(f"${es.head.get("car").asInstanceOf[Car].license}%-9s " +
+  //     f"completed in ${es.head.get("duration")}%ss " +
+  //     f"with speed ${es.head.get("maxSpeed")}%3s")
+  // }
 
   def sendEvent(e: LicensePlateEvent): Unit = {
     if (rt.getCurrentTime != e.time.unwrap) { // avoid duplicates
@@ -128,7 +138,7 @@ object LicensePlateData {
 
   val SEPARATOR = ","
   private def genericEventToLine(e: LicensePlateEvent): String =
-    e.time.unwrap + SEPARATOR + e.car.license
+    e.time.unwrap + SEPARATOR + e.car.license + SEPARATOR + e.speed
 
   private def genEvtsFor(rng:Random)(plate:Car): Seq[LicensePlateEvent] = {
     def now = TimeStamp(0)
@@ -137,21 +147,27 @@ object LicensePlateData {
     val ts: Seq[TimeStamp] =
       Stream.iterate(now.advance(rng.nextInt(10000*1000).toLong),5)(_.advance(rndDelay))
 
+    val speeds: Seq[Int] = List.fill(5)(
+      100 +
+        rng.nextInt( 5) +
+        rng.nextInt(10) +
+        rng.nextInt(10) +
+        rng.nextInt(10) +
+        rng.nextInt(10))
+
     Seq(
-      CarStartEvent(plate,ts(0)),
-      C1Event(plate,ts(1)),
-      C2Event(plate,ts(2)),
-      C3Event(plate,ts(3)),
-      CarGoalEvent(plate,ts(4))
+      CarStartEvent(plate,ts(0),speeds(0)),
+      CheckPointEvent(plate,ts(1),speeds(1),1),
+      CheckPointEvent(plate,ts(2),speeds(2),2),
+      CheckPointEvent(plate,ts(3),speeds(3),3),
+      CarGoalEvent(plate,ts(4),speeds(4))
     )
   }
 
   private def eventToLine(e: LicensePlateEvent): String = e match {
-    case CarStartEvent(p,t) => genericEventToLine(e) + SEPARATOR + "start"
-    case C1Event(p,t) => genericEventToLine(e) + SEPARATOR + "c1"
-    case C2Event(p,t) => genericEventToLine(e) + SEPARATOR + "c2"
-    case C3Event(p,t) => genericEventToLine(e) + SEPARATOR + "c3"
-    case CarGoalEvent(p,t) => genericEventToLine(e) + SEPARATOR + "goal"
+    case CarStartEvent(p,t,s) => genericEventToLine(e) + SEPARATOR + "start"
+    case CheckPointEvent(p,t,s,n) => genericEventToLine(e) + SEPARATOR + n
+    case CarGoalEvent(p,t,s) => genericEventToLine(e) + SEPARATOR + "goal"
   }
 
   def writeEvents(fileName: String)(e: Seq[LicensePlateEvent]): Unit = {
@@ -164,13 +180,11 @@ object LicensePlateData {
   }
 
   private def parseEvent(s: String): LicensePlateEvent = {
-    val Array(t,p,n) = s.split(",")
+    val Array(t,p,speed,n) = s.split(",")
     n match {
-      case "start" => CarStartEvent(Car(p),TimeStamp(t.toLong))
-      case "c1" => C1Event(Car(p),TimeStamp(t.toLong))
-      case "c2" => C2Event(Car(p),TimeStamp(t.toLong))
-      case "c3" => C3Event(Car(p),TimeStamp(t.toLong))
-      case "goal" => CarGoalEvent(Car(p),TimeStamp(t.toLong))
+      case "start" => CarStartEvent(Car(p),TimeStamp(t.toLong),speed.toInt)
+      case "goal" => CarGoalEvent(Car(p),TimeStamp(t.toLong),speed.toInt)
+      case _ => CheckPointEvent(Car(p),TimeStamp(t.toLong),speed.toInt,n.toInt)
     }
   }
 
