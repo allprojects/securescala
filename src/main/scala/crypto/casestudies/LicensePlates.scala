@@ -74,11 +74,6 @@ final case class CarGoalEvent(
   @BeanProperty speed: Int
 ) extends LicensePlateEvent
 
-object LP {
-  def difference(tx: Long, ty: Long) =
-    f"${(tx.max(ty) - tx.min(ty)) / 1000 / 60.0}%.2f"
-}
-
 object LicensePlates extends App with EsperImplicits {
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
@@ -112,7 +107,8 @@ INSERT INTO CompleteCarRun
 SELECT s.time as startTime,
        g.time as goalTime,
        s.car as car,
-       LP.difference(g.time,s.time) as duration,
+       g.time as goalTime,
+       s.time as startTime,
        g.speed as maxSpeed
 FROM PATTERN [ every s=CarStartEvent
                -> c1=CheckPointEvent(car=s.car,number=1)
@@ -121,12 +117,6 @@ FROM PATTERN [ every s=CarStartEvent
                -> g=CarGoalEvent(car=c3.car)
              ]
 """)
-
-  // completions += { (es: Seq[EventBean]) =>
-  //   println(f"${es.head.get("car").asInstanceOf[String].license}%-9s " +
-  //     f"completed in ${es.head.get("duration")}%ss " +
-  //     f"with speed ${es.head.get("maxSpeed")}%3s")
-  // }
 
   def sendEvent(e: LicensePlateEvent): Unit = {
     if (rt.getCurrentTime != e.time) { // avoid duplicates
