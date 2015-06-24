@@ -15,51 +15,16 @@ import com.espertech.esper.client._
 import com.espertech.esper.client.time._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Paths, Files}
-// import org.scalacheck._
 import scala.beans.BeanProperty
-// import scala.io._
-import scala.util._
-import argonaut._
-import Argonaut._
 import crypto._
+import crypto.cipher._
+import crypto.dsl._
+import crypto.dsl.Implicits._
 
 sealed trait LicensePlateEventEnc {
   @BeanProperty def car: EncString
   @BeanProperty def time: Long
   @BeanProperty def speed: EncInt
-}
-
-object LicensePlateEventEnc {
-  implicit val encoder: EncodeJson[LicensePlateEventEnc] = {
-    def generic(e: LicensePlateEventEnc) =
-      ("car" := e.car) ->: ("time" := e.time) ->: ("speed" := e.speed) ->: jEmptyObject
-
-    EncodeJson {
-      (e: LicensePlateEventEnc) => e match {
-        case CarStartEventEnc(_,_,_) => ("type" := "start") ->: generic(e)
-        case CheckPointEventEnc(_,_,_,n) => ("type" := "cp"+n) ->: generic(e)
-        case CarGoalEventEnc(_,_,_) => ("type" := "goal") ->: generic(e)
-      }
-    }
-  }
-
-  def decoder(key: PubKeys): DecodeJson[LicensePlateEventEnc] = {
-    implicit val D = EncInt.decode(key)
-
-    DecodeJson {
-      c => for {
-        car <- (c --\ "car").as[EncString]
-        time <- (c --\ "time").as[Long]
-        speed <- (c --\ "speed").as[EncInt]
-        typ <- (c --\ "type").as[String]
-      } yield typ match {
-        case "start" => CarStartEventEnc(car,time,speed)
-        case "cp1" | "cp2" | "cp3" =>
-          CheckPointEventEnc(car,time,speed,typ.last.toString.toInt)
-        case "goal" => CarGoalEventEnc(car,time,speed)
-      }
-    }
-  }
 }
 
 final case class CarStartEventEnc(
@@ -94,18 +59,18 @@ object LicensePlatesEnc extends App with EsperImplicits {
 
   rt.sendEvent(new TimerControlEvent(TimerControlEvent.ClockType.CLOCK_EXTERNAL))
 
-  val rng = new Random
   val admin = epService.getEPAdministrator
 
   val speeders = admin.createEPL("""
 INSERT INTO Speeders
 SELECT car AS license, number, speed
 FROM CheckPointEventEnc
-WHERE speed > 133""")
+WHERE Interp.isTooFast(speed)""")
 
   speeders += { es =>
-    println(f"*FLASH* ${es.head.get("license")}%-9s " +
-      s"(${es.head.get("speed")}km/h) " +
+    println(
+      f"${Interp.decryptStr(es.head.get("license").asInstanceOf[EncString])}%-9s " +
+      s"(${Interp.decrypt(es.head.get("speed").asInstanceOf[EncInt])}km/h) " +
       s"at checkpoint ${es.head.get("number")}")
   }
 
@@ -132,5 +97,40 @@ FROM PATTERN [ every s=CarStartEventEnc
     rt.sendEvent(e)
   }
 
-  // LicensePlateData.readEventsDef.foreach(sendEvent)
+  val N = 1000
+  val k = Interp.keyRing
+  println(s"Generating events for ${N} different cars...")
+  val evts = LicensePlateDataEnc.genEventsEnc(k)(N)
+  println("done!")
+  println(System.currentTimeMillis)
+  evts.foreach(sendEvent)
+  println(System.currentTimeMillis)
+}
+
+object Interp {
+  val keyRing = KeyRing.create
+  val interpret = LocalInterpreter(keyRing)
+
+  val speedLimit = Common.encrypt(Comparable, keyRing)(133)
+  def isTooFast(s: EncInt): Boolean = interpret(s > speedLimit)
+  val decryptStr = Common.decryptStr(keyRing)
+  val decrypt = Common.decrypt(keyRing)
+}
+
+object LicensePlateDataEnc {
+  def encryptEvent(k: KeyRing)(e: LicensePlateEvent): LicensePlateEventEnc = {
+    val encCar: EncString = Common.encryptStrOpe(k)(e.car)
+    val encSpeed: EncInt = Common.depEncrypt(Comparable,k)(e.speed)
+
+    e match {
+      case CarStartEvent(_,time,_) => CarStartEventEnc(encCar,time,encSpeed)
+      case CheckPointEvent(_,time,_,number) =>
+        CheckPointEventEnc(encCar,time,encSpeed,number)
+      case CarGoalEvent(_,time,_) => CarGoalEventEnc(encCar,time,encSpeed)
+    }
+  }
+
+  def genEventsEnc(k: KeyRing)(n: Int) = {
+    LicensePlateData.genEvents(n).par.map(encryptEvent(k))
+  }
 }
