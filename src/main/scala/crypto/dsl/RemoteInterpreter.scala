@@ -9,7 +9,7 @@ import crypto.remote._
 import scala.concurrent._
 import scala.io.StdIn
 import scala.util.Try
-  import scalaz._
+import scalaz._
 import scalaz.std.scalaFuture._
 import scalaz.syntax.bind._
 import scalaz.syntax.order._
