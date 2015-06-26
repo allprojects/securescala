@@ -3,7 +3,7 @@ package crypto
 import crypto.cipher._
 import argonaut._
 import Argonaut._
-
+import com.cedarsoftware.util.io._
 case class KeyRing(pub: PubKeys, priv: PrivKeys)
 case class PubKeys(paillier: Paillier.PubKey, elgamal: ElGamal.PubKey)
 case class PrivKeys(
@@ -42,6 +42,60 @@ object KeyRing {
     )
     KeyRing(encKeys,decKeys)
   }
+
+  implicit def codec: CodecJson[KeyRing] = CodecJson[KeyRing](
+    (k: KeyRing) => ("pubs" := k.pub) ->: ("privs" := k.priv) ->: jEmptyObject,
+    c => for {
+      pub <- (c --\ "pubs").as[PubKeys]
+      priv <- (c --\ "privs").as[PrivKeys](PrivKeys.decode(pub))
+    } yield KeyRing(pub,priv)
+   )
+}
+
+object PrivKeys {
+  implicit def encode: EncodeJson[PrivKeys] = {
+    EncodeJson((p: PrivKeys) =>
+      ("paillier_priv" := p.paillierPriv) ->:
+        ("elgamal_priv" := p.elgamalPriv) ->:
+        ("aes_priv" := JsonWriter.objectToJson(p.aesPriv)) ->:
+        ("opeInt_priv" := p.opeIntPriv) ->:
+        ("opeStr_priv" := p.opeStrPriv) ->:
+        jEmptyObject)
+  }
+
+  implicit def decode(pub: PubKeys): DecodeJson[PrivKeys] = DecodeJson(c => for {
+    paillierPriv <- (c --\ "paillier_priv").as[Paillier.PrivKey]
+    elgamalPriv <- (c --\ "elgamal_priv").as[ElGamal.PrivKey]
+    aesPriv <-
+      (c --\ "aes_priv").as[String].map(JsonReader.jsonToJava(_).asInstanceOf[Aes.PrivKey])
+    opeIntPriv <- (c --\ "opeInt_priv").as[OpeInt.PrivKey]
+    opeStrPriv <- (c --\ "opeStr_priv").as[OpeStr.PrivKey]
+  } yield {
+    val (_,paillierDec) = Paillier.fromKeys(pub.paillier,paillierPriv)
+    val (_,elgamalDec) = ElGamal.fromKeys(pub.elgamal,elgamalPriv)
+    val (aesEnc,aesDec) = Aes.fromKey(aesPriv)
+    val (opeIntEnc,opeIntDec) = OpeInt.fromKey(opeIntPriv)
+    val (opeStrEnc,opeStrDec) = OpeStr.fromKey(opeStrPriv)
+    PrivKeys(
+      paillierDec,
+      paillierPriv,
+
+      elgamalDec,
+      elgamalPriv,
+
+      aesEnc,
+      aesDec,
+      aesPriv,
+
+      opeIntEnc,
+      opeIntDec,
+      opeIntPriv,
+
+      opeStrEnc,
+      opeStrDec,
+      opeStrPriv
+    )
+  })
 }
 
 object PubKeys {
