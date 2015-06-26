@@ -1,11 +1,10 @@
 package crypto.cipher
 
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import scalaz.syntax.IdOps
 import scalaz.syntax.id._
-
-import javax.crypto.SecretKey
-import javax.crypto.KeyGenerator
-import javax.crypto.Cipher;
 
 object Aes {
   sealed trait KeySize { def bits: Int }
