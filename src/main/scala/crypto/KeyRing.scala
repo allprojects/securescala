@@ -1,9 +1,10 @@
 package crypto
 
-import crypto.cipher._
 import argonaut._
 import Argonaut._
-import com.cedarsoftware.util.io._
+
+import crypto.cipher._
+
 case class KeyRing(pub: PubKeys, priv: PrivKeys)
 case class PubKeys(paillier: Paillier.PubKey, elgamal: ElGamal.PubKey)
 case class PrivKeys(
@@ -57,7 +58,7 @@ object PrivKeys {
     EncodeJson((p: PrivKeys) =>
       ("paillier_priv" := p.paillierPriv) ->:
         ("elgamal_priv" := p.elgamalPriv) ->:
-        ("aes_priv" := JsonWriter.objectToJson(p.aesPriv)) ->:
+        ("aes_priv" := p.aesPriv) ->:
         ("opeInt_priv" := p.opeIntPriv) ->:
         ("opeStr_priv" := p.opeStrPriv) ->:
         jEmptyObject)
@@ -66,8 +67,7 @@ object PrivKeys {
   implicit def decode(pub: PubKeys): DecodeJson[PrivKeys] = DecodeJson(c => for {
     paillierPriv <- (c --\ "paillier_priv").as[Paillier.PrivKey]
     elgamalPriv <- (c --\ "elgamal_priv").as[ElGamal.PrivKey]
-    aesPriv <-
-      (c --\ "aes_priv").as[String].map(JsonReader.jsonToJava(_).asInstanceOf[Aes.PrivKey])
+    aesPriv <- (c --\ "aes_priv").as[Aes.PrivKey]
     opeIntPriv <- (c --\ "opeInt_priv").as[OpeInt.PrivKey]
     opeStrPriv <- (c --\ "opeStr_priv").as[OpeStr.PrivKey]
   } yield {

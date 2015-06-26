@@ -1,11 +1,14 @@
 package crypto
 
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 
 import crypto.cipher._
 
 case class EncryptedGens(keys: KeyRing) {
+  implicit val keyRingGen = Gen.wrap(Gen.const(KeyRing.create))
+
   val allowedChar: Gen[Char] = Gen.oneOf(OpeStr.ALLOWED_CHARS)
 
   val allowedString: Gen[String] =
