@@ -22,7 +22,11 @@ object ElGamal {
     implicit def codec =
       casecodec5(PubKey.apply,PubKey.unapply)("bits","p","g","h","threshold")
   }
+
   case class PrivKey(x: BigInt)
+  object PrivKey {
+    implicit def codec = casecodec1(PrivKey.apply,PrivKey.unapply)("x")
+  }
 
   def create(bits: Int): (Encryptor, Decryptor, PubKey) = {
     val (pub,priv) = Stream.continually(generateKeys(bits)).
