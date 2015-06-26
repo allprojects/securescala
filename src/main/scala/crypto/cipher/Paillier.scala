@@ -30,6 +30,10 @@ object Paillier {
 
   case class PrivKey(lambda: BigInt, mu: BigInt)
 
+  object PrivKey {
+    implicit def codec = casecodec2(PrivKey.apply,PrivKey.unapply)("lambda","mu")
+  }
+
   def create(bits: Int): (Encryptor,Decryptor,PubKey) = {
     val (pub,priv) = Stream.continually(Paillier.generateKeys(bits)).
       take(100).
