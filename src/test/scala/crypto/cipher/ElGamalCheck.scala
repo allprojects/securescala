@@ -10,7 +10,7 @@ import scalaz._
 import crypto._
 
 object ElGamalCheck extends Properties("ElGamal") with CryptoCheck {
-  val (encrypt,decrypt,pub) = ElGamal.create(1024)
+  val (encrypt,decrypt,pub,_) = ElGamal.create(1024)
 
   property("decrypt · encrypt = id (Int)") =
     forAll { (input: Int) =>

@@ -1,8 +1,9 @@
 package crypto.cipher
 
-import scala.util._
+import argonaut._
+import Argonaut._
 import java.security.SecureRandom
-
+import scala.util._
 import scalaz._
 
 object Paillier {
@@ -22,9 +23,18 @@ object Paillier {
     threshold: BigInt
   )
 
+  object PubKey {
+    implicit def codec =
+      casecodec5(PubKey.apply,PubKey.unapply)("bits","n","g","nSquare","threshold")
+  }
+
   case class PrivKey(lambda: BigInt, mu: BigInt)
 
-  def create(bits: Int): (Encryptor,Decryptor,PubKey) = {
+  object PrivKey {
+    implicit def codec = casecodec2(PrivKey.apply,PrivKey.unapply)("lambda","mu")
+  }
+
+  def create(bits: Int): (Encryptor,Decryptor,PubKey,PrivKey) = {
     val (pub,priv) = Stream.continually(Paillier.generateKeys(bits)).
       take(100).
       dropWhile(_.isEmpty).
@@ -32,8 +42,11 @@ object Paillier {
       flatten.
       getOrElse(sys.error("Failed to generate keys."))
 
-    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)), pub)
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)), pub, priv)
   }
+
+  def fromKeys(pub: PubKey, priv: PrivKey): (Encryptor,Decryptor) =
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)))
 
   private def generateKeys(bits: Int): Option[(PubKey,PrivKey)] = {
     val rand = new SecureRandom

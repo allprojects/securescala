@@ -30,7 +30,7 @@ object AesBench extends CustomPerformanceTest with SchemeBench[Array[Byte]] {
   def name = "AES"
   def sizes = Gen.range("sizes")(5000,20000,5000)
 
-  val (aesEncrypt,aesDecrypt) = Aes.create(Aes.B256)
+  val (aesEncrypt,aesDecrypt,_) = Aes.create(Aes.B256)
 
   val encrypt = (x: BigInt) => aesEncrypt(x)
   val decrypt = (x: Array[Byte]) => BigInt(aesDecrypt(x))
@@ -53,7 +53,7 @@ object ElGamalBench
   def name = "ElGamal"
   def sizes = Gen.enumeration("sizes")(10,25,50,75)
 
-  val (elGamalEnc,elGamalDec,_) = ElGamal.create(1024)
+  val (elGamalEnc,elGamalDec,_,_) = ElGamal.create(1024)
 
   val encrypt = (x: BigInt) => elGamalEnc(x).valueOr(sys.error)
   val decrypt = (x: (BigInt,BigInt)) => elGamalDec(x._1,x._2)
@@ -63,7 +63,7 @@ object PaillierBench extends CustomPerformanceTest with SchemeBench[BigInt] {
   def name = "Paillier"
   def sizes = Gen.enumeration("sizes")(1, 5, 10, 15)
 
-  val (paillierEnc, paillierDec, _) = Paillier.create(1024)
+  val (paillierEnc, paillierDec, _, _) = Paillier.create(1024)
 
   val encrypt = (x: BigInt) => paillierEnc(x).valueOr(sys.error)
   val decrypt = (x: BigInt) => paillierDec(x)

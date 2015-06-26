@@ -1,7 +1,9 @@
 package crypto.cipher
 
-import java.security.SecureRandom
+import argonaut._
+import Argonaut._
 
+import java.security.SecureRandom
 import scalaz._
 
 object ElGamal {
@@ -16,17 +18,28 @@ object ElGamal {
   }
 
   case class PubKey(bits: Int, p: BigInt, g: BigInt, h: BigInt, threshold: BigInt)
-  case class PrivKey(x: BigInt)
+  object PubKey {
+    implicit def codec =
+      casecodec5(PubKey.apply,PubKey.unapply)("bits","p","g","h","threshold")
+  }
 
-  def create(bits: Int): (Encryptor, Decryptor, PubKey) = {
+  case class PrivKey(x: BigInt)
+  object PrivKey {
+    implicit def codec = casecodec1(PrivKey.apply,PrivKey.unapply)("x")
+  }
+
+  def create(bits: Int): (Encryptor, Decryptor, PubKey, PrivKey) = {
     val (pub,priv) = Stream.continually(generateKeys(bits)).
       take(10).
       dropWhile(_.isEmpty).
       headOption.
       flatten.
       getOrElse(sys.error("Failed to generate keys."))
-    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)),pub)
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)),pub,priv)
   }
+
+  def fromKeys(pub: PubKey, priv: PrivKey) =
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)))
 
   private def generateKeys(bits: Int): Option[(PubKey,PrivKey)] = {
     val rng = new SecureRandom

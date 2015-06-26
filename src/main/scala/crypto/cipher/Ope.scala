@@ -1,9 +1,11 @@
 package crypto.cipher
 
-import java.security.SecureRandom
-import scala.util.Try
-import scala.collection.immutable.NumericRange
+import argonaut._
+import Argonaut._
 
+import java.security.SecureRandom
+import scala.collection.immutable.NumericRange
+import scala.util.Try
 import scalaz._
 import scalaz.std.list._
 import scalaz.std.stream
@@ -54,9 +56,18 @@ object OpeInt {
     domain: CipherDomain[BigInt]
   )
 
+  object PrivKey {
+    implicit def codec = casecodec5(PrivKey.apply,PrivKey.unapply)(
+      "key","bits","plainBits","cipherBits","domain")
+  }
+
   def create(bits: Int): (Encryptor, Decryptor, PrivKey) = {
     val key = generateKey(bits, numPlainTextBits, numCipherTextBits)
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)), key)
+  }
+
+  def fromKey(key: PrivKey): (Encryptor, Decryptor) = {
+    (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
   }
 
   private def generateKey(bits: Int, plainBits: Int, cipherBits: Int): PrivKey = {
@@ -117,12 +128,19 @@ object OpeStr {
     maxLength: Int
   )
 
+  object PrivKey {
+    implicit def codec = casecodec6(PrivKey.apply,PrivKey.unapply)(
+      "key","bits","plainBits","cipherBits","domain","maxLength")
+  }
+
   def create(bits: Int, maxLength: Int): (Encryptor, Decryptor, PrivKey) = {
     val plainTextBits = maxLength * BITS_PER_CHAR
     val cipherTextBits = plainTextBits + ADDITIONAL_CIPHERTEXT_BITS
     val key = generateKey(bits, plainTextBits, cipherTextBits, maxLength)
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)), key)
   }
+
+  def fromKey(key: PrivKey) = (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
 
   private def generateKey(
     bits: Int, plainBits: Int, cipherBits: Int, maxLength: Int): PrivKey = {
