@@ -1,7 +1,9 @@
 package crypto.cipher
 
-import java.security.SecureRandom
+import argonaut._
+import Argonaut._
 
+import java.security.SecureRandom
 import scalaz._
 
 object ElGamal {
@@ -16,6 +18,10 @@ object ElGamal {
   }
 
   case class PubKey(bits: Int, p: BigInt, g: BigInt, h: BigInt, threshold: BigInt)
+  object PubKey {
+    implicit def codec =
+      casecodec5(PubKey.apply,PubKey.unapply)("bits","p","g","h","threshold")
+  }
   case class PrivKey(x: BigInt)
 
   def create(bits: Int): (Encryptor, Decryptor, PubKey) = {
