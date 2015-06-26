@@ -25,9 +25,9 @@ object Aes {
 
   type PrivKey = SecretKey // alias for java's type
 
-  def create(keySize: KeySize): (Encryptor,Decryptor) = {
+  def create(keySize: KeySize): (Encryptor,Decryptor,PrivKey) = {
     val key = generateKey(keySize)
-    (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
+    (Encryptor(encrypt(key)), Decryptor(decrypt(key)),key)
   }
 
   private def generateKey(keySize: KeySize): PrivKey =

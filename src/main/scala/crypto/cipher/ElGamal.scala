@@ -28,14 +28,14 @@ object ElGamal {
     implicit def codec = casecodec1(PrivKey.apply,PrivKey.unapply)("x")
   }
 
-  def create(bits: Int): (Encryptor, Decryptor, PubKey) = {
+  def create(bits: Int): (Encryptor, Decryptor, PubKey, PrivKey) = {
     val (pub,priv) = Stream.continually(generateKeys(bits)).
       take(10).
       dropWhile(_.isEmpty).
       headOption.
       flatten.
       getOrElse(sys.error("Failed to generate keys."))
-    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)),pub)
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)),pub,priv)
   }
 
   private def generateKeys(bits: Int): Option[(PubKey,PrivKey)] = {

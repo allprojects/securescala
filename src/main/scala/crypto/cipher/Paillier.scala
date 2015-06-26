@@ -34,7 +34,7 @@ object Paillier {
     implicit def codec = casecodec2(PrivKey.apply,PrivKey.unapply)("lambda","mu")
   }
 
-  def create(bits: Int): (Encryptor,Decryptor,PubKey) = {
+  def create(bits: Int): (Encryptor,Decryptor,PubKey,PrivKey) = {
     val (pub,priv) = Stream.continually(Paillier.generateKeys(bits)).
       take(100).
       dropWhile(_.isEmpty).
@@ -42,7 +42,7 @@ object Paillier {
       flatten.
       getOrElse(sys.error("Failed to generate keys."))
 
-    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)), pub)
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)), pub, priv)
   }
 
   private def generateKeys(bits: Int): Option[(PubKey,PrivKey)] = {

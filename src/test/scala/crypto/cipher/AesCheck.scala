@@ -7,7 +7,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.BooleanOperators
 
 object AesCheck extends Properties("AES") {
-  val (encrypt,decrypt) = Aes.create(Aes.B256)
+  val (encrypt,decrypt,_) = Aes.create(Aes.B256)
 
   property("decrypt · encrypt = id (BigInt)") =
     forAll { (input: BigInt) =>

@@ -10,7 +10,7 @@ import scalaz._
 import crypto._
 
 object PaillierCheck extends Properties("Paillier") with CryptoCheck {
-  val (encrypt,decrypt,pub) = Paillier.create(1024)
+  val (encrypt,decrypt,pub,_) = Paillier.create(1024)
 
   property("decrypt · encrypt = id (Int)") =
     forAll { (input: Int) =>
