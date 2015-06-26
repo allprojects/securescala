@@ -1,6 +1,8 @@
 package crypto
 
 import crypto.cipher._
+import argonaut._
+import Argonaut._
 
 case class KeyRing(pub: PubKeys, priv: PrivKeys)
 case class PubKeys(paillier: Paillier.PubKey, elgamal: ElGamal.PubKey)
@@ -35,4 +37,9 @@ object KeyRing {
     )
     KeyRing(encKeys,decKeys)
   }
+}
+
+object PubKeys {
+  implicit def codec: CodecJson[PubKeys] =
+    casecodec2(PubKeys.apply,PubKeys.unapply)("paillier","elgamal")
 }
