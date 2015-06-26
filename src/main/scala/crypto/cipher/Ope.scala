@@ -1,9 +1,11 @@
 package crypto.cipher
 
-import java.security.SecureRandom
-import scala.util.Try
-import scala.collection.immutable.NumericRange
+import argonaut._
+import Argonaut._
 
+import java.security.SecureRandom
+import scala.collection.immutable.NumericRange
+import scala.util.Try
 import scalaz._
 import scalaz.std.list._
 import scalaz.std.stream
@@ -53,6 +55,11 @@ object OpeInt {
     cipherBits: Int,
     domain: CipherDomain[BigInt]
   )
+
+  object PrivKey {
+    implicit def codec = casecodec5(PrivKey.apply,PrivKey.unapply)(
+      "key","bits","plainBits","cipherBits","domain")
+  }
 
   def create(bits: Int): (Encryptor, Decryptor, PrivKey) = {
     val key = generateKey(bits, numPlainTextBits, numCipherTextBits)
@@ -116,6 +123,11 @@ object OpeStr {
     domain: CipherDomain[BigInt],
     maxLength: Int
   )
+
+  object PrivKey {
+    implicit def codec = casecodec6(PrivKey.apply,PrivKey.unapply)(
+      "key","bits","plainBits","cipherBits","domain","maxLength")
+  }
 
   def create(bits: Int, maxLength: Int): (Encryptor, Decryptor, PrivKey) = {
     val plainTextBits = maxLength * BITS_PER_CHAR
