@@ -1,8 +1,9 @@
 package crypto.cipher
 
-import scala.util._
+import argonaut._
+import Argonaut._
 import java.security.SecureRandom
-
+import scala.util._
 import scalaz._
 
 object Paillier {
@@ -21,6 +22,11 @@ object Paillier {
     nSquare: BigInt,
     threshold: BigInt
   )
+
+  object PubKey {
+    implicit def codec =
+      casecodec5(PubKey.apply,PubKey.unapply)("bits","n","g","nSquare","threshold")
+  }
 
   case class PrivKey(lambda: BigInt, mu: BigInt)
 
