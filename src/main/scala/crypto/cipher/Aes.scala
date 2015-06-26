@@ -30,6 +30,8 @@ object Aes {
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)),key)
   }
 
+  def fromKey(key: PrivKey) = (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
+
   private def generateKey(keySize: KeySize): PrivKey =
     (KeyGenerator.getInstance("AES") <| (_.init(keySize.bits))).generateKey
 

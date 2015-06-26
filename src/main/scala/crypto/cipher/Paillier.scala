@@ -45,6 +45,9 @@ object Paillier {
     (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)), pub, priv)
   }
 
+  def fromKeys(pub: PubKey, priv: PrivKey): (Encryptor,Decryptor) =
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)))
+
   private def generateKeys(bits: Int): Option[(PubKey,PrivKey)] = {
     val rand = new SecureRandom
     val p = BigInt(bits/2, 64, rand)

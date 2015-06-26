@@ -66,6 +66,10 @@ object OpeInt {
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)), key)
   }
 
+  def fromKey(key: PrivKey): (Encryptor, Decryptor) = {
+    (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
+  }
+
   private def generateKey(bits: Int, plainBits: Int, cipherBits: Int): PrivKey = {
     val limit = BigInt(2).pow(plainBits) / 2
     val dom = CipherDomain(-limit,limit-1)
@@ -135,6 +139,8 @@ object OpeStr {
     val key = generateKey(bits, plainTextBits, cipherTextBits, maxLength)
     (Encryptor(encrypt(key)), Decryptor(decrypt(key)), key)
   }
+
+  def fromKey(key: PrivKey) = (Encryptor(encrypt(key)), Decryptor(decrypt(key)))
 
   private def generateKey(
     bits: Int, plainBits: Int, cipherBits: Int, maxLength: Int): PrivKey = {

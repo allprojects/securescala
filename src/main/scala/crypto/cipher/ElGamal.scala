@@ -38,6 +38,9 @@ object ElGamal {
     (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)),pub,priv)
   }
 
+  def fromKeys(pub: PubKey, priv: PrivKey) =
+    (Encryptor(encrypt(pub)),Decryptor(decrypt(pub,priv)))
+
   private def generateKeys(bits: Int): Option[(PubKey,PrivKey)] = {
     val rng = new SecureRandom
     val p: BigInt = BigInt.probablePrime(bits, rng)
