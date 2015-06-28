@@ -54,3 +54,6 @@
 /scheme-bench/
 /license-plates.csv
 /license-plates.json
+/license-plate-events-enc.json
+/license-plate-events-enc.keys
+/license-plate-events.json
