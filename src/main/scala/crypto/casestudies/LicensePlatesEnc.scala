@@ -35,10 +35,12 @@ sealed trait LicensePlateEventEnc {
   @BeanProperty def speed: EncInt
 }
 
-object LicensePlateEventEnc_Generate extends App {
+object LicensePlateEventEnc_GenerateKey extends App {
+  import Constants._
+  Files.deleteIfExists((new File(EVENT_FILE)).toPath)
   val keyRing = KeyRing.create
-  Files.write(Paths.get("license-plate-events-enc.keys"),
-    keyRing.asJson.nospaces.getBytes(StandardCharsets.UTF_8))
+  Files.write(Paths.get(KEYRING_FILE),
+    keyRing.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
 }
 
 object LicensePlateEventEnc {
@@ -88,10 +90,14 @@ final case class CarGoalEventEnc(
   @BeanProperty speed: EncInt
 ) extends LicensePlateEventEnc
 
-object LicensePlatesEnc extends App with EsperImplicits {
+private object Constants {
   val NUM_EVENTS = 1000
   val EVENT_FILE = "license-plate-events-enc.json"
+  val KEYRING_FILE = "license-plate-events-enc.keys"
+}
 
+object LicensePlatesEnc extends App with EsperImplicits {
+  import Constants._
 
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
@@ -142,7 +148,7 @@ FROM PATTERN [ every s=CarStartEventEnc
 
   generateEventsIfRequired()
   val keyRing = Parse.decodeOption[KeyRing](
-    Source.fromFile("license-plate-events-enc.keys").mkString).get
+    Source.fromFile(KEYRING_FILE).mkString).get
 
   implicit val decodeInt = EncInt.decode(keyRing)
   val evts = Parse.decodeOption[List[LicensePlateEventEnc]](
@@ -164,12 +170,12 @@ FROM PATTERN [ every s=CarStartEventEnc
     if (args.isEmpty && new File(EVENT_FILE).exists) {
       println("Found event file.")
     } else {
-      if (! (new File("license-plate-events-enc.keys").exists)) {
+      if (! (new File(KEYRING_FILE).exists)) {
         sys.error("Could not find keyfile, did you generate it in advance?")
       }
       val keyRing = Parse.decodeOption[KeyRing](
-        Source.fromFile("license-plate-events-enc.keys").mkString).getOrElse(
-        sys.error(s"Could not parse ${"license-plate-events-enc.keys"}"))
+        Source.fromFile(KEYRING_FILE).mkString).getOrElse(
+        sys.error(s"Could not parse ${KEYRING_FILE}"))
 
       println(s"Generating events for ${NUM_EVENTS} different cars...")
       val evts = LicensePlateDataEnc.genEventsEnc(keyRing)(NUM_EVENTS)
@@ -183,14 +189,15 @@ FROM PATTERN [ every s=CarStartEventEnc
 }
 
 object Interp {
+  import Constants._
   val keyRing = {
-    if (! (new File("license-plate-events-enc.keys").exists)) {
+    if (! (new File(KEYRING_FILE).exists)) {
       sys.error("Could not find keyfile, did you generate it in advance?")
     }
 
     Parse.decodeOption[KeyRing](
-      Source.fromFile("license-plate-events-enc.keys").mkString).getOrElse(
-      sys.error(s"Could not parse ${"license-plate-events-enc.keys"}"))
+      Source.fromFile(KEYRING_FILE).mkString).getOrElse(
+      sys.error(s"Could not parse ${KEYRING_FILE}"))
   }
 
   val interpret = LocalInterpreter(keyRing)
