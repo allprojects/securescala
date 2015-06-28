@@ -1,18 +1,19 @@
 package crypto.remote
 
-import scala.util.Random
-import scala.concurrent._
-import scala.concurrent.duration._
+import argonaut._
+import Argonaut._
 
 import akka.actor._
-import akka.routing._
 import akka.pattern.ask
+import akka.routing._
 import akka.util.Timeout
-
 import com.typesafe.config.ConfigFactory
-
 import crypto._
 import crypto.cipher._
+import java.io.File
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.util.Random
 
 trait CryptoService {
   /** Replies with the public keys of the KeyRing used by this service */
@@ -233,9 +234,30 @@ class DelayedCryptoService(keyRing: KeyRing, d: FiniteDuration)(
 
 object StartCryptoService extends App {
   val (system, service) = CryptoService.start
-  println("CryptoService is up and running.")
+  println("CryptoService is up and running. Press ENTER for shutdown.")
   System.in.read()
   print("Shutting down...")
   system.shutdown()
   println("bye!")
+}
+
+object StartCryptoServiceFrom {
+  def main(args: Array[String]): Unit = {
+    if (args.size != 1 || !(new File(args.head).exists)) {
+      println(s"Could not start crypto service with args: ${args.toList}")
+      println(s"Usage: StartCryptoServiceFrom KEYFILE")
+    }
+
+    val keyRing = Parse.decodeOption[KeyRing](
+      io.Source.fromFile(args.head).mkString).getOrElse(
+      sys.error(s"Could not parse ${args.head}"))
+    println(s"Using keys from ${args.head}")
+
+    val (system, _) = CryptoService.startWith(4242, keyRing, "cryptoService", 5)
+    println("CryptoService is up and running. Press ENTER for shutdown.")
+    System.in.read()
+    print("Shutting down...")
+    system.shutdown()
+    println("bye!")
+  }
 }
