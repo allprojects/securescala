@@ -11,18 +11,50 @@
 //  T
 package crypto.casestudies
 
+import argonaut._
+import Argonaut._
+
 import com.espertech.esper.client._
 import com.espertech.esper.client.time._
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Paths, Files}
 import org.scalacheck._
 import scala.beans.BeanProperty
+import scala.io.Source
 import scala.util._
 
 sealed trait LicensePlateEvent {
   @BeanProperty def car: String
   @BeanProperty def time: Long
   @BeanProperty def speed: Int
+}
+
+object LicensePlateEvent {
+  implicit val codec: CodecJson[LicensePlateEvent] = {
+
+    def generic(e: LicensePlateEvent) =
+      ("car" := e.car) ->: ("time" := e.time) ->: ("speed" := e.speed) ->: jEmptyObject
+
+    CodecJson(
+      (e: LicensePlateEvent) => e match {
+        case CarStartEvent(_,_,_) => ("type" := "start") ->: generic(e)
+        case CheckPointEvent(_,_,_,n) => ("type" := "cp"+n) ->: generic(e)
+        case CarGoalEvent(_,_,_) => ("type" := "goal") ->: generic(e)
+      } ,
+      c => for {
+        car <- (c --\ "car").as[String]
+        time <- (c --\ "time").as[Long]
+        speed <- (c --\ "speed").as[Int]
+        typ <- (c --\ "type").as[String]
+      } yield typ match {
+        case "start" => CarStartEvent(car,time,speed)
+        case "cp1" | "cp2" | "cp3" =>
+          CheckPointEvent(car,time,speed,typ.last.toString.toInt)
+        case "goal" => CarGoalEvent(car,time,speed)
+      }
+    )
+  }
 }
 
 final case class CarStartEvent(
@@ -45,6 +77,9 @@ final case class CarGoalEvent(
 ) extends LicensePlateEvent
 
 object LicensePlates extends App with EsperImplicits {
+  val NUM_EVENTS = 1000
+  val EVENT_FILE = "license-plate-events.json"
+
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
 
@@ -91,6 +126,15 @@ FROM PATTERN [ every s=CarStartEvent
       f"with speed ${(es.head.get("maxSpeed"))}%3s")
   }
 
+  generateEventsIfRequired()
+  val evts = Parse.decodeOption[List[LicensePlateEvent]](
+    Source.fromFile(EVENT_FILE).mkString).get
+
+  val start = System.currentTimeMillis
+  evts.foreach(sendEvent)
+  val end = System.currentTimeMillis
+  println(s"Time for event processing: ${(end - start) / 1000.0}s")
+
   def sendEvent(e: LicensePlateEvent): Unit = {
     if (rt.getCurrentTime != e.time) { // avoid duplicates
       rt.sendEvent(new CurrentTimeEvent(e.time))
@@ -98,15 +142,21 @@ FROM PATTERN [ every s=CarStartEvent
     rt.sendEvent(e)
   }
 
-  val N = 1000
-  println(s"Generating events for ${N} different cars...")
-  val evts = LicensePlateData.genEvents(N)
-  println(s"done! Generated ${evts.size} events")
+  def generateEventsIfRequired(): Unit = {
+    if (new File(EVENT_FILE).exists) {
+      println("Found event file.")
+    } else {
+      println(s"Generating events for ${NUM_EVENTS} different cars...")
 
-  val start = System.currentTimeMillis
-  evts.foreach(sendEvent)
-  val end = System.currentTimeMillis
-  println(s"Time for event processing: ${(end - start) / 1000.0}s")
+      val evts = LicensePlateData.genEvents(NUM_EVENTS)
+
+      Files.write(Paths.get(EVENT_FILE),
+        evts.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
+
+
+      println(s"done! Generated ${evts.size} events")
+    }
+  }
 }
 
 object LicensePlateData {
