@@ -148,7 +148,7 @@ FROM PATTERN [ every s=CarStartEvent
     } else {
       println(s"Generating events for ${NUM_EVENTS} different cars...")
 
-      val evts = LicensePlateData.genEvents(NUM_EVENTS)
+      val evts = LicensePlateData.genEvents(NUM_EVENTS).sortBy(_.time)
 
       Files.write(Paths.get(EVENT_FILE),
         evts.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
