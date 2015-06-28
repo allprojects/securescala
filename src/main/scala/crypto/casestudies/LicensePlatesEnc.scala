@@ -11,15 +11,20 @@
 //  T
 package crypto.casestudies
 
+import argonaut._
+import Argonaut._
+
 import com.espertech.esper.client._
 import com.espertech.esper.client.time._
 import crypto._
 import crypto.cipher._
 import crypto.dsl.Implicits._
 import crypto.dsl._
+import java.io._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Paths, Files}
 import scala.beans.BeanProperty
+import scala.io._
 import scalaz.Ordering._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
@@ -28,6 +33,40 @@ sealed trait LicensePlateEventEnc {
   @BeanProperty def car: EncString
   @BeanProperty def time: Long
   @BeanProperty def speed: EncInt
+}
+
+object LicensePlateEventEnc_Generate extends App {
+  val keyRing = KeyRing.create
+  Files.write(Paths.get("license-plate-events-enc.keys"),
+    keyRing.asJson.nospaces.getBytes(StandardCharsets.UTF_8))
+}
+
+object LicensePlateEventEnc {
+  implicit def codec(
+    implicit encInt: DecodeJson[EncInt]): CodecJson[LicensePlateEventEnc] = {
+
+    def generic(e: LicensePlateEventEnc) =
+      ("car_enc" := e.car) ->: ("time" := e.time) ->: ("speed_enc" := e.speed) ->: jEmptyObject
+
+    CodecJson(
+      (e: LicensePlateEventEnc) => e match {
+        case CarStartEventEnc(_,_,_) => ("type" := "start") ->: generic(e)
+        case CheckPointEventEnc(_,_,_,n) => ("type" := "cp"+n) ->: generic(e)
+        case CarGoalEventEnc(_,_,_) => ("type" := "goal") ->: generic(e)
+      } ,
+      c => for {
+        car <- (c --\ "car_enc").as[EncString]
+        time <- (c --\ "time").as[Long]
+        speed <- (c --\ "speed_enc").as[EncInt]
+        typ <- (c --\ "type").as[String]
+      } yield typ match {
+        case "start" => CarStartEventEnc(car,time,speed)
+        case "cp1" | "cp2" | "cp3" =>
+          CheckPointEventEnc(car,time,speed,typ.last.toString.toInt)
+        case "goal" => CarGoalEventEnc(car,time,speed)
+      }
+    )
+  }
 }
 
 final case class CarStartEventEnc(
@@ -50,6 +89,10 @@ final case class CarGoalEventEnc(
 ) extends LicensePlateEventEnc
 
 object LicensePlatesEnc extends App with EsperImplicits {
+  val NUM_EVENTS = 1000
+  val EVENT_FILE = "license-plate-events-enc.json"
+
+
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
 
@@ -97,6 +140,19 @@ FROM PATTERN [ every s=CarStartEventEnc
       f"with speed ${Interp.decrypt(es.head.get("maxSpeed").asInstanceOf[EncInt])}%3s")
   }
 
+  generateEventsIfRequired()
+  val keyRing = Parse.decodeOption[KeyRing](
+    Source.fromFile("license-plate-events-enc.keys").mkString).get
+
+  implicit val decodeInt = EncInt.decode(keyRing)
+  val evts = Parse.decodeOption[List[LicensePlateEventEnc]](
+    Source.fromFile(EVENT_FILE).mkString).get
+
+  val start = System.currentTimeMillis
+  evts.foreach(sendEvent)
+  val end = System.currentTimeMillis
+  println(s"Time for event processing: ${(end - start) / 1000.0}s")
+
   def sendEvent(e: LicensePlateEventEnc): Unit = {
     if (rt.getCurrentTime != e.time) { // avoid duplicates
       rt.sendEvent(new CurrentTimeEvent(e.time))
@@ -104,20 +160,39 @@ FROM PATTERN [ every s=CarStartEventEnc
     rt.sendEvent(e)
   }
 
-  val N = 100
-  val k = Interp.keyRing
-  println(s"Generating events for ${N} different cars...")
-  val evts = LicensePlateDataEnc.genEventsEnc(k)(N)
-  println(s"done! Generated ${evts.size} events")
+  def generateEventsIfRequired(): Unit = {
+    if (args.isEmpty && new File(EVENT_FILE).exists) {
+      println("Found event file.")
+    } else {
+      if (! (new File("license-plate-events-enc.keys").exists)) {
+        sys.error("Could not find keyfile, did you generate it in advance?")
+      }
+      val keyRing = Parse.decodeOption[KeyRing](
+        Source.fromFile("license-plate-events-enc.keys").mkString).getOrElse(
+        sys.error(s"Could not parse ${"license-plate-events-enc.keys"}"))
 
-  val start = System.currentTimeMillis
-  evts.foreach(sendEvent)
-  val end = System.currentTimeMillis
-  println(s"Time for event processing: ${(end - start) / 1000.0}s")
+      println(s"Generating events for ${NUM_EVENTS} different cars...")
+      val evts = LicensePlateDataEnc.genEventsEnc(keyRing)(NUM_EVENTS)
+
+      Files.write(Paths.get(EVENT_FILE),
+        evts.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
+
+      println(s"done! Generated ${evts.size} events")
+    }
+  }
 }
 
 object Interp {
-  val keyRing = KeyRing.create
+  val keyRing = {
+    if (! (new File("license-plate-events-enc.keys").exists)) {
+      sys.error("Could not find keyfile, did you generate it in advance?")
+    }
+
+    Parse.decodeOption[KeyRing](
+      Source.fromFile("license-plate-events-enc.keys").mkString).getOrElse(
+      sys.error(s"Could not parse ${"license-plate-events-enc.keys"}"))
+  }
+
   val interpret = LocalInterpreter(keyRing)
 
   val speedLimit = Common.encrypt(Comparable, keyRing)(133)
@@ -126,7 +201,6 @@ object Interp {
   def strEq(s1: EncString, s2: EncString) = interpret(s1 ?|? s2) == EQ
   def max(i1: EncInt, i2: EncInt, i3: EncInt, i4: EncInt, i5: EncInt) =
     interpret(List(i1,i2,i3,i4,i5).traverse(toOpe).map(_.max))
-
 
   val decryptStr = Common.decryptStr(keyRing)
   val decrypt = Common.decrypt(keyRing)
