@@ -143,7 +143,7 @@ FROM PATTERN [ every s=CarStartEvent
   }
 
   def generateEventsIfRequired(): Unit = {
-    if (new File(EVENT_FILE).exists) {
+    if (args.isEmpty && new File(EVENT_FILE).exists) {
       println("Found event file.")
     } else {
       println(s"Generating events for ${NUM_EVENTS} different cars...")
