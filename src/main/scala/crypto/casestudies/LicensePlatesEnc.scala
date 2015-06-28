@@ -20,12 +20,15 @@ import crypto._
 import crypto.cipher._
 import crypto.dsl.Implicits._
 import crypto.dsl._
+import crypto.remote._
 import java.io._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Paths, Files}
 import scala.beans.BeanProperty
-import scala.io._
+import scala.concurrent._
+import scala.concurrent.duration._
 import scalaz.Ordering._
+import scalaz._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
 
@@ -148,11 +151,11 @@ FROM PATTERN [ every s=CarStartEventEnc
 
   generateEventsIfRequired()
   val keyRing = Parse.decodeOption[KeyRing](
-    Source.fromFile(KEYRING_FILE).mkString).get
+    io.Source.fromFile(KEYRING_FILE).mkString).get
 
   implicit val decodeInt = EncInt.decode(keyRing)
   val evts = Parse.decodeOption[List[LicensePlateEventEnc]](
-    Source.fromFile(EVENT_FILE).mkString).get
+    io.Source.fromFile(EVENT_FILE).mkString).get
 
   val start = System.currentTimeMillis
   evts.foreach(sendEvent)
@@ -174,7 +177,7 @@ FROM PATTERN [ every s=CarStartEventEnc
         sys.error("Could not find keyfile, did you generate it in advance?")
       }
       val keyRing = Parse.decodeOption[KeyRing](
-        Source.fromFile(KEYRING_FILE).mkString).getOrElse(
+        io.Source.fromFile(KEYRING_FILE).mkString).getOrElse(
         sys.error(s"Could not parse ${KEYRING_FILE}"))
 
       println(s"Generating events for ${NUM_EVENTS} different cars...")
@@ -196,18 +199,36 @@ object Interp {
     }
 
     Parse.decodeOption[KeyRing](
-      Source.fromFile(KEYRING_FILE).mkString).getOrElse(
+      io.Source.fromFile(KEYRING_FILE).mkString).getOrElse(
       sys.error(s"Could not parse ${KEYRING_FILE}"))
   }
 
-  val interpret = LocalInterpreter(keyRing)
+  val (system,futService) =
+    CryptoService.connect(scala.concurrent.ExecutionContext.Implicits.global)
+
+  val service = \/.fromTryCatchNonFatal(Await.result(futService, 10.seconds)) match {
+    case -\/(err) =>
+      println(s"Error connecting to crypto service: ${err}")
+      println("Did you start the crypto service before running this?")
+      system.shutdown()
+      sys.exit(1)
+    case \/-(service) =>
+      println("Connected to crypto service.")
+      service
+  }
+
+  print("Requesting public keys...")
+  val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
+  println("ok")
+
+  val interpret = new RemoteInterpreter(service, keys)(scala.concurrent.ExecutionContext.Implicits.global)
 
   val speedLimit = Common.encrypt(Comparable, keyRing)(133)
-  def isTooFast(s: EncInt): Boolean = interpret(s > speedLimit)
+  def isTooFast(s: EncInt): Boolean = Await.result(interpret(s > speedLimit), 30.seconds)
 
-  def strEq(s1: EncString, s2: EncString) = interpret(s1 ?|? s2) == EQ
+  def strEq(s1: EncString, s2: EncString) = Await.result(interpret(s1 ?|? s2), 30.seconds) == EQ
   def max(i1: EncInt, i2: EncInt, i3: EncInt, i4: EncInt, i5: EncInt) =
-    interpret(List(i1,i2,i3,i4,i5).traverse(toOpe).map(_.max))
+    Await.result(interpret(List(i1,i2,i3,i4,i5).traverse(toOpe).map(_.max)), 30.seconds)
 
   val decryptStr = Common.decryptStr(keyRing)
   val decrypt = Common.decrypt(keyRing)
