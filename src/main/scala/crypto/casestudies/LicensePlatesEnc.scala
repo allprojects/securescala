@@ -161,6 +161,8 @@ FROM PATTERN [ every s=CarStartEventEnc
   evts.foreach(sendEvent)
   val end = System.currentTimeMillis
   println(s"Time for event processing: ${(end - start) / 1000.0}s")
+  Interp.system.shutdown()
+  System.exit(0)
 
   def sendEvent(e: LicensePlateEventEnc): Unit = {
     if (rt.getCurrentTime != e.time) { // avoid duplicates
