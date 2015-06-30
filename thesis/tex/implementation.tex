@@ -1,6 +1,14 @@
 \chapter{Implementation}
 \label{cha:implementation}
 
+\section{Encryption schemes}
+\label{sec:encryption-schemes}
+
+\begin{itemize}
+\item CryptDB, PigLatin framework
+\item Paillier (+), ElGamal (*), AES (==), OPE (compare)
+\end{itemize}
+
 \section{Free Monads}
 \label{sec:free-monads}
 
@@ -18,13 +26,15 @@
 \begin{itemize}
 \item Applicative is weaker than Monad
 \item (Even better: Applicatives compose!)
-% \item $\forall f. Monad f \rightarrow Applicative f$
-%   ``Every Monad has an Applicative instance''
-% \item $\not \forall f. Applicative f \rightarrow$
-%   ``Not every Applicative is also a Monad''
+\item $\forall f. Monad f \rightarrow Applicative f$
+  ``Every Monad has an Applicative instance''
+\item $\not \forall f. Applicative f \rightarrow Monad f$
+  ``Not every Applicative is also a Monad''
   \begin{itemize}
   \item ZipList
   \item Validation
+  \item Concurrently/Futures(!)
+% https://github.com/simonmar/async/pull/26
   \item Our DSL
   \end{itemize}
 \item weaker = better for us
@@ -43,6 +53,7 @@
 \item monads are inherently sequential
 \item \texttt{ma >>= f} \textbf{requires} sequential evaluation of \texttt{ma}
   before \texttt{f} can be applied
+\item unless cheating like scala.concurrent.Future
 \item applicatives are not, can choose order of evaluation of effects
 \end{itemize}
 
@@ -62,6 +73,16 @@
   \item details: you can otherwise get different results
   \end{itemize}
 \end{itemize}
+
+\subsubsection{CryptoF}
+\label{sec:cryptof}
+
+\begin{listing}[htp]
+  \caption{OptiReactive example code}
+  \scalafile{CryptoF.example}
+  \label{lst:optireactive-example-code}
+\end{listing}
+
 
 %%% Local Variables:
 %%% mode: latex
