@@ -123,8 +123,8 @@ WHERE Interp.isTooFast(speed)""")
 
   speeders += { es =>
     println("*FLASH*: " +
-      f"${Interp.decryptStr(es.head.get("license").asInstanceOf[EncString])}%-9s " +
-      s"(${Interp.decrypt(es.head.get("speed").asInstanceOf[EncInt])}km/h) " +
+      f"${es.head.get("license").asInstanceOf[EncString]}%s " +
+      s"(${es.head.get("speed").asInstanceOf[EncInt]}km/h) " +
       s"at checkpoint ${es.head.get("number")}")
   }
 
@@ -144,9 +144,9 @@ FROM PATTERN [ every s=CarStartEventEnc
 
   completions += { (es: Seq[EventBean]) =>
     println(
-      f"${Interp.decryptStr(es.head.get("car").asInstanceOf[EncString])}%-9s " +
-      f"completed in ${es.head.get("duration").asInstanceOf[Long] / 1000}%ss " +
-      f"with speed ${Interp.decrypt(es.head.get("maxSpeed").asInstanceOf[EncInt])}%3s")
+      f"${es.head.get("car").asInstanceOf[EncString]}%s " +
+        f"completed in ${es.head.get("duration").asInstanceOf[Long] / 1000}%ss " +
+        f"with speed ${es.head.get("maxSpeed").asInstanceOf[EncInt]}%s")
   }
 
   generateEventsIfRequired()
