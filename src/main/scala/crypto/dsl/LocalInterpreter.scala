@@ -99,3 +99,7 @@ case class LocalInterpreter(keyRing: KeyRing) extends PureCryptoInterpreter {
     case \/-(x) => x
   }
 }
+
+object LocalInterpreter {
+  def create = LocalInterpreter(KeyRing.create)
+}
