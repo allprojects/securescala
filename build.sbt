@@ -37,6 +37,8 @@ scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
 addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
 
+libraryDependencies += "io.reactivex" % "rxscala_2.11" % "0.25.0"
+
 libraryDependencies += "org.spire-math" %% "spire" % "0.10.1"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.1.2"
