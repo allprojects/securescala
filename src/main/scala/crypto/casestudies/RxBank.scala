@@ -68,7 +68,7 @@ object RxBankGui extends SimpleSwingApplication {
 
   private def newField = new TextField {
     text = "0"
-    columns = 10
+    columns = 6
     editable = false
   }
 
@@ -80,9 +80,10 @@ object RxBankGui extends SimpleSwingApplication {
     title = "RxBank"
     contents = new BoxPanel(Orientation.Vertical) {
       senders.zipWithIndex.foreach { case (s,i) =>
-        contents += new BoxPanel(Orientation.Horizontal) {
-          contents += new Label(f"${s}%s:")
+        contents += new FlowPanel(FlowPanel.Alignment.Leading)() {
+          contents += Swing.HStrut(60)
           contents += fieldFor(s)
+          contents += new Label(s)
         }
       }
       contents += new FlowPanel (new ScrollPane (new ListView(List())))
