@@ -55,6 +55,8 @@ libraryDependencies += "com.typesafe.akka" % "akka-remote_2.11" % "2.3.10"
 
 libraryDependencies += "com.espertech" % "esper" % "5.2.0"
 
+libraryDependencies += "org.scala-lang" % "scala-swing" % "2.11.0-M7"
+
 libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6" % "test"
 
 libraryDependencies += "org.pelotom" %% "effectful" % "1.1-SNAPSHOT"
