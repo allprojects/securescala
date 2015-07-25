@@ -84,7 +84,7 @@ class RxBankInterfacePlain(model: RxBank, interp: PureCryptoInterpreter, keyRing
   }
 
   def top = new MainFrame {
-    title = "RxBank"
+    title = "RxBank Plain"
     contents = new BoxPanel(Orientation.Vertical) {
       preferredSize = new Dimension(400,500)
       senders.zipWithIndex.foreach { case (s,i) =>
@@ -136,7 +136,7 @@ class RxBankInterface(model: RxBank, interp: PureCryptoInterpreter)
   }
 
   def top = new MainFrame {
-    title = "RxBank"
+    title = "RxBank Encrypted"
     contents = new BoxPanel(Orientation.Vertical) {
       preferredSize = new Dimension(400,500)
       senders.zipWithIndex.foreach { case (s,i) =>
