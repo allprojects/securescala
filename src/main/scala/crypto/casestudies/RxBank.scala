@@ -28,6 +28,8 @@ case class Transaction(sender: String, receiver: String, amount: EncInt)
 
 object Transaction {
   import RxBankConstants._
+  private val cache = collection.mutable.Map[Int,EncInt]()
+
   def rand(rand: Random)(implicit K: KeyRing): Transaction = {
     val index = rand.nextInt(senders.length)
     val sender = senders(index)
@@ -37,11 +39,12 @@ object Transaction {
     val receiver = remaining(index2)
 
     val amount = rand.nextInt(20) + 5
+    val encAmount = cache.getOrElseUpdate(amount, Common.encrypt(Additive,K)(amount))
 
     Transaction(
       sender,
       receiver,
-      Common.encrypt(Additive,K)(amount)
+      encAmount
     )
   }
 }
