@@ -5,7 +5,7 @@ package crypto.casestudies
 
 import java.awt.Color
 import java.awt.Insets
-import rx.lang.scala.Observable
+import rx.lang.scala._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -49,6 +49,9 @@ object Transaction {
 class RxBank(ts: Observable[Transaction])(interp: PureCryptoInterpreter, zero: EncInt) {
   private var storage: Map[String,EncInt] = Map()
 
+  private val subjUpdates: Subject[(String,EncInt)] = Subject()
+  val updates: Observable[(String,EncInt)] = subjUpdates
+
   ts.foreach(process)
 
   private def process: Transaction => Unit = { case Transaction(sender,receiver,amount) =>
@@ -59,13 +62,18 @@ class RxBank(ts: Observable[Transaction])(interp: PureCryptoInterpreter, zero: E
 
     storage = storage + (sender -> newSenderAmount)
     storage = storage + (receiver -> newReceiverAmount)
+
+    subjUpdates.onNext((sender,newSenderAmount))
+    subjUpdates.onNext((receiver,newReceiverAmount))
   }
 
   def balance: String => EncInt = s => storage.get(s).getOrElse(zero)
 }
 
 class RxBankInterface(ts: Observable[Transaction])(
-  model: RxBank, interp: PureCryptoInterpreter) extends SimpleSwingApplication {
+  updates: Observable[(String,EncInt)],
+  interp: PureCryptoInterpreter
+) extends SimpleSwingApplication {
 
   import RxBankConstants._
 
@@ -104,13 +112,12 @@ class RxBankInterface(ts: Observable[Transaction])(
     case Transaction(sender,receiver,amnt) =>
       val old = messages.listData
       messages.listData = s"${sender} -> ${receiver}" +: old
-      redrawFor(sender)
-      redrawFor(receiver)
   }
 
-  private def redrawFor(s: String): Unit = {
+  updates.foreach { case (account,newAmount) => redrawFor(account,newAmount)}
+
+  private def redrawFor(s: String, amt: EncInt): Unit = {
     val field = fieldFor(s)
-    val amt = model.balance(s)
     val colors = interp { encColorMapping.traverse { case (t,c) => (amt > t).map((_,c)) } }.filter(_._1)
     if (colors.nonEmpty)
       field.background = colors.last._2
@@ -118,20 +125,20 @@ class RxBankInterface(ts: Observable[Transaction])(
 }
 
 class RxBankInterfacePlain(ts: Observable[Transaction])(
-  model: RxBank, interp: PureCryptoInterpreter, keyRing: KeyRing)
-    extends RxBankInterface(ts)(model,interp) {
+  updates: Observable[(String,EncInt)],
+  interp: PureCryptoInterpreter, keyRing: KeyRing
+) extends RxBankInterface(ts)(updates,interp) {
 
   override def logTransaction(t: Transaction) = t match {
     case Transaction(sender,receiver,amnt) =>
       val old = messages.listData
       messages.listData = s"${sender} -> ${receiver} (${Common.decrypt(keyRing)(amnt)})" +: old
-      redrawFor(sender)
-      redrawFor(receiver)
   }
 
-  private def redrawFor(s: String): Unit = {
-    val field = fieldFor(s)
-    val amt = model.balance(s)
+  updates.foreach { case (account,newAmount) => redrawFor(account,newAmount) }
+
+  private def redrawFor(account: String, amt: EncInt): Unit = {
+    val field = fieldFor(account)
     val colors = interp { encColorMapping.traverse { case (t,c) => (amt > t).map((_,c)) } }.filter(_._1)
     field.text = Common.decrypt(keyRing)(amt).toString
     if (colors.nonEmpty)
@@ -152,16 +159,19 @@ object RxBankApp extends App {
   }
 
   val rand = new Random
-  val ts = Observable.interval(200 millis).map(_ => Transaction.rand(rand))
+  val ts = Observable.interval(200 millis).map(_ => Transaction.rand(rand)).publish
 
   val bank = new RxBank(ts)(interp, Common.zero(keyRing))
 
-  Await.result(Future.sequence(
-    List(
-      Future { new RxBankInterface(ts)(bank,interp).startup(Array()) }
-        , Future { new RxBankInterfacePlain(ts)(bank,interp,keyRing).startup(Array()) }
-    )
-  ),30.minutes)
+  val interfaces = Future.sequence(List(
+    Future { new RxBankInterface(ts)(bank.updates,interp).startup(Array()) },
+    Future { new RxBankInterfacePlain(ts)(bank.updates,interp,keyRing).startup(Array()) }
+  ))
+
+  Thread.sleep(5000)
+  ts.connect
+
+  Await.result(interfaces ,30.minutes)
 }
 
 object RxBankConstants {
