@@ -180,16 +180,16 @@ object RxBankApp extends App {
 object RxBankConstants {
   import java.awt.Color
   val senders = List(
-    "Rorra",
-    "Gugei",
-    "Sote",
-    "Jaas",
-    "Thom",
-    "Bapokaz",
-    "Ussid",
-    "Ethoo",
-    "Tattlack",
-    "Zhaimta"
+    "Jancis",
+    "Caroline",
+    "Denton",
+    "Berny",
+    "Joslyn",
+    "Emma",
+    "Kaitlyn",
+    "Claudia",
+    "Breanna",
+    "Aurora"
   )
 
   val colorMapping: List[(Int,Color)]= List(
