@@ -7,6 +7,7 @@ import crypto._
 import crypto.cipher._
 import crypto.remote._
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.io.StdIn
 import scala.util.Try
 import scalaz._
@@ -183,4 +184,8 @@ class RemoteInterpreterOptAnalyze(
       parallel(p)
     }
   }
+}
+
+case class Blocking(val interp: CryptoInterpreter[Future]) extends PureCryptoInterpreter {
+  def interpret[A](p: CryptoM[A]) = Await.result(interp(p),Duration.Inf)
 }
