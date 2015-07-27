@@ -77,8 +77,14 @@ final case class CarGoalEvent(
 ) extends LicensePlateEvent
 
 object LicensePlates extends App with EsperImplicits {
-  val NUM_EVENTS = 1000
-  val EVENT_FILE = "license-plate-events.json"
+  val args_ = args.map(_.split("""=""") match {
+    case Array(x,y) => List((x,y))
+    case _ => List()
+  }).flatten.toMap
+  val NUM_EVENTS = args_.get("num").map(_.toInt).getOrElse(1000)
+  val EVENT_FILE = args_.get("file").getOrElse(s"license-plate-events-${NUM_EVENTS}.json")
+  val GENERATE_EVTS = args_.get("gen").map(_.toBoolean).getOrElse(false)
+  val RUN_SIMULATION = args_.get("sim").map(_.toBoolean).getOrElse(true)
 
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
@@ -127,6 +133,11 @@ FROM PATTERN [ every s=CarStartEvent
   }
 
   generateEventsIfRequired()
+
+  if (!RUN_SIMULATION) {
+    println("Requested to not run simulation, quitting.")
+    System.exit(0)
+  }
   val evts = Parse.decodeOption[List[LicensePlateEvent]](
     Source.fromFile(EVENT_FILE).mkString).get
 
@@ -143,10 +154,10 @@ FROM PATTERN [ every s=CarStartEvent
   }
 
   def generateEventsIfRequired(): Unit = {
-    if (args.isEmpty && new File(EVENT_FILE).exists) {
+    if (!GENERATE_EVTS && new File(EVENT_FILE).exists) {
       println("Found event file.")
     } else {
-      println(s"Generating events for ${NUM_EVENTS} different cars...")
+      print(s"Generating events for ${NUM_EVENTS} different cars...")
 
       val evts = LicensePlateData.genEvents(NUM_EVENTS).sortBy(_.time)
 
