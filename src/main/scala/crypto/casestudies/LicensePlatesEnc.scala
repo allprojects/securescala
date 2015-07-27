@@ -205,32 +205,42 @@ object Interp {
       sys.error(s"Could not parse ${KEYRING_FILE}"))
   }
 
-  val (system,futService) =
-    CryptoService.connect(scala.concurrent.ExecutionContext.Implicits.global)
+  var shutdown: Unit => Unit = (_: Unit) => ()
 
-  val service = \/.fromTryCatchNonFatal(Await.result(futService, 10.seconds)) match {
-    case -\/(err) =>
-      println(s"Error connecting to crypto service: ${err}")
-      println("Did you start the crypto service before running this?")
-      system.shutdown()
-      sys.exit(1)
-    case \/-(service) =>
-      println("Connected to crypto service.")
-      service
+  val interpret = if (USE_REMOTE) {
+    val (system,futService) =
+      CryptoService.connect(scala.concurrent.ExecutionContext.Implicits.global)
+
+    val service = \/.fromTryCatchNonFatal(Await.result(futService, 10.seconds)) match {
+      case -\/(err) =>
+        println(s"Error connecting to crypto service: ${err}")
+        println("Did you start the crypto service before running this?")
+        system.shutdown()
+        sys.exit(1)
+      case \/-(service) =>
+        println("Connected to crypto service.")
+        service
+    }
+
+    print("Requesting public keys...")
+    val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
+    println("ok")
+
+    shutdown = _ => system.shutdown()
+
+    Blocking(30.seconds)(
+      new RemoteInterpreter(service, keys)(
+        scala.concurrent.ExecutionContext.Implicits.global))
+  } else {
+    new LocalInterpreter(keyRing)
   }
 
-  print("Requesting public keys...")
-  val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
-  println("ok")
-
-  val interpret = new RemoteInterpreter(service, keys)(scala.concurrent.ExecutionContext.Implicits.global)
-
   val speedLimit = Common.encrypt(Comparable, keyRing)(133)
-  def isTooFast(s: EncInt): Boolean = Await.result(interpret(s > speedLimit), 30.seconds)
+  def isTooFast(s: EncInt): Boolean = interpret(s > speedLimit)
 
-  def strEq(s1: EncString, s2: EncString) = Await.result(interpret(s1 ?|? s2), 30.seconds) == EQ
+  def strEq(s1: EncString, s2: EncString) = interpret(s1 ?|? s2) == EQ
   def max(i1: EncInt, i2: EncInt, i3: EncInt, i4: EncInt, i5: EncInt) =
-    Await.result(interpret(List(i1,i2,i3,i4,i5).traverse(toOpe).map(_.max)), 30.seconds)
+    interpret(List(i1,i2,i3,i4,i5).traverse(toOpe).map(_.max))
 
   val decryptStr = Common.decryptStr(keyRing)
   val decrypt = Common.decrypt(keyRing)
