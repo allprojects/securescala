@@ -186,6 +186,11 @@ class RemoteInterpreterOptAnalyze(
   }
 }
 
-case class Blocking(val interp: CryptoInterpreter[Future]) extends PureCryptoInterpreter {
+case class Blocking(val dur: Duration)(val interp: CryptoInterpreter[Future])
+    extends PureCryptoInterpreter {
   def interpret[A](p: CryptoM[A]) = Await.result(interp(p),Duration.Inf)
+}
+
+object Blocking {
+  def apply(interp: CryptoInterpreter[Future]): Blocking = Blocking(Duration.Inf)(interp)
 }
