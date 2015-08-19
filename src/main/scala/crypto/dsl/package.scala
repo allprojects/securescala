@@ -66,6 +66,11 @@ trait BaseDsl {
       def apply[B](fa: CryptoF[B]): CryptoMF[B] = Coproduct(-\/(fa))
     })
 
+  def liftFree[A](fa: CryptoF[A]): CryptoM[A] = {
+    val fb: CryptoMF[A] = Coproduct(-\/(fa))
+    Free.liftF(fb)
+  }
+
   implicit val cryptomInstance =
     new Functor[CryptoM]
         with Applicative[CryptoM]
@@ -92,6 +97,22 @@ trait BaseDsl {
   def splitStr(s: EncString, regex: String): Crypto[IList[EncString]] =
     FreeAp.lift(SplitStr(s,regex,identity))
 
+  def addM(lhs: EncInt, rhs: EncInt): CryptoM[EncInt] = liftFree(Plus(lhs,rhs,identity))
+  def equalM(lhs: EncInt, rhs: EncInt): CryptoM[Boolean] =
+    liftFree(Equals(lhs,rhs,identity))
+  def equalStrM(lhs: EncString, rhs: EncString): CryptoM[Boolean] =
+    liftFree(EqualsStr(lhs,rhs,identity))
+  def compareM(lhs: EncInt, rhs: EncInt): CryptoM[Ordering] =
+    liftFree(Compare(lhs,rhs,identity))
+  def compareStrM(lhs: EncString, rhs: EncString): CryptoM[Ordering] =
+    liftFree(CompareStr(lhs,rhs,identity))
+  def concatStrM(lhs: EncString, rhs: EncString): CryptoM[EncString] =
+    liftFree(ConcatStr(lhs,rhs,identity))
+  def splitStrM(s: EncString, regex: String): CryptoM[IList[EncString]] =
+    liftFree(SplitStr(s,regex,identity))
+  def multiplyM(lhs: EncInt, rhs: EncInt): CryptoM[EncInt] =
+    liftFree(Mult(lhs,rhs,identity))
+
   def encrypt(s: Scheme)(v: Int): Crypto[EncInt] = FreeAp.lift(Encrypt(s,v,identity))
   def toPaillier(v: EncInt): Crypto[PaillierEnc] = FreeAp.lift(ToPaillier(v,identity))
   def toGamal(v: EncInt): Crypto[ElGamalEnc] = FreeAp.lift(ToGamal(v,identity))
@@ -100,21 +121,40 @@ trait BaseDsl {
   def toAesStr(v: EncString): Crypto[AesString] = FreeAp.lift(ToAesStr(v,identity))
   def toOpeStr(v: EncString): Crypto[OpeString] = FreeAp.lift(ToOpeStr(v,identity))
 
+  def encryptM(s: Scheme)(v: Int): CryptoM[EncInt] = liftFree(Encrypt(s,v,identity))
+  def toPaillierM(v: EncInt): CryptoM[PaillierEnc] = liftFree(ToPaillier(v,identity))
+  def toGamalM(v: EncInt): CryptoM[ElGamalEnc] = liftFree(ToGamal(v,identity))
+  def toAesM(v: EncInt): CryptoM[AesEnc] = liftFree(ToAes(v,identity))
+  def toOpeM(v: EncInt): CryptoM[OpeEnc] = liftFree(ToOpe(v,identity))
+  def toAesStrM(v: EncString): CryptoM[AesString] = liftFree(ToAesStr(v,identity))
+  def toOpeStrM(v: EncString): CryptoM[OpeString] = liftFree(ToOpeStr(v,identity))
+
   def ceilRatio(r: EncRatio): Crypto[EncInt] = FreeAp.lift(CeilRatio(r,identity))
   def floorRatio(r: EncRatio): Crypto[EncInt] = FreeAp.lift(FloorRatio(r,identity))
+
+  def ceilRatioM(r: EncRatio): CryptoM[EncInt] = liftFree(CeilRatio(r,identity))
+  def floorRatioM(r: EncRatio): CryptoM[EncInt] = liftFree(FloorRatio(r,identity))
 
   def subtract(lhs: EncInt, rhs: EncInt): Crypto[EncInt] =
     FreeAp.lift(Sub(lhs,rhs,identity))
   def divide(lhs: EncInt, rhs: EncInt): Crypto[EncRatio] =
     FreeAp.lift(Div(lhs,rhs,identity))
 
+  def subtractM(lhs: EncInt, rhs: EncInt): CryptoM[EncInt] =
+    liftFree(Sub(lhs,rhs,identity))
+  def divideM(lhs: EncInt, rhs: EncInt): CryptoM[EncRatio] =
+    liftFree(Div(lhs,rhs,identity))
+
   def integerDivide(lhs: EncInt, rhs: EncInt): CryptoM[EncInt] = for {
-    ratio <- embed(divide(lhs,rhs))
-    result <- embed(floorRatio(ratio))
+    ratio <- divideM(lhs,rhs)
+    result <- floorRatioM(ratio)
   } yield result
 
   def isEven(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsEven(v,identity))
   def isOdd(v: EncInt): Crypto[Boolean] = FreeAp.lift(IsOdd(v,identity))
+
+  def isEvenM(v: EncInt): CryptoM[Boolean] = liftFree(IsEven(v,identity))
+  def isOddM(v: EncInt): CryptoM[Boolean] = liftFree(IsOdd(v,identity))
 
   def embed[A](p: Crypto[A]): CryptoM[A] = Free.liftF[CryptoMF,A](Coproduct(\/-(new Embed[A]() {
     type I = A
