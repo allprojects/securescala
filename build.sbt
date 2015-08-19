@@ -2,7 +2,7 @@ name := "master_thesis_source"
 
 version := "1.0"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
