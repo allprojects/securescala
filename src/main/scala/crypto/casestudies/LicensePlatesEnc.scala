@@ -39,10 +39,19 @@ sealed trait LicensePlateEventEnc {
 }
 
 object LicensePlateEventEnc_GenerateKey extends App {
-  import Constants._
-  Files.deleteIfExists((new File(EVENT_FILE)).toPath)
+  import LPConstants._
   val keyRing = KeyRing.create
-  Files.write(Paths.get(KEYRING_FILE),
+
+  Paths.get(".").
+    toAbsolutePath.
+    toFile.
+    listFiles.
+    map(_.toString).
+    filter(_ matches """.*events-enc-\d+.*\.json""").
+    map(Paths.get(_)).
+    foreach(Files.deleteIfExists(_))
+
+  Files.write(KEYRING_FILE,
     keyRing.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
 }
 
@@ -93,42 +102,58 @@ final case class CarGoalEventEnc(
   @BeanProperty speed: EncInt
 ) extends LicensePlateEventEnc
 
-private object Constants {
-  val NUM_EVENTS = 1000
-  val EVENT_FILE = "license-plate-events-enc.json"
-  val KEYRING_FILE = "license-plate-events-enc.keys"
+object LPConstants {
+  val KEYRING_FILE = Paths.get("license-plate-events-enc.keys").toAbsolutePath
 }
 
-object LicensePlatesEnc extends App with EsperImplicits {
-  import Constants._
+object NullOutputStream extends OutputStream {override def write(b: Int) = ()}
 
-  val config: Configuration = new Configuration
-  config.addImport("crypto.casestudies.*")
+object LicensePlatesEnc extends EsperImplicits {
+  def withKeyRing(keyRing: KeyRing)(args: Array[String]) = {
+    val args_ = args.map(_.split("""=""") match {
+      case Array(x,y) => List((x,y))
+      case _ => List()
+    }).flatten.toMap
+    val NUM_EVENTS = args_.get("num").map(_.toInt).getOrElse(1000)
+    val EVENT_FILE =
+      args_.get("file").getOrElse(s"license-plate-events-enc-${NUM_EVENTS}.json")
+    val GENERATE_EVTS = args_.get("gen").map(_.toBoolean).getOrElse(false)
+    val RUN_SIMULATION = args_.get("sim").map(_.toBoolean).getOrElse(true)
+    val OUTPUT = args_.get("print").map(_.toBoolean).map { doPrint =>
+      if (doPrint) {
+        System.out
+      } else {
+        new java.io.PrintStream(NullOutputStream)
+      }
+    }.getOrElse(new java.io.PrintStream(NullOutputStream))
 
-  config.addEventType(classOf[CarStartEventEnc])
-  config.addEventType(classOf[CheckPointEventEnc])
-  config.addEventType(classOf[CarGoalEventEnc])
+    val config: Configuration = new Configuration
+    config.addImport("crypto.casestudies.*")
 
-  val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
-  val rt = epService.getEPRuntime
+    config.addEventType(classOf[CarStartEventEnc])
+    config.addEventType(classOf[CheckPointEventEnc])
+    config.addEventType(classOf[CarGoalEventEnc])
 
-  rt.sendEvent(new TimerControlEvent(TimerControlEvent.ClockType.CLOCK_EXTERNAL))
+    val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
+    val rt = epService.getEPRuntime
 
-  val admin = epService.getEPAdministrator
+    rt.sendEvent(new TimerControlEvent(TimerControlEvent.ClockType.CLOCK_EXTERNAL))
 
-  val speeders = admin.createEPL("""
+    val admin = epService.getEPAdministrator
+
+    val speeders = admin.createEPL("""
 SELECT car AS license, number, speed
 FROM CheckPointEventEnc
 WHERE Interp.isTooFast(speed)""")
 
-  speeders += { es =>
-    println("*FLASH*: " +
-      f"${es.head.get("license").asInstanceOf[EncString]}%s " +
-      s"(${es.head.get("speed").asInstanceOf[EncInt]}km/h) " +
-      s"at checkpoint ${es.head.get("number")}")
-  }
+    speeders += { es =>
+      OUTPUT.println("*FLASH*: " +
+        f"${es.head.get("license").asInstanceOf[EncString]}%s " +
+        s"(${es.head.get("speed").asInstanceOf[EncInt]}km/h) " +
+        s"at checkpoint ${es.head.get("number")}")
+    }
 
-  val completions = admin.createEPL("""
+    val completions = admin.createEPL("""
 SELECT s.time as startTime,
        g.time as goalTime,
        s.car as car,
@@ -142,66 +167,74 @@ FROM PATTERN [ every s=CarStartEventEnc
              ]
 """)
 
-  completions += { (es: Seq[EventBean]) =>
-    println(
-      f"${es.head.get("car").asInstanceOf[EncString]}%s " +
-        f"completed in ${es.head.get("duration").asInstanceOf[Long] / 1000}%ss " +
-        f"with speed ${es.head.get("maxSpeed").asInstanceOf[EncInt]}%s")
-  }
-
-  generateEventsIfRequired()
-  val keyRing = Parse.decodeOption[KeyRing](
-    io.Source.fromFile(KEYRING_FILE).mkString).get
-
-  implicit val decodeInt = EncInt.decode(keyRing)
-  val evts = Parse.decodeOption[List[LicensePlateEventEnc]](
-    io.Source.fromFile(EVENT_FILE).mkString).get
-
-  val start = System.currentTimeMillis
-  evts.foreach(sendEvent)
-  val end = System.currentTimeMillis
-  println(s"Time for event processing: ${(end - start) / 1000.0}s")
-  Interp.system.shutdown()
-  System.exit(0)
-
-  def sendEvent(e: LicensePlateEventEnc): Unit = {
-    if (rt.getCurrentTime != e.time) { // avoid duplicates
-      rt.sendEvent(new CurrentTimeEvent(e.time))
+    completions += { (es: Seq[EventBean]) =>
+      OUTPUT.println(
+        f"${es.head.get("car").asInstanceOf[EncString]}%s " +
+          f"completed in ${es.head.get("duration").asInstanceOf[Long] / 1000}%ss " +
+          f"with speed ${es.head.get("maxSpeed").asInstanceOf[EncInt]}%s")
     }
-    rt.sendEvent(e)
-  }
 
-  def generateEventsIfRequired(): Unit = {
-    if (args.isEmpty && new File(EVENT_FILE).exists) {
-      println("Found event file.")
+    generateEventsIfRequired()
+    if (!RUN_SIMULATION) {
+      OUTPUT.println("Requested to not run simulation, quitting.")
     } else {
-      if (! (new File(KEYRING_FILE).exists)) {
-        sys.error("Could not find keyfile, did you generate it in advance?")
-      }
-      val keyRing = Parse.decodeOption[KeyRing](
-        io.Source.fromFile(KEYRING_FILE).mkString).getOrElse(
-        sys.error(s"Could not parse ${KEYRING_FILE}"))
 
-      println(s"Generating events for ${NUM_EVENTS} different cars...")
-      val evts = LicensePlateDataEnc.genEventsEnc(keyRing)(NUM_EVENTS)
+      implicit val decodeInt = EncInt.decode(keyRing)
+      val evts = Parse.decodeOption[List[LicensePlateEventEnc]](
+        io.Source.fromFile(EVENT_FILE).mkString).get
 
-      Files.write(Paths.get(EVENT_FILE),
-        evts.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
-
-      println(s"done! Generated ${evts.size} events")
+      val start = System.currentTimeMillis
+      evts.foreach(sendEvent)
+      val end = System.currentTimeMillis
+      OUTPUT.println(s"Time for event processing: ${(end - start) / 1000.0}s")
+      Interp.shutdown(())
+      System.exit(0)
     }
+
+    def sendEvent(e: LicensePlateEventEnc): Unit = {
+      if (rt.getCurrentTime != e.time) { // avoid duplicates
+        rt.sendEvent(new CurrentTimeEvent(e.time))
+      }
+      rt.sendEvent(e)
+    }
+
+    def generateEventsIfRequired(): Unit = {
+      implicit val decodeInt = EncInt.decode(keyRing)
+      OUTPUT.println("In generateEventsIfRequired")
+      if (!GENERATE_EVTS && new File(EVENT_FILE).exists) {
+        OUTPUT.println("Found event file.")
+      } else {
+        OUTPUT.println(s"Generating ${NUM_EVENTS} events...")
+        val evts = LicensePlateDataEnc.genEventsEnc(keyRing)(NUM_EVENTS)
+
+        Files.write(Paths.get(EVENT_FILE),
+          evts.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
+
+        OUTPUT.println(s"done! Generated ${evts.size} events")
+      }
+    }
+  }
+
+  def main(args: Array[String]) = {
+    val keyRing = Parse.decodeOption[KeyRing](
+      io.Source.fromFile(LPConstants.KEYRING_FILE.toString).mkString).getOrElse(
+      sys.error("Could not find key file"))
+
+    withKeyRing(keyRing)(args)
   }
 }
 
 object Interp {
-  import Constants._
+  import LPConstants._
+  val USE_REMOTE = false
+
   val keyRing = {
-    if (! (new File(KEYRING_FILE).exists)) {
+    if (! (KEYRING_FILE.toFile.exists)) {
       sys.error("Could not find keyfile, did you generate it in advance?")
     }
 
     Parse.decodeOption[KeyRing](
-      io.Source.fromFile(KEYRING_FILE).mkString).getOrElse(
+      io.Source.fromFile(KEYRING_FILE.toString).mkString).getOrElse(
       sys.error(s"Could not parse ${KEYRING_FILE}"))
   }
 
@@ -222,9 +255,7 @@ object Interp {
         service
     }
 
-    print("Requesting public keys...")
     val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
-    println("ok")
 
     shutdown = _ => system.shutdown()
 

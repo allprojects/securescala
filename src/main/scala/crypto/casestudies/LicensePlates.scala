@@ -85,6 +85,13 @@ object LicensePlates extends App with EsperImplicits {
   val EVENT_FILE = args_.get("file").getOrElse(s"license-plate-events-${NUM_EVENTS}.json")
   val GENERATE_EVTS = args_.get("gen").map(_.toBoolean).getOrElse(false)
   val RUN_SIMULATION = args_.get("sim").map(_.toBoolean).getOrElse(true)
+  val OUTPUT = args_.get("print").map(_.toBoolean).map { doPrint =>
+    if (doPrint) {
+      System.out
+    } else {
+      new java.io.PrintStream(NullOutputStream)
+    }
+  }.getOrElse(new java.io.PrintStream(NullOutputStream))
 
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
@@ -106,7 +113,7 @@ FROM CheckPointEvent
 WHERE speed > 133""")
 
   speeders += { es =>
-    println(f"*FLASH* ${es.head.get("license")}%-9s " +
+    OUTPUT.println(f"*FLASH* ${es.head.get("license")}%-9s " +
       s"(${es.head.get("speed")}km/h) " +
       s"at checkpoint ${es.head.get("number")}")
   }
@@ -126,7 +133,7 @@ FROM PATTERN [ every s=CarStartEvent
 """)
 
   completions += { (es: Seq[EventBean]) =>
-    println(
+    OUTPUT.println(
       f"${es.head.get("car")}%-9s " +
       f"completed in ${es.head.get("duration").asInstanceOf[Long] / 1000}%ss " +
       f"with speed ${(es.head.get("maxSpeed"))}%3s")
@@ -135,16 +142,16 @@ FROM PATTERN [ every s=CarStartEvent
   generateEventsIfRequired()
 
   if (!RUN_SIMULATION) {
-    println("Requested to not run simulation, quitting.")
-    System.exit(0)
-  }
-  val evts = Parse.decodeOption[List[LicensePlateEvent]](
-    Source.fromFile(EVENT_FILE).mkString).get
+    OUTPUT.println("Requested to not run simulation, quitting.")
+  } else {
+    val evts = Parse.decodeOption[List[LicensePlateEvent]](
+      Source.fromFile(EVENT_FILE).mkString).get
 
-  val start = System.currentTimeMillis
-  evts.foreach(sendEvent)
-  val end = System.currentTimeMillis
-  println(s"Time for event processing: ${(end - start) / 1000.0}s")
+    val start = System.currentTimeMillis
+    evts.foreach(sendEvent)
+    val end = System.currentTimeMillis
+    OUTPUT.println(s"Time for event processing: ${(end - start) / 1000.0}s")
+  }
 
   def sendEvent(e: LicensePlateEvent): Unit = {
     if (rt.getCurrentTime != e.time) { // avoid duplicates
@@ -155,9 +162,9 @@ FROM PATTERN [ every s=CarStartEvent
 
   def generateEventsIfRequired(): Unit = {
     if (!GENERATE_EVTS && new File(EVENT_FILE).exists) {
-      println("Found event file.")
+      OUTPUT.println("Found event file.")
     } else {
-      print(s"Generating events for ${NUM_EVENTS} different cars...")
+      OUTPUT.print(s"Generating events for ${NUM_EVENTS} different cars...")
 
       val evts = LicensePlateData.genEvents(NUM_EVENTS).sortBy(_.time)
 
@@ -165,7 +172,7 @@ FROM PATTERN [ every s=CarStartEvent
         evts.asJson.spaces2.getBytes(StandardCharsets.UTF_8))
 
 
-      println(s"done! Generated ${evts.size} events")
+      OUTPUT.println(s"done! Generated ${evts.size} events")
     }
   }
 }
