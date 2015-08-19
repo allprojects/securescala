@@ -20,7 +20,10 @@ class PaillierEnc(val underlying: BigInt, nSquare: BigInt) extends EncInt with S
   }
   override def toString = s"PaillierEnc($underlying)"
 
-  override def equals(that: Any) = false // paillier is nondeterministic
+  override def equals(that: Any) = that match {
+    case PaillierEnc(underlying2) => underlying == underlying2
+    case _ => false
+  }
   override def hashCode = underlying.hashCode
 }
 class ElGamalEnc(val ca: BigInt, val cb: BigInt, p: BigInt) extends EncInt with Serializable {
