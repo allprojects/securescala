@@ -25,14 +25,14 @@ private object ScalaPrograms {
 object FactFibBench extends CustomPerformanceTest {
 
   val keyRing = KeyRing.create
-   @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
+  def cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
 
-  @transient val remote =
+  def remote =
     new RemoteInterpreterOpt(cryptoService,keyRing.pub)(ExecutionContext.Implicits.global)
 
-  @transient val local = LocalInterpreter(keyRing)
+  def local = LocalInterpreter(keyRing)
 
-  @transient val generators = EncryptedGens(keyRing)
+  def generators = EncryptedGens(keyRing)
 
   val zero = Common.zero(keyRing)
   val one = Common.one(keyRing)

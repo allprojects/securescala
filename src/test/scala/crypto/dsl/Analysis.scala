@@ -69,7 +69,7 @@ class AnalysisSpec extends WordSpec with Matchers {
 
 object AnalysisBench extends CustomPerformanceTest {
   val keyRing = KeyRing.create
-  @transient val generators = EncryptedGens(keyRing)
+  val generators = EncryptedGens(keyRing)
 
   val sizes = Gen.enumeration("size")(50,100,150,200,250)
   val programs =

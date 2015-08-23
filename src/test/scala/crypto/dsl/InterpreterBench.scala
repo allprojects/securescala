@@ -13,7 +13,6 @@ import org.scalacheck.{Gen => SCGen}
 import org.scalameter.api._
 
 import crypto._
-import crypto.dsl.Implicits._
 import crypto.cipher._
 import crypto.remote._
 
@@ -32,29 +31,31 @@ trait InterpreterBench[F[_]] {
 
   // To be implemented
   def finalize[A]: F[A] => A
-  def interpret[A]: CryptoM[A] => F[A]
+  def createInterpreter: CryptoInterpreter[F]
   def name: String
 
   // The specific test cases
   performance of name in {
+    lazy val interp = createInterpreter
+
     measure method "monadic sum" in {
-      using(lists) in { xs => finalize { interpret(sumM(zero)(xs)) } }
+      using(lists) in { xs => finalize { interp.interpret(sumM(zero)(xs)) } }
     }
 
     measure method "applicative sum" in {
-      using(lists) in { xs => finalize { interpret(sumA(zero)(xs)) } }
+      using(lists) in { xs => finalize { interp.interpretA(sumA(zero)(xs)) } }
     }
 
     measure method "monadic product" in {
-      using(lists) in { xs => finalize { interpret(productM(one)(xs)) } }
+      using(lists) in { xs => finalize { interp.interpret(productM(one)(xs)) } }
     }
 
     measure method "applicative product" in {
-      using(lists) in { xs => finalize { interpret(productA(one)(xs)) } }
+      using(lists) in { xs => finalize { interp.interpretA(productA(one)(xs)) } }
     }
 
     measure method "sorting" in {
-      using(lists) in { xs => finalize { interpret(sorted(xs)) } }
+      using(lists) in { xs => finalize { interp.interpretA(sorted(xs)) } }
     }
   }
 }
@@ -64,15 +65,14 @@ class RemoteInterpreterOptAnalyzeBench
     with InterpreterBench[Future] {
 
   def name = "Remote interpreter with opt + analysis"
-  @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
+  def cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
 
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
 
-  @transient val interpreter =
+  def createInterpreter =
     new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, FixedBatch(20), _ >= 10)(
       ExecutionContext.Implicits.global)
 
-  override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
   override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
 }
 
@@ -81,14 +81,13 @@ class RemoteInterpreterOptBench
     with InterpreterBench[Future] {
 
   def name = "Remote interpreter with opt"
-  @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
+  def cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
 
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
 
-  @transient val interpreter =
+  def createInterpreter =
     new RemoteInterpreterOpt(cryptoService, pubKeys)(ExecutionContext.Implicits.global)
 
-  override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
   override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
 }
 
@@ -97,14 +96,13 @@ class RemoteInterpreterBench
     with InterpreterBench[Future] {
 
   def name = "Remote interpreter"
-  @transient val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
+  def cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
 
   val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
 
-  @transient val interpreter =
+  def createInterpreter =
     new RemoteInterpreter(cryptoService, pubKeys)(ExecutionContext.Implicits.global)
 
-  override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
   override def finalize[A] = (x: Future[A]) => Await.result(x,Duration.Inf)
 }
 
@@ -113,14 +111,13 @@ class LocalInterpreterBench
     with InterpreterBench[λ[α=>α]] {
 
   def name = "Local interpreter"
-  val interpreter = LocalInterpreter(keyRing)
+  def createInterpreter = LocalInterpreter(keyRing)
 
-  override def interpret[A] = (x: CryptoM[A]) => interpreter.interpret(x)
   override def finalize[A] = (x: A) => x
 }
 
 class InterpreterBenchSuite extends CustomPerformanceTest {
-  include[LocalInterpreterBench]
+  // include[LocalInterpreterBench]
   include[RemoteInterpreterBench]
   include[RemoteInterpreterOptBench]
   include[RemoteInterpreterOptAnalyzeBench]

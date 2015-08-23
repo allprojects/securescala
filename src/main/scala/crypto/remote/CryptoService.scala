@@ -64,7 +64,7 @@ trait CryptoServicePlus extends CryptoService {
 }
 
 class CryptoServiceImpl(keyRing: KeyRing)(implicit ec: ExecutionContext)
-    extends CryptoService with CryptoServicePlus {
+    extends CryptoService with CryptoServicePlus with java.io.Serializable {
 
   private def doConvert(s: Scheme, in: EncInt) = Common.depConvert(keyRing)(s,in)
   private def additive(x: EncInt): PaillierEnc = doConvert(Additive, x)
