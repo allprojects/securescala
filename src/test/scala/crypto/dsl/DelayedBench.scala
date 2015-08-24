@@ -41,7 +41,7 @@ object DelayedBench extends CustomPerformanceTest {
   val zero = Common.zero(keyRing)
   val one = Common.one(keyRing)
 
-  val sizes = Gen.enumeration("size")(1,5,10,15,20,25,30,35)
+  val sizes = Gen.enumeration("size")(1,5,10,15,20,25,30,35,40)
   val lists =
     for (size <- sizes) yield SCGen.listOfN(size, generators.encryptedNumber).sample.get
 
@@ -64,6 +64,46 @@ object DelayedBench extends CustomPerformanceTest {
       }
     }
 
+  }
+
+  performance of s"Product (${delay})" in {
+    measure method "sequential" in {
+      using(lists) in { xs =>
+        Await.result(noOpt.interpret(productA(one)(xs)), Duration.Inf)
+      }
+    }
+
+    measure method "parallel" in {
+      using(lists) in { xs =>
+        Await.result(opt.interpret(productA(one)(xs)), Duration.Inf)
+      }
+    }
+
+    measure method "parallel + batch" in {
+      using(lists) in { xs =>
+        Await.result(optAnalyze.interpret(productA(one)(xs)), Duration.Inf)
+      }
+    }
+  }
+
+  performance of s"Sorting (${delay})" in {
+    measure method "sequential" in {
+      using(lists) in { xs =>
+        Await.result(noOpt.interpret(sorted(xs)), Duration.Inf)
+      }
+    }
+
+    measure method "parallel" in {
+      using(lists) in { xs =>
+        Await.result(opt.interpret(sorted(xs)), Duration.Inf)
+      }
+    }
+
+    measure method "parallel + batch" in {
+      using(lists) in { xs =>
+        Await.result(optAnalyze.interpret(sorted(xs)), Duration.Inf)
+      }
+    }
   }
 }
 
