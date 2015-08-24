@@ -25,7 +25,7 @@ trait InterpreterBench[F[_]] {
   val zero = Common.zero(keyRing)
   val one = Common.one(keyRing)
 
-  val sizes = Gen.enumeration("size")(2,4,6,8,10)
+  val sizes = Gen.enumeration("size")(2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40)
   val lists =
     for (size <- sizes) yield SCGen.listOfN(size, generators.encryptedNumber).sample.get
 
@@ -117,7 +117,7 @@ class LocalInterpreterBench
 }
 
 class InterpreterBenchSuite extends CustomPerformanceTest {
-  // include[LocalInterpreterBench]
+  include[LocalInterpreterBench]
   include[RemoteInterpreterBench]
   include[RemoteInterpreterOptBench]
   include[RemoteInterpreterOptAnalyzeBench]
