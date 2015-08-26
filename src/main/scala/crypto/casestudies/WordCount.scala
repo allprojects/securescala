@@ -46,7 +46,9 @@ object WordCountCaseStudy extends App {
 
   val encrypted = encryptFileContent(k)("ghci-debugger.txt")
   writeEncryptedFile(encrypted, "ghci-debugger.json")
+  println("Text encrypted")
 
+  val startTime = System.currentTimeMillis
   val encryptedFromFile: EncString = readEncryptedFile("ghci-debugger.json")
   val counts: List[(OpeString, Int)] =
     locally(wordCountText(encryptedFromFile)).sortBy(_._2)
@@ -54,10 +56,12 @@ object WordCountCaseStudy extends App {
   Files.write(
     Paths.get("ghci-debugger-wordcount.json"),
     counts.asJson.nospaces.getBytes(StandardCharsets.UTF_8))
+  val totalTime = System.currentTimeMillis - startTime
 
   val countsFromFile = Parse.decodeOption[List[(OpeString, Int)]](
     Source.fromFile("ghci-debugger-wordcount.json").mkString).get
   val decrypted = countsFromFile.map { case (w,c) => (Common.decryptStr(k)(w), c) }
 
   println(decrypted.mkString("[","\n","]"))
+  println(s"Time for word count only: $totalTime")
 }
