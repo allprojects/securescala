@@ -22,10 +22,10 @@ object DelayedBench extends CustomPerformanceTest {
 
   val keyRing = KeyRing.create
 
-  val delay = 150.milliseconds
+  val delay = 50.milliseconds
 
-  val ecLocal = CustomExecutionContext(4)
-  val ecRemote = CustomExecutionContext(4)
+  val ecLocal = CustomExecutionContext(2)
+  val ecRemote = CustomExecutionContext(5)
 
   val cryptoService = new DelayedCryptoService(keyRing, delay)(ecRemote)
 
