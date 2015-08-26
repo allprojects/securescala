@@ -13,3 +13,46 @@ The debugger provides the following:
     Exceptions (e.g. pattern matching failure and error) can be treated as breakpoints, to help locate the source of an exception in the program.
 
 There is currently no support for obtaining a "stack trace", but the tracing and history features provide a useful second-best, which will often be enough to establish the context of an error. For instance, it is possible to break automatically when an exception is thrown, even if it is thrown from within compiled code (see Section 2.5.6, "Debugging exceptions").
+
+2.5.1. Breakpoints and inspecting variables
+
+Let's use quicksort as a running example. Here's the code:
+
+qsort [] = []
+qsort (a:as) = qsort left ++ [a] ++ qsort right
+  where (left,right) = (filter (<=a) as, filter (>a) as)
+
+main = print (qsort [8, 4, 0, 3, 1, 23, 11, 18])
+
+First, load the module into GHCi:
+
+Prelude> :l qsort.hs
+[1 of 1] Compiling Main             ( qsort.hs, interpreted )
+Ok, modules loaded: Main.
+*Main>
+
+
+Now, let's set a breakpoint on the right-hand-side of the second equation of qsort:
+
+*Main> :break 2
+Breakpoint 0 activated at qsort.hs:2:15-46
+*Main>
+
+The command :break 2 sets a breakpoint on line 2 of the most recently-loaded module, in this case qsort.hs. Specifically, it picks the leftmost complete subexpression on that line on which to set the breakpoint, which in this case is the expression (qsort left ++ [a] ++ qsort right).
+
+Now, we run the program:
+
+*Main> main
+Stopped at qsort.hs:2:15-46
+_result :: [a]
+a :: a
+left :: [a]
+right :: [a]
+[qsort.hs:2:15-46] *Main>
+
+Execution has stopped at the breakpoint. The prompt has changed to indicate that we are currently stopped at a breakpoint, and the location: [qsort.hs:2:15-46]. To further clarify the location, we can use the :list command:
+
+[qsort.hs:2:15-46] *Main> :list
+1  qsort [] = []
+2  qsort (a:as) = qsort left ++ [a] ++ qsort right
+3    where (left,right) = (filter (<=a) as, filter (>a) as)
