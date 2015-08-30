@@ -143,7 +143,7 @@ object LicensePlatesEnc extends EsperImplicits {
 
     val speeders = admin.createEPL("""
 SELECT car AS license, number, speed
-FROM CheckPointEventEnc
+FROM crypto.casestudies.CheckPointEventEnc
 WHERE Interp.isTooFast(speed)""")
 
     speeders += { es =>
@@ -159,11 +159,11 @@ SELECT s.time as startTime,
        s.car as car,
        g.time - s.time as duration,
        Interp.max(s.speed,c1.speed,c2.speed,c3.speed,g.speed) as maxSpeed
-FROM PATTERN [ every s=CarStartEventEnc
-               -> c1=CheckPointEventEnc(Interp.strEq(car,s.car),number=1)
-               -> c2=CheckPointEventEnc(Interp.strEq(car,c1.car),number=2)
-               -> c3=CheckPointEventEnc(Interp.strEq(car,c2.car),number=3)
-               -> g=CarGoalEventEnc(Interp.strEq(car,c3.car))
+FROM PATTERN [ every s=crypto.casestudies.CarStartEventEnc
+               -> c1=crypto.casestudies.CheckPointEventEnc(Interp.strEq(car,s.car),number=1)
+               -> c2=crypto.casestudies.CheckPointEventEnc(Interp.strEq(car,c1.car),number=2)
+               -> c3=crypto.casestudies.CheckPointEventEnc(Interp.strEq(car,c2.car),number=3)
+               -> g=crypto.casestudies.CarGoalEventEnc(Interp.strEq(car,c3.car))
              ]
 """)
 

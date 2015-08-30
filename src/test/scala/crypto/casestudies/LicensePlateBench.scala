@@ -7,9 +7,9 @@ import crypto.casestudies._
 import argonaut._
 import Argonaut._
 
-object LicensePlateBench extends CustomPerformanceTest {
+class LicensePlateBench extends CustomPerformanceTest {
 
-  val ns = List(10,50,100,200,500,1000)
+  val ns = List(10,50,100,150,200,300,400,500,600,700,800,900,1000)
   val sizes = Gen.enumeration("events")(ns: _*)
 
   ns.foreach { n =>
@@ -25,9 +25,9 @@ object LicensePlateBench extends CustomPerformanceTest {
   }
 }
 
-object LicensePlateEncBench extends CustomPerformanceTest {
+class LicensePlateEncBench extends CustomPerformanceTest {
 
-  val ns = List(1)
+  val ns = List(10,50,100,150,200,300,400,500,600,700,800,900,1000)
   val sizes = Gen.enumeration("events")(ns: _*)
   val keyRing = Parse.decodeOption[KeyRing](
     io.Source.fromFile(LPConstants.KEYRING_FILE.toString).mkString).getOrElse(
@@ -45,4 +45,14 @@ object LicensePlateEncBench extends CustomPerformanceTest {
       }
     }
   }
+}
+
+class LicensePlateBenchSuite extends CustomPerformanceTest {
+  include[LicensePlateBench]
+  include[LicensePlateEncBench]
+}
+
+object LicensePlateBenchSuiteRunner extends App {
+  val bench = new LicensePlateBenchSuite
+  bench.main(args)
 }

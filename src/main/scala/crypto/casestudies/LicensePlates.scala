@@ -96,9 +96,9 @@ object LicensePlates extends App with EsperImplicits {
   val config: Configuration = new Configuration
   config.addImport("crypto.casestudies.*")
 
-  config.addEventType(classOf[CarStartEvent])
-  config.addEventType(classOf[CheckPointEvent])
-  config.addEventType(classOf[CarGoalEvent])
+  config.addEventType(classOf[crypto.casestudies.CarStartEvent])
+  config.addEventType(classOf[crypto.casestudies.CheckPointEvent])
+  config.addEventType(classOf[crypto.casestudies.CarGoalEvent])
 
   val epService: EPServiceProvider = EPServiceProviderManager.getDefaultProvider(config)
   val rt = epService.getEPRuntime
@@ -109,7 +109,7 @@ object LicensePlates extends App with EsperImplicits {
 
   val speeders = admin.createEPL("""
 SELECT car AS license, number, speed
-FROM CheckPointEvent
+FROM crypto.casestudies.CheckPointEvent
 WHERE speed > 133""")
 
   speeders += { es =>
@@ -124,11 +124,11 @@ SELECT s.time as startTime,
        s.car as car,
        g.time - s.time as duration,
        max(s.speed,c1.speed,c2.speed,c3.speed,g.speed) as maxSpeed
-FROM PATTERN [ every s=CarStartEvent
-               -> c1=CheckPointEvent(car=s.car,number=1)
-               -> c2=CheckPointEvent(car=c1.car,number=2)
-               -> c3=CheckPointEvent(car=c2.car,number=3)
-               -> g=CarGoalEvent(car=c3.car)
+FROM PATTERN [ every s=crypto.casestudies.CarStartEvent
+               -> c1=crypto.casestudies.CheckPointEvent(car=s.car,number=1)
+               -> c2=crypto.casestudies.CheckPointEvent(car=c1.car,number=2)
+               -> c3=crypto.casestudies.CheckPointEvent(car=c2.car,number=3)
+               -> g=crypto.casestudies.CarGoalEvent(car=c3.car)
              ]
 """)
 
