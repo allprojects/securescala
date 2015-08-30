@@ -188,7 +188,6 @@ FROM PATTERN [ every s=CarStartEventEnc
       val end = System.currentTimeMillis
       OUTPUT.println(s"Time for event processing: ${(end - start) / 1000.0}s")
       Interp.shutdown(())
-      System.exit(0)
     }
 
     def sendEvent(e: LicensePlateEventEnc): Unit = {
