@@ -55,10 +55,9 @@ object WordCountBench extends CustomPerformanceTest {
     }
 
     measure method "remoteOpt" in {
-      lazy val keyRing = KeyRing.create
       lazy val interpret = {
-        val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
-        val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+        lazy val cryptoService = new CryptoServiceImpl(keyRing)(CustomExecutionContext(5))
+        lazy val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
         new RemoteInterpreterOpt(cryptoService, pubKeys)(ExecutionContext.Implicits.global)
       }
       def finish[A](x: Future[A]): A = Await.result(x, 42.minutes)

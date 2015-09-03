@@ -129,8 +129,8 @@ object WordCountCaseStudyPlain extends App {
   // }
   // def finish[A](x: Future[A]): A = Await.result(x, 42.minutes)
 
-  val interpret = LocalInterpreter(keyRing)
-  def finish[A](x: A): A = x
+  // val interpret = LocalInterpreter(keyRing)
+  // def finish[A](x: A): A = x
 
   implicit val decoder = EncInt.decode(keyRing)
 
