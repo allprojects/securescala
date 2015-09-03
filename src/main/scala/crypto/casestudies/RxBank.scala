@@ -1,6 +1,3 @@
-// https://github.com/samuelgruetter/rx-playground
-// https://github.com/ReactiveX/RxScala/blob/4857c7727d0fb2192a95740e545a7b69785f08b4/examples/src/test/scala/examples/Olympics.scala
-// https://github.com/ReactiveX/RxJava/wiki/Additional-Reading
 package crypto.casestudies
 
 import java.awt.Color
@@ -22,7 +19,7 @@ import crypto._
 import crypto.cipher._
 import crypto.dsl.Implicits._
 import crypto.dsl._
-import crypto.remote._
+// import crypto.remote._
 
 case class Transaction(sender: String, receiver: String, amount: EncInt)
 
@@ -55,7 +52,7 @@ class RxBank(ts: Observable[Transaction])(interp: PureCryptoInterpreter, zero: E
   private val subjUpdates: Subject[(String,EncInt)] = Subject()
   val updates: Observable[(String,EncInt)] = subjUpdates
 
-  ts.foreach(process)
+  ts.doOnTerminate(subjUpdates.onCompleted).foreach(process)
 
   private def process: Transaction => Unit = { case Transaction(sender,receiver,amount) =>
     val (newSenderAmount,newReceiverAmount) = interp {
@@ -76,11 +73,11 @@ class RxBank(ts: Observable[Transaction])(interp: PureCryptoInterpreter, zero: E
 class RxBankInterface(ts: Observable[Transaction])(
   updates: Observable[(String,EncInt)],
   interp: PureCryptoInterpreter
-) extends SimpleSwingApplication {
+) extends SimpleSwingApplication { gui =>
 
   import RxBankConstants._
 
-  val encColorMapping = colorMapping.map { case (thresh,c) => (interp(encrypt(Comparable)(thresh)),c)}
+  val encColorMapping: List[(EncInt,Color)] = colorMapping.map { case (thresh,c) => (interp(encrypt(Comparable)(thresh)),c)}
 
   private def newField = new TextField {
     text = ""
@@ -94,8 +91,10 @@ class RxBankInterface(ts: Observable[Transaction])(
     preferredSize = new Dimension(300,500)
   }
 
+  def title = "RxBank Encrypted"
+
   def top = new MainFrame {
-    title = "RxBank Encrypted"
+    title = gui.title
     contents = new BoxPanel(Orientation.Vertical) {
       preferredSize = new Dimension(400,500)
       senders.zipWithIndex.foreach { case (s,i) =>
@@ -117,7 +116,7 @@ class RxBankInterface(ts: Observable[Transaction])(
       messages.listData = s"${sender} -> ${receiver}" +: old
   }
 
-  updates.foreach { case (account,newAmount) => redrawFor(account,newAmount)}
+  updates.doOnTerminate(quit()).foreach { case (account,newAmount) => redrawFor(account,newAmount)}
 
   private def redrawFor(s: String, amt: EncInt): Unit = {
     val field = fieldFor(s)
@@ -127,10 +126,12 @@ class RxBankInterface(ts: Observable[Transaction])(
   }
 }
 
-class RxBankInterfacePlain(ts: Observable[Transaction])(
+class RxBankInterfaceDecrypted(ts: Observable[Transaction])(
   updates: Observable[(String,EncInt)],
   interp: PureCryptoInterpreter, keyRing: KeyRing
 ) extends RxBankInterface(ts)(updates,interp) {
+
+  override def title = "RxBank Decrypted"
 
   override def logTransaction(t: Transaction) = t match {
     case Transaction(sender,receiver,amnt) =>
@@ -138,7 +139,7 @@ class RxBankInterfacePlain(ts: Observable[Transaction])(
       messages.listData = s"${sender} -> ${receiver} (${Common.decrypt(keyRing)(amnt)})" +: old
   }
 
-  updates.foreach { case (account,newAmount) => redrawFor(account,newAmount) }
+  updates.doOnTerminate(quit()).foreach { case (account,newAmount) => redrawFor(account,newAmount) }
 
   private def redrawFor(account: String, amt: EncInt): Unit = {
     val field = fieldFor(account)
@@ -149,32 +150,141 @@ class RxBankInterfacePlain(ts: Observable[Transaction])(
   }
 }
 
+case class PlainTransaction(sender: String, receiver: String, amount: Int)
+object PlainTransaction {
+  import RxBankConstants._
+
+  def rand(rand: Random): PlainTransaction = {
+    val index = rand.nextInt(senders.length)
+    val sender = senders(index)
+
+    val remaining = senders.diff(List(sender))
+    val index2 = rand.nextInt(remaining.length)
+    val receiver = remaining(index2)
+
+    val amount = rand.nextInt(20) + 5
+
+    PlainTransaction(
+      sender,
+      receiver,
+      amount
+    )
+  }
+}
+
+class RxBankInterfacePlain(ts: Observable[PlainTransaction])(
+  updates: Observable[(String,Int)]) extends SimpleSwingApplication { gui =>
+
+  import RxBankConstants._
+
+  private def newField = new TextField {
+    text = ""
+    columns = 6
+    editable = false
+  }
+
+  private val fields = List.fill(senders.size)(newField)
+  val fieldFor = senders.zip(fields).toMap
+  val messages = new ListView[String](List()) {
+    preferredSize = new Dimension(300,500)
+  }
+
+  def title = "RxBank Plain"
+
+  def top = new MainFrame {
+    title = gui.title
+    contents = new BoxPanel(Orientation.Vertical) {
+      preferredSize = new Dimension(400,500)
+      senders.zipWithIndex.foreach { case (s,i) =>
+        contents += new FlowPanel(FlowPanel.Alignment.Leading)() {
+          contents += Swing.HStrut(60)
+          contents += fieldFor(s)
+          contents += new Label(s)
+        }
+      }
+      contents += new FlowPanel (new ScrollPane (messages))
+    }
+  }
+
+  ts.foreach(logTransaction)
+
+  def logTransaction(t: PlainTransaction) = t match {
+    case PlainTransaction(sender,receiver,amnt) =>
+      val old = messages.listData
+      messages.listData = s"${sender} -> ${receiver} (${amnt})" +: old
+  }
+
+  updates.doOnTerminate(quit()).foreach { case (account,newAmount) => redrawFor(account,newAmount)}
+
+  private def redrawFor(s: String, amt: Int): Unit = {
+    val field = fieldFor(s)
+    val colors = colorMapping.filter { case (t,c) => amt > t }
+    field.text = amt.toString
+    if (colors.nonEmpty)
+      field.background = colors.last._2
+  }
+}
+
+class RxBankPlain(ts: Observable[PlainTransaction]) {
+  private var storage: Map[String,Int] = Map()
+
+  private val subjUpdates: Subject[(String,Int)] = Subject()
+  val updates: Observable[(String,Int)] = subjUpdates
+
+  ts.doOnTerminate(subjUpdates.onCompleted).foreach(process)
+
+  private def process: PlainTransaction => Unit = {
+    case PlainTransaction(sender,receiver,amount) =>
+
+      val newSenderAmount = storage.get(sender).getOrElse(0) - amount
+      val newReceiverAmount = storage.get(receiver).getOrElse(0) + amount
+
+      storage = storage + (sender -> newSenderAmount)
+      storage = storage + (receiver -> newReceiverAmount)
+
+      subjUpdates.onNext((sender,newSenderAmount))
+      subjUpdates.onNext((receiver,newReceiverAmount))
+  }
+
+  def balance: String => Int = s => storage.get(s).getOrElse(0)
+}
+
 object RxBankApp extends App {
   implicit val keyRing = KeyRing.create
 
+  val NUM_TRANSACTIONS = 100
+
   // val interp = new LocalInterpreter(keyRing)
 
-  val globalEC = scala.concurrent.ExecutionContext.Implicits.global
-  val cryptoService = new CryptoServiceImpl(keyRing)(globalEC)
-  val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
-  val interp = Blocking {
-    new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, FixedBatch(10), _ > 3)(globalEC)
-  }
+  // val globalEC = scala.concurrent.ExecutionContext.Implicits.global
+  // val cryptoService = new CryptoServiceImpl(keyRing)(globalEC)
+  // val pubKeys = Await.result(cryptoService.publicKeys, 10.seconds)
+  // val interp = Blocking {
+  //   new RemoteInterpreterOptAnalyze(cryptoService, pubKeys, FixedBatch(10), _ > 3)(globalEC)
+  // }
 
-  val rand = new Random
-  val ts = Observable.interval(200 millis).map(_ => Transaction.rand(rand)).publish
+  // val rand1 = new Random
+  // var ts = Observable.from(List.fill(NUM_TRANSACTIONS)(Transaction.rand(rand1))).publish
+  // val bank = new RxBank(ts)(interp, Common.zero(keyRing))
 
-  val bank = new RxBank(ts)(interp, Common.zero(keyRing))
+  // val enc = Future { new RxBankInterface(ts)(bank.updates,interp).startup(Array()) }
 
-  val interfaces = Future.sequence(List(
-    Future { new RxBankInterface(ts)(bank.updates,interp).startup(Array()) },
-    Future { new RxBankInterfacePlain(ts)(bank.updates,interp,keyRing).startup(Array()) }
-  ))
+  // val dec = Future {new RxBankInterfaceDecrypted(ts)(bank.updates,interp,keyRing).startup(Array())}
 
-  Thread.sleep(5000)
-  ts.connect
+  val rand2 = new Random
+  val tsPlain =
+    Observable.from(List.fill(NUM_TRANSACTIONS)(PlainTransaction.rand(rand2))).publish
+  val bankPlain = new RxBankPlain(tsPlain)
 
-  Await.result(interfaces ,30.minutes)
+  val plain = Future { new RxBankInterfacePlain(tsPlain)(bankPlain.updates).startup(Array()) }
+
+  Thread.sleep(1000)
+
+  // ts.connect
+  // Await.result(Future.sequence(List(enc)),30.minutes)
+
+  tsPlain.connect
+  Await.result(plain,30.minutes)
 }
 
 object RxBankConstants {
