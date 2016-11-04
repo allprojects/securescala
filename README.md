@@ -4,7 +4,7 @@
 
 ### Functionality
 <p align="center">
-<img src="images/Architecture.jpg" alt="Architecture" align="center" width="450" >
+<img src="images/Archi.jpg" alt="Architecture" align="center" width="450" >
 </p>
 SecureScala is a domain specific language to express secure computation in Scala without requiring any cryptographic knowledge. This means that the code can be executed on an untrusted platform without leaking any data. Computation is simply carried on encrypted data. SecureScala is based on a novel combination of free monads and free applicative functors and supports parallel execution and static analyzability. 
 
