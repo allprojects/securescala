@@ -1,44 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Securescala by allprojects</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-dark.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
     <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
+    <title>Securescala by allprojects</title>
   </head>
+
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/allprojects/securescala">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/allprojects/securescala/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/allprojects/securescala/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
+    <div id="container">
+      <div class="inner">
 
-    <div class="wrapper">
-
-      <section>
-        <div id="title">
+        <header>
           <h1>Securescala</h1>
-          <p>Scala Embedding of Secure Computations</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/allprojects">allprojects</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
+          <h2>Scala Embedding of Secure Computations</h2>
+        </header>
 
-        <p></p>
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/allprojects/securescala/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/allprojects/securescala/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/allprojects/securescala" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <p></p>
 
 
 
@@ -49,17 +42,6 @@
 
 <p>SecureScala is a domain specific language to express secure computation in Scala without requiring any cryptographic knowledge. This means that the code can be executed on an untrusted platform without leaking any data. Computation is simply carried on encrypted data. SecureScala is based on a novel combination of free monads and free applicative functors and supports parallel execution and static analyzability. </p>
 
-<p align="center" id="Architecture">
-<img src="images/Architecture.jpg" alt="Architecture" align="center" width="450">
-</p>
-
-<ul>
-<li>The user submits a program for execution through the client interface. </li>
-<li>The client deploys the program to the (untrusted) cloud service (along with any required encrypted data) which executes the program over encrypted data. </li>
-<li>The cloud service can utilize a trusted service to overcome limitations of PHE, by re-encrypting data as necessary, i.e., converting between encryption schemes. </li>
-<li>Upon program completion, the encrypted results are returned to the client, decrypted and returned to the user in plain text.</li>
-</ul>
-
 <p>With SecureScala defining a secure version of WordCount is as simple as:</p>
 
 <div class="highlight highlight-source-scala"><pre><span class="pl-k">def</span> <span class="pl-en">wordCountText</span>(<span class="pl-v">e</span>: <span class="pl-en">EncStr</span>)<span class="pl-k">:</span> <span class="pl-en">CryptoM</span>[<span class="pl-en">List</span>[(<span class="pl-en">OpeStr</span>,<span class="pl-k">Int</span>)]] <span class="pl-k">=</span> 
@@ -68,6 +50,22 @@
 <span class="pl-k">def</span> <span class="pl-en">wordCount_</span>(<span class="pl-v">es</span>: <span class="pl-en">IList</span>[<span class="pl-en">EncStr</span>])<span class="pl-k">:</span> <span class="pl-en">Crypto</span>[<span class="pl-en">List</span>[(<span class="pl-en">OpeStr</span>,<span class="pl-k">Int</span>)]] <span class="pl-k">=</span> 
               es.traverse(toOpeStr).map(
                 _.groupBy(x <span class="pl-k">=&gt;</span> x).map(_.length).toList)</pre></div>
+
+<h3>
+<a id="architecture" class="anchor" href="#architecture" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Architecture</h3>
+
+<p align="center" id="Architecture">
+<img src="images/Architecture.jpg" alt="Architecture" align="center" width="450">
+</p>
+
+<p>SecureScala targets and architecture where a trusted client can access data in plaintext and an untrusted service provides computing power. </p>
+
+<ul>
+<li>The user submits a program for execution through the client interface. </li>
+<li>The client deploys the program to the (untrusted) cloud service (along with any required encrypted data) which executes the program over encrypted data. </li>
+<li>The cloud service can utilize a trusted service to overcome limitations of PHE, by re-encrypting data as necessary, i.e., converting between encryption schemes. </li>
+<li>Upon program completion, the encrypted results are returned to the client, decrypted and returned to the user in plain text.</li>
+</ul>
 
 <p>The current implementation of SecureScala is due to <a href="https://github.com/markus1189">Markus Hauck</a></p>
 
@@ -108,10 +106,15 @@
 <li>Mira Mezini</li>
 <li>Guido Salvaneschi</li>
 </ul>
-      </section>
+        </section>
 
+        <footer>
+          Securescala is maintained by <a href="https://github.com/allprojects">allprojects</a><br>
+          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
   </body>
 </html>
