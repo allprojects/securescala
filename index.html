@@ -47,9 +47,11 @@
 <h3>
 <a id="functionality" class="anchor" href="#functionality" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Functionality</h3>
 
-<p align="center">
+<p align="center" id="Architecture">
 <img src="images/Architecture.jpg" alt="Architecture" align="center" width="450">
 </p>
+
+<p>The user submits a program for execution through the client interface. The client deploys the program to the (untrusted) cloud service (along with any required encrypted data) which executes the program over encrypted data. The cloud service can utilize a trusted service to overcome limitations of PHE, by re-encrypting data as necessary, i.e., converting between encryption schemes. Upon program completion, the encrypted results are returned to the client, decrypted and returned to the user in plain text.<a href="#Architecture">[Figure 1]</a></p>
 
 <p>SecureScala is a domain specific language to express secure computation in Scala without requiring any cryptographic knowledge. This means that the code can be executed on an untrusted platform without leaking any data. Computation is simply carried on encrypted data. SecureScala is based on a novel combination of free monads and free applicative functors and supports parallel execution and static analyzability. </p>
 
