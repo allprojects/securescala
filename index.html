@@ -65,8 +65,7 @@
 
 <div class="highlight highlight-source-scala"><pre><span class="pl-k">def</span> <span class="pl-en">wordCountText</span>(<span class="pl-v">e</span>: <span class="pl-en">EncStr</span>)<span class="pl-k">:</span> <span class="pl-en">CryptoM</span>[<span class="pl-en">List</span>[(<span class="pl-en">OpeStr</span>,<span class="pl-k">Int</span>)]] <span class="pl-k">=</span> e.split(<span class="pl-s"><span class="pl-pds">"""</span>\s+<span class="pl-pds">"""</span></span>) <span class="pl-k">&gt;&gt;=</span> wordCount_
 
-<span class="pl-k">def</span> <span class="pl-en">wordCount_</span>(<span class="pl-v">es</span>: <span class="pl-en">IList</span>[<span class="pl-en">EncStr</span>])<span class="pl-k">:</span> <span class="pl-en">Crypto</span>[<span class="pl-en">List</span>[(<span class="pl-en">OpeStr</span>,<span class="pl-k">Int</span>)]] <span class="pl-k">=</span> es.traverse(toOpeStr).map(
-                                                                  _.groupBy(x <span class="pl-k">=&gt;</span> x).map(_.length).toList)</pre></div>
+<span class="pl-k">def</span> <span class="pl-en">wordCount_</span>(<span class="pl-v">es</span>: <span class="pl-en">IList</span>[<span class="pl-en">EncStr</span>])<span class="pl-k">:</span> <span class="pl-en">Crypto</span>[<span class="pl-en">List</span>[(<span class="pl-en">OpeStr</span>,<span class="pl-k">Int</span>)]] <span class="pl-k">=</span> es.traverse(toOpeStr).map(_.groupBy(x <span class="pl-k">=&gt;</span> x).map(_.length).toList)</pre></div>
 
 <h3>
 <a id="academic-publications" class="anchor" href="#academic-publications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Academic publications</h3>
