@@ -38,7 +38,7 @@
 
 
 <h3>
-<a id="functionality" class="anchor" href="#functionality" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Functionality</h3>
+<a id="securescala-in-a-nutshell" class="anchor" href="#securescala-in-a-nutshell" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SecureScala in a Nutshell</h3>
 
 <p>SecureScala is a domain specific language to express secure computation in Scala without requiring any cryptographic knowledge. This means that the code can be executed on an untrusted platform without leaking any data. Computation is simply carried on encrypted data. SecureScala is based on a novel combination of free monads and free applicative functors and supports parallel execution and static analyzability. </p>
 
@@ -51,14 +51,16 @@
               es.traverse(toOpeStr).map(
                 _.groupBy(x <span class="pl-k">=&gt;</span> x).map(_.length).toList)</pre></div>
 
+<p>The current implementation of SecureScala is due to <a href="https://github.com/markus1189">Markus Hauck</a></p>
+
 <h3>
 <a id="architecture" class="anchor" href="#architecture" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Architecture</h3>
+
+<p>SecureScala targets and architecture where a trusted client can access data in plaintext and an untrusted service provides computing power.</p>
 
 <p align="center" id="Architecture">
 <img src="images/Architecture.jpg" alt="Architecture" align="center" width="450">
 </p>
-
-<p>SecureScala targets and architecture where a trusted client can access data in plaintext and an untrusted service provides computing power. </p>
 
 <ul>
 <li>The user submits a program for execution through the client interface. </li>
@@ -66,8 +68,6 @@
 <li>The cloud service can utilize a trusted service to overcome limitations of PHE, by re-encrypting data as necessary, i.e., converting between encryption schemes. </li>
 <li>Upon program completion, the encrypted results are returned to the client, decrypted and returned to the user in plain text.</li>
 </ul>
-
-<p>The current implementation of SecureScala is due to <a href="https://github.com/markus1189">Markus Hauck</a></p>
 
 <h3>
 <a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h3>
@@ -77,11 +77,11 @@
 <p>SecureScala, allows developers to write computations over encrypted data without requiring sophisticated cryptographic knowledge, without forfeiting integration with a general-purpose language. SecureScala is based on a novel combination of a well known approach using free monads and more recent research on free applicative functors. While applicative functors are less expressive than monads, the latter suffer from the lack of static analyzability and do not allow implicit parallelism. The resulting DSL allows programmers to combine these styles, retaining the benefits of both. Since each PHE scheme supports only a limited set of operations, conversions transparent to the user allow to express programs that include unsupported operations. Different interpreters allow processing locally for testing purposes, on remote hardware in a distributed fashion, or with an optional variety of optimization such as implicit parallelism and transformations achieved via static analysis.</p>
 
 <h3>
-<a id="more-background" class="anchor" href="#more-background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>More Background</h3>
+<a id="cloud-computing-and-partial-homomorphic-encryption" class="anchor" href="#cloud-computing-and-partial-homomorphic-encryption" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Cloud Computing and Partial Homomorphic Encryption</h3>
 
 <p>Cloud computing offers on-demand provisioning of resources, seemingly unlimited scalability and other desirable properties, e.g., fault tolerance, minimal maintenance and cost reduction. To take advantage of these opportunities, the program representing a computation at hand and the associated data is uploaded into the cloud and executed there. Moving computations to the cloud, however, forces developers to face a number of security challenges. While the cloud is a viable approach for non-sensitive and public data, it is problematic for scenarios where data is sensitive, requiring protection from both adversaries and the cloud provider. Traditional encryption targeted to protect data while passing communication channels does not offer a solution for the cloud-based computation scenario because the program running on the remote hardware is not allowed to decrypt the data during the execution plain text data would be available to the owners of the remote host.</p>
 
-<p>Homomorphic encryption schemes allow computations over encrypted data. Hence, private data can be uploaded to the cloud and processed in the encrypted form, without leaking information. Available homomorphic encryption schemes differ in the operations they support. Fully homomorphic encryption schemes (FHE) support at least multiplication and addition, from which all other operations can be derived. While in theory FHE seems to be the ulti- mate solution to the problem of computing over encrypted data, the computational overhead makes it unviable in practice. Partial homomorphic encryption (PHE) schemes are less expressive they support computation over encrypted data with respect to specific operations, but in contrast to FHE, exhibit acceptable performance. Examples of such schemes are Paillier (addition), ElGamal (multiplication), OPE (order comparisons) and AES (equality comparisons).</p>
+<p>Homomorphic encryption schemes allow computations over encrypted data. Hence, private data can be uploaded to the cloud and processed in the encrypted form, without leaking information. Available homomorphic encryption schemes differ in the operations they support. Fully homomorphic encryption schemes (FHE) support at least multiplication and addition, from which all other operations can be derived. While in theory FHE seems to be the ultimate solution to the problem of computing over encrypted data, the computational overhead makes it unviable in practice. Partial homomorphic encryption (PHE) schemes are less expressive they support computation over encrypted data with respect to specific operations, but in contrast to FHE, exhibit acceptable performance. Examples of such schemes are Paillier (addition), ElGamal (multiplication), OPE (order comparisons) and AES (equality comparisons).</p>
 
 <p>PHE schemes have been used in several systems to provide practical and provable security. Yet, these approaches adopt special-purpose languages, such as SQL or PigLatin to specify computations. A PHE embedding in a general-purpose language that enables reuse of existing libraries, fostering modularity and composition of secure computations, is still open research.</p>
 
@@ -97,15 +97,8 @@
 <h3>
 <a id="about" class="anchor" href="#about" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>About</h3>
 
-<p>Securescala is a project at the Software Technology Group - Technical University of Darmstadt, Germany. Many people contributed to the project:</p>
-
-<ul>
-<li>Markus Hauck</li>
-<li>Savvas Savvides</li>
-<li>Patrick Eugster</li>
-<li>Mira Mezini</li>
-<li>Guido Salvaneschi</li>
-</ul>
+<p>Securescala is a project collaboration between Technical University of Darmstadt, Germany and Purdue university, USA.
+People: Markus Hauck, Savvas Savvides, Patrick Eugster, Mira Mezini, Guido Salvaneschi.</p>
         </section>
 
         <footer>
