@@ -1,4 +1,4 @@
-## securescala
+## SecureScala
 
 Scala Embedding of Secure Computations
 
