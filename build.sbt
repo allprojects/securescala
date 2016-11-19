@@ -35,6 +35,8 @@ scalacOptions in (Compile, console) ~= (_ filterNot (Set("-Ywarn-unused-import",
 
 scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
+test in assembly := {}
+
 addCompilerPlugin("org.spire-math" % "kind-projector_2.11" % "0.5.2")
 
 libraryDependencies += "io.reactivex" % "rxscala_2.11" % "0.25.0"
@@ -62,6 +64,10 @@ libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.6" % "test"
 libraryDependencies += "org.pelotom" %% "effectful" % "1.1-SNAPSHOT"
 
 libraryDependencies += "io.argonaut" %% "argonaut" % "6.1"
+
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.0.1" % "provided"
+
+libraryDependencies += "com.github.scala-incubator.io" % "scala-io-file_2.11" % "0.4.3-1"
 
 testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
