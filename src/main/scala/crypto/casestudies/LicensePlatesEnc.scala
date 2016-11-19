@@ -109,6 +109,8 @@ object LPConstants {
 object NullOutputStream extends OutputStream {override def write(b: Int) = ()}
 
 object LicensePlatesEnc extends EsperImplicits {
+  import scala.io
+
   def withKeyRing(keyRing: KeyRing)(args: Array[String]) = {
     val args_ = args.map(_.split("""=""") match {
       case Array(x,y) => List((x,y))
@@ -225,6 +227,8 @@ FROM PATTERN [ every s=crypto.casestudies.CarStartEventEnc
 
 object Interp {
   import LPConstants._
+  import scala.io
+
   val USE_REMOTE = false
 
   val keyRing = {

@@ -242,6 +242,8 @@ object StartCryptoService extends App {
 }
 
 object StartCryptoServiceFrom {
+  import scala.io
+
   def main(args: Array[String]): Unit = {
     if (args.size != 1 || !(new File(args.head).exists)) {
       println(s"Could not start crypto service with args: ${args.toList}")

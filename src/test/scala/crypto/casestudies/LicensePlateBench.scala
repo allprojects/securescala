@@ -26,6 +26,7 @@ class LicensePlateBench extends CustomPerformanceTest {
 }
 
 class LicensePlateEncBench extends CustomPerformanceTest {
+  import scala.io
 
   val ns = List(10,50,100,150,200,300,400,500,600,700,800,900,1000)
   val sizes = Gen.enumeration("events")(ns: _*)
