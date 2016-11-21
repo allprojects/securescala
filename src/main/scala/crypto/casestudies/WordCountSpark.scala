@@ -11,7 +11,7 @@ object WordCountSpark {
   import scala.io._
   import scalax.file.Path
 
-  val conf = new SparkConf().setAppName("Word Count on Spark").setMaster("spark://chen-ThinkPad-T410:7077")
+  val conf = new SparkConf().setAppName("Word Count on Spark")
   val sc = new SparkContext(conf)
 
   object WordCount {
@@ -33,11 +33,11 @@ object WordCountSpark {
 
     val keyring = KeyRing.create
 
-    val plain = Source.fromFile("ghci-debugger.txt").mkString
+    val plain = Source.fromFile(args(0)).mkString
     WordCount.writeEncryptedFile(WordCount.encryptContent(keyring)(plain), "encrypted_test.txt")
 
     val content = WordCount.readEncryptedFile("encrypted_test.txt")
-    content.map(Common.decryptStr(keyring.priv)).flatMap(word => word.split(" ")).map(x => (x, 1)).reduceByKey((l, r) => l + r).collect.foreach(println)
+    content.map(Common.decryptStr(keyring.priv)).flatMap(word => word.split("""\W+""")).map(x => (x, 1)).reduceByKey((l, r) => l + r).collect.foreach(println)
 
   }
 }
