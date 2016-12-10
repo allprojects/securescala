@@ -9,6 +9,8 @@ usage()
 MASTER_URL="spark://$(hostname):7077"
 FILE=./ghci-debugger.txt
 CLASS=crypto.casestudies.WordCountSpark 
+BENCH=
+PLAINBENCH=
 
 while getopts ":m:h:f:b" o; do
     case "${o}" in
@@ -17,7 +19,9 @@ while getopts ":m:h:f:b" o; do
 	f)
 	    FILE=${OPTARG} ;;
 	b)
-	    CLASS=crypto.casestudies.WordCountSparkBench ;;
+	    BENCH=crypto.casestudies.WordCountSparkBench
+	    PLAINBENCH=crypto.casestudies.WordCountPlainSparkBench
+	    ;;
 	h)
 	    usage ;;
 	*) ;;
@@ -26,8 +30,14 @@ done
 
 sbt assembly
 if [ -n ${SPARK_HOME} ]
-then ${SPARK_HOME}/bin/spark-submit --master ${MASTER_URL} --class ${CLASS} ./target/scala-2.11/master_thesis_source-assembly-1.0.jar ${FILE}
+then
+    if [ -n ${BENCH} ]
+    then ${SPARK_HOME}/bin/spark-submit --master ${MASTER_URL} --class ${BENCH} ./target/scala-2.11/master_thesis_source-assembly-1.0.jar ${FILE} 
+	 ${SPARK_HOME}/bin/spark-submit --master ${MASTER_URL} --class ${PLAINBENCH} ./target/scala-2.11/master_thesis_source-assembly-1.0.jar ${FILE}
+    else ${SPARK_HOME}/bin/spark-submit --master ${MASTER_URL} --class ${CLASS} ./target/scala-2.11/master_thesis_source-assembly-1.0.jar ${FILE}
+    fi
 else echo "Please set your SPARK_HOME variable" 1>&2
 fi
+
 
 rm -f encrypted_test.txt
