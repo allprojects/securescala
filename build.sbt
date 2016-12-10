@@ -65,7 +65,7 @@ libraryDependencies += "org.pelotom" %% "effectful" % "1.1-SNAPSHOT"
 
 libraryDependencies += "io.argonaut" %% "argonaut" % "6.1"
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "2.0.1" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.0.2" % "provided"
 
 libraryDependencies += "com.github.scala-incubator.io" % "scala-io-file_2.11" % "0.4.3-1"
 

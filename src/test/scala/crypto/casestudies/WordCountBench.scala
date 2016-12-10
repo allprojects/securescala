@@ -68,32 +68,3 @@ object WordCountBench extends CustomPerformanceTest {
     }
   }
 }
-
-object WordCountSparkBench extends CustomPerformanceTest {
-  import org.apache.spark.launcher.SparkLauncher
-
-  import WordCountBench.{ns, limits}
-
-  val sparkHome = sys.env.get("SPARK_HOME") match {
-    case None => sys.error("""Cannot find $SPARK_HOME. Please set the environment variable""")
-    case Some(x) => x
-  }
-  val pwd = sys.env.get("PWD") match {
-    case None => sys.error("""Cannot find $PWD. This should not happen""")
-    case Some(x) => x
-  }
-
-  val spark = new SparkLauncher()
-    .setSparkHome(sparkHome)
-    .setMaster("local[4]")
-    .setAppResource(pwd ++ """/target/scala-2.11/master_thesis_source-assembly-1.0.jar""")
-    .setMainClass("""WordCountSparkBench""")
-    .addSparkArg("""./ghci-debugger.txt""")
-
-  measure method "wordCountSpark" in {
-    using (limits) in {
-      charLimit => spark.addSparkArg(charLimit.toString).launch()
-    }
-  }
-
-}
