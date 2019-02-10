@@ -1,4 +1,4 @@
-import sbt._
+import sbt.{Build, Project, ProjectRef, uri}
 
 object MyBuild extends Build {
 
