@@ -62,7 +62,8 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "2.0.0-M2"
 libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.10.1" % "test"
 
 //libraryDependencies += "org.pelotom" %% "effectful" % "1.2-SNAPSHOT"
-lazy val effectfulProject = RootProject(uri("https://github.com/azanov/effectful.git")) dependsOn(effectfulProject)
+lazy val effectfulProject = RootProject(uri("https://github.com/azanov/effectful.git"))
+lazy val root = (project in file(".")).dependsOn(effectfulProject)
 
 libraryDependencies += "io.argonaut" %% "argonaut" % "6.2.2"
 
