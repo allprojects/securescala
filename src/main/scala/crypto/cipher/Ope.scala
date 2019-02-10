@@ -21,7 +21,7 @@ class OpeNative { // `class` required for javah/native interface
 
 object OpeNative {
   val home = System.getProperty("user.home")
-  System.load(home + "/libope.so")
+  System.load("libope.so")
   private val instance = new OpeNative
 
   def encrypt(
