@@ -181,7 +181,7 @@ FROM PATTERN [ every s=crypto.casestudies.CarStartEventEnc
 
       implicit val decodeInt = EncInt.decode(keyRing)
       val evts = Parse.decodeOption[List[LicensePlateEventEnc]](
-        io.Source.fromFile(EVENT_FILE).mkString).get
+        scala.io.Source.fromFile(EVENT_FILE).mkString).get
 
       val start = System.currentTimeMillis
       evts.foreach(sendEvent)
@@ -216,7 +216,7 @@ FROM PATTERN [ every s=crypto.casestudies.CarStartEventEnc
 
   def main(args: Array[String]) = {
     val keyRing = Parse.decodeOption[KeyRing](
-      io.Source.fromFile(LPConstants.KEYRING_FILE.toString).mkString).getOrElse(
+      scala.io.Source.fromFile(LPConstants.KEYRING_FILE.toString).mkString).getOrElse(
       sys.error("Could not find key file"))
 
     withKeyRing(keyRing)(args)
@@ -233,7 +233,7 @@ object Interp {
     }
 
     Parse.decodeOption[KeyRing](
-      io.Source.fromFile(KEYRING_FILE.toString).mkString).getOrElse(
+      scala.io.Source.fromFile(KEYRING_FILE.toString).mkString).getOrElse(
       sys.error(s"Could not parse ${KEYRING_FILE}"))
   }
 
@@ -247,7 +247,7 @@ object Interp {
       case -\/(err) =>
         println(s"Error connecting to crypto service: ${err}")
         println("Did you start the crypto service before running this?")
-        system.shutdown()
+        system.terminate()
         sys.exit(1)
       case \/-(service) =>
         println("Connected to crypto service.")
@@ -256,7 +256,7 @@ object Interp {
 
     val keys: PubKeys = Await.result(service.publicKeys, 10.seconds)
 
-    shutdown = _ => system.shutdown()
+    shutdown = _ => system.terminate()
 
     Blocking(30.seconds)(
       new RemoteInterpreter(service, keys)(

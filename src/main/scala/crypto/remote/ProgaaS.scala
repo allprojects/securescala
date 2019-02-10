@@ -30,7 +30,7 @@ trait ProgaaS {
         println("failed!")
         println(s"Error connecting to crypto service: ${err}")
         println("Did you start the crypto service before running this?")
-        system.shutdown()
+        system.terminate()
         sys.exit(1)
       case \/-(service) =>
         println("ok")
@@ -47,7 +47,7 @@ trait ProgaaS {
       println(s"Your input for program '${name}':")
       val input = StdIn.readLine
       if (input.startsWith("quit")) {
-        system.shutdown()
+        system.terminate()
         sys.exit(0)
       } else {
         \/.fromTryCatchNonFatal(input.toInt) match {

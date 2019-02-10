@@ -237,7 +237,7 @@ object StartCryptoService extends App {
   println("CryptoService is up and running. Press ENTER for shutdown.")
   System.in.read()
   print("Shutting down...")
-  system.shutdown()
+  system.terminate()
   println("bye!")
 }
 
@@ -249,7 +249,7 @@ object StartCryptoServiceFrom {
     }
 
     val keyRing = Parse.decodeOption[KeyRing](
-      io.Source.fromFile(args.head).mkString).getOrElse(
+      scala.io.Source.fromFile(args.head).mkString).getOrElse(
       sys.error(s"Could not parse ${args.head}"))
     println(s"Using keys from ${args.head}")
 
@@ -257,7 +257,7 @@ object StartCryptoServiceFrom {
     println("CryptoService is up and running. Press ENTER for shutdown.")
     System.in.read()
     print("Shutting down...")
-    system.shutdown()
+    system.terminate()
     println("bye!")
   }
 }

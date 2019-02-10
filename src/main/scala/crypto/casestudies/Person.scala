@@ -17,6 +17,8 @@ import java.nio.charset.StandardCharsets
 import argonaut._
 import Argonaut._
 
+import scala.language.implicitConversions
+
 case class Person(firstName: String, lastName: String, age: Int, income: Int)
 case class EncPerson(firstName: EncString, lastName: EncString, age: EncInt, income: EncInt)
 
@@ -110,7 +112,7 @@ object PersonsCaseStudy extends App {
 
   def groupLastName(ps: IList[EncPerson]): Crypto[List[IList[EncPerson]]]= {
     ps.traverseU(p =>
-      toOpeStr(p.lastName).map((_,p))).map(_.groupBy(_._1).values.map(_.map(_._2)))
+      toOpeStr(p.lastName).map((_,p))).map(_.groupBy(_._1).values.map(_.map(_._2).toIList))
   }
 
   val groups = locally(groupLastName(IList(ps:_*)))

@@ -122,14 +122,14 @@ object EncInt {
 
   def decode(key: PubKeys): DecodeJson[EncInt] = DecodeJson { c =>
     PaillierEnc.decode(key.paillier)(c) match {
-      case DecodeResult(\/-(x)) => DecodeResult.ok(x)
-      case DecodeResult(-\/(_)) => ElGamalEnc.decode(key.elgamal)(c) match {
-        case DecodeResult(\/-(x)) => DecodeResult.ok(x)
-        case DecodeResult(-\/(_)) => AesEnc.aesCodec.Decoder(c) match {
-          case DecodeResult(\/-(x)) => DecodeResult.ok(x)
-          case DecodeResult(-\/(_)) => OpeEnc.opeCodec.Decoder(c) match {
-            case DecodeResult(\/-(x)) => DecodeResult.ok(x)
-            case DecodeResult(-\/(err)) => DecodeResult.fail(err._1,err._2)
+      case DecodeResult(Right(x)) => DecodeResult.ok(x)
+      case DecodeResult(Left(_)) => ElGamalEnc.decode(key.elgamal)(c) match {
+        case DecodeResult(Right(x)) => DecodeResult.ok(x)
+        case DecodeResult(Left(_)) => AesEnc.aesCodec.Decoder(c) match {
+          case DecodeResult(Right(x)) => DecodeResult.ok(x)
+          case DecodeResult(Left(_)) => OpeEnc.opeCodec.Decoder(c) match {
+            case DecodeResult(Right(x)) => DecodeResult.ok(x)
+            case DecodeResult(Left(err)) => DecodeResult.fail(err._1,err._2)
           }
         }
       }
@@ -192,10 +192,10 @@ object EncString {
 
   implicit val decode: DecodeJson[EncString] = DecodeJson { c =>
     OpeString.opeCodec.Decoder(c) match {
-      case DecodeResult(\/-(x)) => DecodeResult.ok(x)
-      case DecodeResult(-\/(_)) => AesString.aesStrCodec.Decoder(c) match {
-        case DecodeResult(\/-(x)) => DecodeResult.ok(x)
-        case DecodeResult(-\/(err)) => DecodeResult.fail(err._1,err._2)
+      case DecodeResult(Right(x)) => DecodeResult.ok(x)
+      case DecodeResult(Left(_)) => AesString.aesStrCodec.Decoder(c) match {
+        case DecodeResult(Right(x)) => DecodeResult.ok(x)
+        case DecodeResult(Left(err)) => DecodeResult.fail(err._1,err._2)
       }
     }
   }
