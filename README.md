@@ -2,9 +2,11 @@
 
 Scala Embedding of Secure Computations
 
-visit main site https://allprojects.github.io/securescala/
+visit main site http://allprojects.github.io/securescala/
 
 ## Building
 
-Build and install https://github.com/azanov/libope
-Install sbt: https://www.scala-sbt.org/1.0/docs/Installing-sbt-on-Linux.html
+Build and install http://github.com/allprojects/securescala/tree/libope
+or http://github.com/allprojects/securescala/tree/libope-libssl-1.1.0
+
+Install sbt: http://www.scala-sbt.org/1.0/docs/Installing-sbt-on-Linux.html
