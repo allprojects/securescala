@@ -1,6 +1,6 @@
 # libope
 
-The libope library provides the basic cryptographic functions for securescala (https://github.com/azanov/securescala, https://github.com/allprojects/securescala).
+The libope library provides the basic cryptographic functions for securescala (http://github.com/allprojects/securescala).
 
 ### Building
 
